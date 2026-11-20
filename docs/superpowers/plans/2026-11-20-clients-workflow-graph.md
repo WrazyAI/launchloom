@@ -11,5 +11,5 @@
 **Constraints:** No new dashboard route, release gate change, generation dispatch, or new access to GitHub logs. Legacy and Postgres operation identities remain separate.
 
 - [x] Reconcile known stages: an exact match to a reported step yields pass, fail, skip, or cancellation. Missing/ambiguous steps do not inherit the run outcome; unknown input never enters the excerpt. Test via `tests/admin-history-reconciliation.test.ts`.
-- [x] Render connected, named stage buttons across each desktop row; use the short strip only on mobile. Keep actual execution/delivery distinctions and place failure output and GitHub inside the drawer. Test both widths in `tests/admin-workspace-browser.test.ts`.
+- [x] Render one plain-language run summary in each directory row; put the connected, named stage graph, failure output, and GitHub link only in the drawer. Test both widths in `tests/admin-workspace-browser.test.ts`.
 - [x] Verify ingestion and directory projection, exact rerun identity, capability boundaries, responsive geometry, and keyboard selection with targeted tests.

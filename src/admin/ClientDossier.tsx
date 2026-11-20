@@ -3,7 +3,7 @@ import type { AttemptSummary, ClientRecord } from "../lib/admin-contracts";
 import { ActorLabel } from "./ActorLabel";
 import { AdminIcon } from "./AdminIcon";
 import type { AdminApi } from "./api";
-import { ClientWorkflowRun } from "./ClientWorkflow";
+import { WorkflowRunPanel } from "./ClientWorkflow";
 import { DeliveryStatusBadge, ExecutionStatusBadge } from "./StatusBadge";
 import {
   formatClientName,
@@ -17,7 +17,6 @@ import {
 
 export type ClientDossierProps = {
   api: AdminApi;
-  workflowTarget: { attemptId: string; stage: string | null } | null;
   client: ClientRecord | null;
   loading: boolean;
   error: string | null;
@@ -272,7 +271,6 @@ function ClientDetails({ client }: { client: ClientRecord }) {
 
 export function ClientDossier({
   api,
-  workflowTarget,
   client,
   loading,
   error,
@@ -292,7 +290,6 @@ export function ClientDossier({
   const [selectedRun, setSelectedRun] = useState<string | null>(null);
   const runId =
     selectedRun ??
-    workflowTarget?.attemptId ??
     client?.workflow?.attemptId ??
     (client?.workflow === undefined
       ? attempts.find((attempt) => attempt.profile === "full")?.attemptId
@@ -402,13 +399,11 @@ export function ClientDossier({
           <>
             <div ref={workflowRef} tabIndex={-1} aria-label="Client workflow">
               {runId ? (
-                <ClientWorkflowRun
+                <WorkflowRunPanel
                   key={runId}
                   api={api}
                   attemptId={runId}
-                  initialStage={
-                    selectedRun ? null : (workflowTarget?.stage ?? null)
-                  }
+                  initialStage={null}
                 />
               ) : (
                 <section

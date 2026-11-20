@@ -117,11 +117,6 @@ export function ClientsView({
   const [clientLoading, setClientLoading] = useState(false);
   const [clientError, setClientError] = useState<string | null>(null);
   const [clientToken, setClientToken] = useState(0);
-  const [workflowTarget, setWorkflowTarget] = useState<{
-    clientId: string;
-    attemptId: string;
-    stage: string | null;
-  } | null>(null);
   const [attempts, setAttempts] = useState<AttemptSummary[]>([]);
   const [attemptTotal, setAttemptTotal] = useState(0);
   const [attemptsNextCursor, setAttemptsNextCursor] = useState<string | null>(
@@ -336,22 +331,9 @@ export function ClientsView({
     );
   }
 
-  function selectClient(
-    record: ClientRecord,
-    trigger: HTMLButtonElement,
-    stage?: string | null,
-  ) {
+  function selectClient(record: ClientRecord, trigger: HTMLButtonElement) {
     triggerRef.current = trigger;
     focusOnOpenRef.current = true;
-    setWorkflowTarget(
-      stage !== undefined && record.workflow
-        ? {
-            clientId: record.clientId,
-            attemptId: record.workflow.attemptId,
-            stage,
-          }
-        : null,
-    );
     onNavigate({
       ...state,
       clientId: record.clientId,
@@ -676,13 +658,6 @@ export function ClientsView({
                 <th scope="col" role="columnheader">
                   Inviting admin
                 </th>
-                <th
-                  scope="col"
-                  role="columnheader"
-                  className="admin-visually-hidden"
-                >
-                  Latest workflow
-                </th>
                 <th scope="col" role="columnheader">
                   <span className="admin-visually-hidden">Client dossier</span>
                 </th>
@@ -794,12 +769,7 @@ export function ClientsView({
                       role="cell"
                       className="admin-client-workflow-cell"
                     >
-                      <ClientWorkflowDirectory
-                        workflow={record.workflow}
-                        onOpen={(stage, trigger) =>
-                          selectClient(record, trigger, stage)
-                        }
-                      />
+                      <ClientWorkflowDirectory workflow={record.workflow} />
                     </td>
                     <td
                       data-label="Client dossier"
@@ -862,9 +832,6 @@ export function ClientsView({
         <ClientDossier
           key={selectedId}
           api={api}
-          workflowTarget={
-            workflowTarget?.clientId === selectedId ? workflowTarget : null
-          }
           client={client?.clientId === selectedId ? client : null}
           loading={clientLoading}
           error={clientError}
@@ -874,10 +841,7 @@ export function ClientsView({
           attemptsError={attemptsError}
           attemptTotal={attemptTotal}
           headingRef={headingRef}
-          onClose={() => {
-            setWorkflowTarget(null);
-            onNavigate({ ...state, clientId: null });
-          }}
+          onClose={() => onNavigate({ ...state, clientId: null })}
           onRetry={() => setClientToken((token) => token + 1)}
           onLoadMoreAttempts={loadMoreAttempts}
         />

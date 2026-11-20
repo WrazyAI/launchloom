@@ -9,6 +9,7 @@ import { AdminIcon, type AdminIconName } from "./AdminIcon";
 import { isSiteGeneration } from "./site-groups";
 import { AttemptSitePreview } from "./AttemptSitePreview";
 import { AttemptSeoResearch } from "./AttemptSeoResearch";
+import { WorkflowRunPanel } from "./ClientWorkflow";
 import { DetailValue } from "./DetailValue";
 import { GenerationActivity } from "./GenerationActivity";
 import { activityStageLabel } from "./generation-activity-format";
@@ -31,10 +32,11 @@ import {
   safeSiteUrl,
 } from "./format";
 
-type InspectorView = "overview" | "activity" | "seo" | "preview";
+type InspectorView = "overview" | "workflow" | "activity" | "seo" | "preview";
 
 const VIEWS: { id: InspectorView; label: string; icon: AdminIconName }[] = [
   { id: "overview", label: "Overview", icon: "generations" },
+  { id: "workflow", label: "Workflow", icon: "operations" },
   { id: "activity", label: "Agent runs", icon: "operations" },
   { id: "seo", label: "SEO research", icon: "search" },
   { id: "preview", label: "Site preview", icon: "panel" },
@@ -59,39 +61,6 @@ export type AttemptInspectorProps = {
   onOpenClient: (clientId: string) => void;
   onOpenAttempt: (attemptId: string) => void;
 };
-
-function WorkflowLinks({ attempt }: { attempt: AttemptDetail }) {
-  const runUrl =
-    attempt.repository === "WrazyAI/launchloom" && attempt.runId
-      ? safeEvidenceUrl(
-          `https://github.com/${attempt.repository}/actions/runs/${attempt.runId}${
-            attempt.runAttempt ? `/attempts/${attempt.runAttempt}` : ""
-          }`,
-        )
-      : null;
-  const issueUrl = attempt.issueNumber
-    ? safeEvidenceUrl(
-        `https://github.com/WrazyAI/launchloom/issues/${attempt.issueNumber}`,
-      )
-    : null;
-  return (
-    <div className="admin-inspector__links">
-      {runUrl ? (
-        <a href={runUrl} target="_blank" rel="noreferrer">
-          Open workflow run
-        </a>
-      ) : null}
-      {issueUrl ? (
-        <a href={issueUrl} target="_blank" rel="noreferrer">
-          Open issue
-        </a>
-      ) : null}
-      {!runUrl && !issueUrl ? (
-        <span className="admin-muted">No safe external evidence link.</span>
-      ) : null}
-    </div>
-  );
-}
 
 function FailureSection({ attempt }: { attempt: AttemptDetail }) {
   const failure = attempt.failure;
@@ -136,14 +105,9 @@ function FailureSection({ attempt }: { attempt: AttemptDetail }) {
       ) : (
         <p className="admin-muted">No next step recorded.</p>
       )}
-      {evidenceUrl ? (
-        <a href={evidenceUrl} target="_blank" rel="noreferrer">
-          Open run evidence
-        </a>
-      ) : failure.evidenceUrl ? (
+      {!evidenceUrl && failure.evidenceUrl ? (
         <p className="admin-muted">
-          An evidence link was omitted because it is not an approved token-free
-          HTTPS route.
+          Run evidence is available inside the workflow view.
         </p>
       ) : null}
     </section>
@@ -421,6 +385,16 @@ export function AttemptInspector({
           </p>
         ) : null}
 
+        {attempt && view === "workflow" ? (
+          <WorkflowRunPanel
+            api={api}
+            attemptId={attempt.attemptId}
+            initialStage={attempt.failure.stage}
+            data={attempt}
+            heading="Workflow run"
+          />
+        ) : null}
+
         {attempt && view === "activity" ? (
           <>
             <GenerationActivity
@@ -519,7 +493,18 @@ export function AttemptInspector({
                   Visit site
                 </a>
               ) : null}
-              <WorkflowLinks attempt={attempt} />
+              <button
+                type="button"
+                className="admin-button admin-button--quiet"
+                onClick={() =>
+                  setSelection({
+                    attemptId: attempt.attemptId,
+                    view: "workflow",
+                  })
+                }
+              >
+                View workflow
+              </button>
               {attempt.clientId ? (
                 <button
                   type="button"

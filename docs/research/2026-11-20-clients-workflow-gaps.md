@@ -1,6 +1,6 @@
 # Clients workflow gaps
 
-The Clients directory is a triage view, not a mirror of the GitHub Actions job graph. It shows the latest production-profile generation for the latest intake in a grouped row. Older intakes, reruns, and focused diagnostic profiles remain available. The most recent run can fail while an earlier verified site stays available.
+The Clients directory shows one plain-language status for the latest production-profile generation of each intake; the connected workflow graph belongs to the side panel. Older intakes, reruns, and focused diagnostic profiles remain available there. The most recent run can fail while an earlier verified site stays available.
 
 | Priority | Gap | Next change |
 | --- | --- | --- |

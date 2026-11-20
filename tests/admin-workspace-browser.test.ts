@@ -39,15 +39,14 @@ const CLIENTS = syntheticClients().map((client) =>
           executionStatus: "failed" as const,
           deliveryStatus: "diagnostic" as const,
           stale: false,
-          failureStage: "setup",
+          failureStage: "preview_deploy",
           stages: [
             { stage: "intake", status: "completed" },
-            { stage: "seo_research", status: "completed" },
-            { stage: "reference_analysis", status: "skipped" },
+            { stage: "seo_telemetry", status: "completed" },
             { stage: "client_repo", status: "completed" },
-            { stage: "review_branch", status: "completed" },
-            { stage: "imagery", status: "completed" },
-            { stage: "creative", status: "succeeded" },
+            { stage: "pack_select", status: "completed" },
+            { stage: "preview_deploy", status: "failed" },
+            { stage: "preview_verification", status: "skipped" },
             { stage: "preview_ready", status: "completed" },
           ],
         },
@@ -430,24 +429,64 @@ async function serve(
     }
     const detail = attemptDetail(attempt);
     if (id === "attempt-diagnostic") {
-      detail.events.push({
-        ...detail.events[0],
-        eventKey: "preview-marker",
-        stage: "preview_ready",
-        status: "completed",
-        detail: "Preview ready state recorded.",
-      });
-      detail.events.push({
-        ...detail.events[0],
-        eventKey: "github-step:setup",
-        stage: "setup",
-        status: "failed",
-        source: "github-reconcile",
-        detail: JSON.stringify({
-          errorCode: "LL_STAGE_SETUP_FAILED",
-          diagnosticExcerpt: "Verify required secrets: failure.",
-        }),
-      });
+      const base = detail.events[0];
+      detail.events = [
+        {
+          ...base,
+          eventKey: "github-step:intake",
+          stage: "intake",
+          status: "completed",
+          source: "github-reconcile",
+          detail: "Intake parsed and site configuration prepared.",
+        },
+        {
+          ...base,
+          eventKey: "github-step:seo_telemetry",
+          stage: "seo_telemetry",
+          status: "completed",
+          source: "github-reconcile",
+        },
+        {
+          ...base,
+          eventKey: "github-step:client_repo",
+          stage: "client_repo",
+          status: "completed",
+          source: "github-reconcile",
+        },
+        {
+          ...base,
+          eventKey: "github-step:pack_select",
+          stage: "pack_select",
+          status: "completed",
+          source: "github-reconcile",
+        },
+        {
+          ...base,
+          eventKey: "github-step:preview_deploy",
+          stage: "preview_deploy",
+          status: "failed",
+          source: "github-reconcile",
+          detail: JSON.stringify({
+            errorCode: "LL_STAGE_PREVIEW_DEPLOY_FAILED",
+            diagnosticExcerpt:
+              "Build and direct-upload public preview: failure.",
+          }),
+        },
+        {
+          ...base,
+          eventKey: "github-step:preview_verification",
+          stage: "preview_verification",
+          status: "skipped",
+          source: "github-reconcile",
+        },
+        {
+          ...base,
+          eventKey: "github-step:preview_ready",
+          stage: "preview_ready",
+          status: "completed",
+          source: "github-reconcile",
+        },
+      ];
     }
     const detailOverride = eventDetails.get(id);
     const events = eventPage(attempt, params);
@@ -1452,8 +1491,43 @@ describe("real admin workspace browser behavior", () => {
     }
   });
 
+  it("opens the workflow inside Sites instead of sending the admin to GitHub", async () => {
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
+    });
+    try {
+      const inspector = page.locator("#attempt-inspector");
+      await visible(
+        inspector.getByRole("heading", { name: "Attempt attempt-diagnostic" }),
+      );
+      expect(await inspector.locator('a[href*="github.com"]').count()).toBe(0);
+      expect(
+        await inspector.getByRole("link", { name: /workflow run/iu }).count(),
+      ).toBe(0);
+      await inspector
+        .getByRole("button", { name: "View workflow", exact: true })
+        .click();
+      const workflow = inspector.getByRole("region", { name: "Workflow run" });
+      await visible(
+        workflow.getByRole("list", { name: "Workflow stage graph" }),
+      );
+      await visible(
+        workflow.getByRole("button", { name: "Preview deploy: Failed" }),
+      );
+      expect(page.url()).toContain("view=generations");
+      const github = workflow
+        .locator("footer")
+        .getByRole("link", { name: "View run on GitHub" });
+      await visible(github);
+      expect(await github.getAttribute("href")).toMatch(/actions\/runs\/\d+/u);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
   it.each([390, 1440])(
-    "opens a failed pipeline stage in Clients at %ipx and keeps GitHub in the workflow footer",
+    "summarizes the run in Clients at %ipx and opens the connected graph in the drawer",
     async (width) => {
       const { page, errors } = await openPage({
         viewport: { width, height: 844 },
@@ -1461,48 +1535,16 @@ describe("real admin workspace browser behavior", () => {
       });
       try {
         const row = page.locator('[data-client-id="submission:client-a"]');
-        await visible(row.getByRole("link", { name: "View site" }));
-        const graph = row.locator("[data-workflow-graph]");
-        const compact = row.locator("[data-workflow-compact]");
-        if (width === 1440) {
-          await visible(graph);
-          expect(await compact.isVisible()).toBe(false);
-          expect(
-            await graph.getByText("Creative", { exact: true }).isVisible(),
-          ).toBe(true);
-          expect(await graph.locator("[data-workflow-edge]").count()).toBe(8);
-          const track = graph.getByRole("list", {
-            name: "Workflow stage graph",
-          });
-          const next = graph.getByRole("button", { name: "Next stages" });
-          const previous = graph.getByRole("button", {
-            name: "Previous stages",
-          });
-          await next.click({ timeout: 2000 });
-          await expect
-            .poll(() => track.evaluate((el) => el.scrollLeft))
-            .toBeGreaterThan(0);
-          await previous.click();
-          await expect
-            .poll(() => track.evaluate((el) => el.scrollLeft))
-            .toBe(0);
-          await visible(
-            graph.getByRole("button", { name: "Inspect failed stage: Setup" }),
-          );
-          const graphWidth = (await graph.boundingBox())!.width;
-          expect(graphWidth).toBeGreaterThan(
-            (await row.boundingBox())!.width * 0.75,
-          );
-        } else {
-          await visible(compact);
-          expect(await graph.isVisible()).toBe(false);
-        }
+        await visible(row.getByText("Preview deploy failed", { exact: true }));
+        await visible(row.getByText("5 of 7 stages passed", { exact: true }));
+        expect(await row.locator("[data-flow-canvas]").count()).toBe(0);
         expect(await row.locator('a[href*="github.com"]').count()).toBe(0);
         expect(await row.getByText(/Issue #|Intake #/u).count()).toBe(0);
-        if (width === 390)
-          await visible(row.getByText("Setup failed", { exact: true }));
-        const noRun = page.locator('[data-client-id="submission:client-b"]');
-        await visible(noRun.getByText("No run recorded"));
+        await visible(
+          page
+            .locator('[data-client-id="submission:client-b"]')
+            .getByText("No workflow yet"),
+        );
         const captures = process.env.CLIENT_WORKFLOW_SCREENSHOTS;
         if (captures) {
           await page.screenshot({
@@ -1510,43 +1552,50 @@ describe("real admin workspace browser behavior", () => {
             animations: "disabled",
           });
         }
-        const trigger = row.getByRole("button", { name: "Setup: Failed" });
-        await visible(
-          row.getByRole("button", { name: "Preview delivery: Needs review" }),
-        );
-        await trigger.focus();
-        await page.keyboard.press("Enter");
+        const trigger = row.getByRole("button", {
+          name: /Open client submission:client-a/u,
+        });
+        await trigger.click();
         const dossier = page.getByRole("dialog", {
           name: "Client dossier: Acme & Sons",
         });
-        const workflow = dossier.getByRole("region", { name: "Workflow run" });
+        const workflow = dossier.getByRole("region", { name: "Workflow" });
+        await page.waitForTimeout(1200);
         await visible(
-          workflow.getByText(
-            "The workflow could not verify its required inputs.",
-          ),
+          workflow.getByRole("heading", { name: "Preview deploy failed" }),
         );
-        await workflow
-          .getByRole("button", { name: "Preview delivery: Needs review" })
-          .click();
+        const graph = workflow.getByRole("list", {
+          name: "Workflow stage graph",
+        });
+        await visible(graph);
+        await visible(
+          graph.getByRole("button", { name: "Preview deploy: Failed" }),
+        );
         expect(
-          await workflow.getByText("Preview ready state recorded.").count(),
-        ).toBe(0);
-        await workflow.getByRole("button", { name: "Setup: Failed" }).click();
-        await visible(workflow.getByText("prerequisite", { exact: true }));
+          await workflow.locator(".flow-edge").count(),
+        ).toBeGreaterThanOrEqual(5);
+        await visible(
+          workflow.getByText("The public preview upload did not complete."),
+        );
         await visible(
           workflow
             .locator("code")
-            .getByText("LL_STAGE_SETUP_FAILED", { exact: true }),
+            .getByText("LL_STAGE_PREVIEW_DEPLOY_FAILED", { exact: true }),
         );
         await visible(
-          workflow
-            .locator("pre")
-            .getByText("Verify required secrets: failure.", { exact: true }),
+          workflow.getByText(
+            "Build and direct-upload public preview: failure.",
+            { exact: true },
+          ),
         );
-        expect(page.url()).toContain("view=clients");
+        await visible(workflow.getByText("1 skipped stage", { exact: true }));
+        await graph
+          .getByRole("button", { name: "Pack choice: Passed" })
+          .click();
+        await visible(workflow.getByRole("heading", { name: "Pack choice" }));
         const github = workflow
           .locator("footer")
-          .getByRole("link", { name: "View on GitHub" });
+          .getByRole("link", { name: "View run on GitHub" });
         await visible(github);
         expect(await github.getAttribute("href")).toBe(
           "https://github.com/WrazyAI/launchloom/actions/runs/90008/attempts/1",
@@ -1557,15 +1606,6 @@ describe("real admin workspace browser behavior", () => {
             animations: "disabled",
           });
         }
-        await workflow
-          .getByRole("button", { name: "Creative: Passed" })
-          .click();
-        await visible(workflow.getByText("Stage evidence recorded."));
-        expect(
-          await workflow
-            .getByText("The workflow could not verify its required inputs.")
-            .count(),
-        ).toBe(0);
         expect(
           await dossier.evaluate((el) => el.scrollWidth),
         ).toBeLessThanOrEqual(width);

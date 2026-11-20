@@ -1,322 +1,73 @@
-import { useEffect, useRef, useState } from "react";
-import { generationStageOrder } from "../../scripts/generation-stage-outcomes.mjs";
+import { useEffect, useState } from "react";
 import type {
   AttemptDetail,
   AttemptEventRecord,
   ClientWorkflow as WorkflowSnapshot,
-  DeliveryStatus,
   Failure,
   WorkflowStage,
 } from "../lib/admin-contracts";
 import type { AdminApi } from "./api";
 import { DetailValue } from "./DetailValue";
-import { activityStageLabel } from "./generation-activity-format";
 import { DeliveryStatusBadge, ExecutionStatusBadge } from "./StatusBadge";
 import {
+  WorkflowGraph,
+  WorkflowLegend,
+  orderedStages,
+  stageLabel,
+  stageStatus,
+  withFailure,
+  workflowState,
+} from "./WorkflowGraph";
+import {
+  formatElapsed,
+  formatProfile,
   formatTimestamp,
   requestErrorMessage,
   safeEvidenceUrl,
 } from "./format";
 
-function stageState(status: string, active: boolean) {
-  switch (status) {
-    case "completed":
-    case "succeeded":
-    case "passed":
-      return { label: "Passed", glyph: "✓", tone: "success" };
-    case "failed":
-    case "error":
-      return { label: "Failed", glyph: "×", tone: "failure" };
-    case "started":
-    case "running":
-      return active
-        ? { label: "In progress", glyph: "›", tone: "running" }
-        : { label: "Outcome not recorded", glyph: "?", tone: "neutral" };
-    case "skipped":
-      return { label: "Skipped", glyph: "–", tone: "neutral" };
-    case "cancelled":
-      return { label: "Cancelled", glyph: "–", tone: "neutral" };
-    case "warning":
-    case "recorded-incomplete":
-      return { label: "Needs review", glyph: "!", tone: "attention" };
-    default:
-      return { label: "Recorded", glyph: "·", tone: "neutral" };
-  }
-}
-
-function withFailure(stages: WorkflowStage[], failure: string | null) {
-  if (!failure || ["execution", "delivery", "workflow"].includes(failure))
-    return stages;
-  const found = stages.some((item) => item.stage === failure);
-  return found
-    ? stages.map((item) =>
-        item.stage === failure && !item.verified
-          ? { ...item, status: "failed" }
-          : item,
-      )
-    : [...stages, { stage: failure, status: "failed" }];
-}
-
-function stageName(stage: string) {
-  if (stage === "preview_ready") return "Preview delivery";
-  if (stage === "preview_verification") return "Preview check";
-  if (stage === "seo_telemetry") return "SEO reporting";
-  return activityStageLabel(stage) || "Unnamed stage";
-}
-
-function stageOutcome(item: WorkflowStage, delivery: DeliveryStatus) {
-  if (item.stage !== "preview_ready" || item.status !== "completed")
-    return item.status;
-  if (delivery === "preview_ready" || delivery === "published")
-    return "completed";
-  return delivery === "attention" || delivery === "diagnostic"
-    ? "warning"
-    : "unverified";
-}
-
-function StageButton({
-  item,
-  active,
-  delivery,
-  selected,
-  showLabel = selected !== undefined,
-  onClick,
-}: {
-  item: WorkflowStage;
-  active: boolean;
-  delivery: DeliveryStatus;
-  selected?: boolean;
-  showLabel?: boolean;
-  onClick: (element: HTMLButtonElement) => void;
-}) {
-  const state = stageState(stageOutcome(item, delivery), active);
-  const name = stageName(item.stage);
-  return (
-    <button
-      type="button"
-      className="admin-workflow-node"
-      data-stage-tone={state.tone}
-      aria-label={`${name}: ${state.label}`}
-      aria-pressed={selected}
-      aria-haspopup={selected === undefined ? "dialog" : undefined}
-      title={`${name}: ${state.label}`}
-      onClick={(event) => onClick(event.currentTarget)}
-    >
-      <span className="admin-workflow-node__glyph" aria-hidden="true">
-        {state.glyph}
-      </span>
-      {showLabel ? (
-        <span className="admin-workflow-node__copy">
-          <span>{name}</span>
-          <small>{state.label}</small>
-        </span>
-      ) : null}
-    </button>
-  );
-}
-
-function orderedStages(stages: WorkflowStage[]) {
-  if (!stages.some((item) => item.verified)) return stages;
-  return [...stages].sort((a, b) => {
-    const position = (stage: string) => {
-      if (stage === "seo_research")
-        return generationStageOrder.indexOf("seo_telemetry") - 0.5;
-      if (stage === "preview_ready")
-        return generationStageOrder.indexOf("preview_verification") + 0.5;
-      const index = generationStageOrder.indexOf(stage);
-      return index < 0 ? Number.MAX_SAFE_INTEGER : index;
-    };
-    return position(a.stage) - position(b.stage);
-  });
-}
-
+/**
+ * One plain-language line in the directory. The full graph lives in the
+ * drawer, not in the admin's working table.
+ */
 export function ClientWorkflowDirectory({
   workflow,
-  onOpen,
 }: {
   workflow: WorkflowSnapshot | null | undefined;
-  onOpen: (stage: string | null, trigger: HTMLButtonElement) => void;
 }) {
-  const trackRef = useRef<HTMLOListElement>(null);
-  const [scrollState, setScrollState] = useState(0);
-  const updateScrollState = (track: HTMLOListElement) => {
-    const before = track.scrollLeft > 1;
-    const after = track.scrollWidth - track.clientWidth - track.scrollLeft > 1;
-    setScrollState(Number(before) | (Number(after) << 1));
-  };
-  useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    const update = () => updateScrollState(track);
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(track);
-    if (track.lastElementChild) observer.observe(track.lastElementChild);
-    return () => observer.disconnect();
-  }, [workflow]);
-
-  function moveStages(direction: -1 | 1) {
-    const track = trackRef.current;
-    if (track) track.scrollBy({ left: direction * track.clientWidth * 0.8 });
-  }
-
-  if (!workflow)
-    return (
-      <span className="admin-muted">
-        {workflow === null ? "No run recorded" : "Workflow unavailable"}
-      </span>
-    );
-  const { executionStatus, deliveryStatus, stale } = workflow;
-  const stages = orderedStages(
-    withFailure(
-      workflow.stages,
-      executionStatus === "failed" ? workflow.failureStage : null,
-    ),
-  );
-  const active = !stale && executionStatus === "running";
-  const failure =
-    stages.find(
-      (item) =>
-        item.stage === workflow.failureStage && item.status === "failed",
-    ) ?? stages.find((item) => item.status === "failed");
-  const latest =
-    failure ??
-    stages.findLast((item) => item.status !== "skipped") ??
-    stages.at(-1);
-  const compact = stages.filter((item) => item.status !== "skipped").slice(-4);
-  if (failure && !compact.includes(failure)) compact.splice(0, 1, failure);
-  const status = (
-    <button
-      type="button"
-      className="admin-workflow-status"
-      aria-haspopup="dialog"
-      onClick={(event) => onOpen(null, event.currentTarget)}
-    >
-      <ExecutionStatusBadge status={executionStatus} stale={stale} />
-    </button>
-  );
+  const state = workflowState(workflow);
   return (
-    <>
-      <div className="admin-workflow-graph" data-workflow-graph>
-        <div className="admin-workflow-graph__head">
-          <span>Latest workflow</span>
-          {status}
-          {failure ? (
-            <button
-              type="button"
-              className="admin-link-button"
-              onClick={(event) => onOpen(failure.stage, event.currentTarget)}
-            >
-              Inspect failed stage: {stageName(failure.stage)}
-            </button>
-          ) : null}
-          {scrollState ? (
-            <div className="admin-workflow-graph__controls">
-              <button
-                type="button"
-                className="admin-workflow-scroll"
-                aria-label="Previous stages"
-                aria-disabled={!(scrollState & 1)}
-                onClick={() => scrollState & 1 && moveStages(-1)}
-              >
-                <span aria-hidden="true">←</span>
-              </button>
-              <button
-                type="button"
-                className="admin-workflow-scroll"
-                aria-label="Next stages"
-                aria-disabled={!(scrollState & 2)}
-                onClick={() => scrollState & 2 && moveStages(1)}
-              >
-                <span aria-hidden="true">→</span>
-                <span>More stages</span>
-              </button>
-            </div>
-          ) : null}
-        </div>
-        {stages.length ? (
-          <ol
-            ref={trackRef}
-            onScroll={(event) => updateScrollState(event.currentTarget)}
-            className="admin-workflow-graph__nodes"
-            role="list"
-            aria-label="Workflow stage graph"
-          >
-            {stages.map((item, index) => (
-              <li key={item.stage}>
-                {index ? (
-                  <span
-                    className="admin-workflow-graph__edge"
-                    data-workflow-edge
-                    aria-hidden="true"
-                  />
-                ) : null}
-                <StageButton
-                  item={item}
-                  active={active}
-                  delivery={deliveryStatus}
-                  showLabel
-                  onClick={(trigger) => onOpen(item.stage, trigger)}
-                />
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <span className="admin-muted">No stage outcomes recorded</span>
-        )}
-      </div>
-      <div className="admin-workflow-strip" data-workflow-compact>
-        {status}
-        {compact.length ? (
-          <ol
-            className="admin-workflow-track"
-            aria-label="Recent workflow stages"
-          >
-            {compact.map((item) => (
-              <li key={item.stage}>
-                <StageButton
-                  item={item}
-                  active={active}
-                  delivery={deliveryStatus}
-                  onClick={(trigger) => onOpen(item.stage, trigger)}
-                />
-              </li>
-            ))}
-          </ol>
-        ) : null}
-        {latest ? (
-          <span className="admin-workflow-caption">
-            {stageName(latest.stage)}{" "}
-            {stageState(
-              stageOutcome(latest, deliveryStatus),
-              active,
-            ).label.toLowerCase()}
-          </span>
-        ) : null}
-      </div>
-    </>
+    <span className="client-run-summary" data-tone={state.tone}>
+      <span className="client-run-summary__dot" aria-hidden="true" />
+      <span className="client-run-summary__copy">
+        <span>{state.headline}</span>
+        <small>{state.detail}</small>
+      </span>
+      <span className="client-run-summary__chevron" aria-hidden="true">
+        →
+      </span>
+    </span>
   );
 }
 
-type RunState =
-  { loading: true } | { error: string } | { attempt: AttemptDetail };
-
-function FailureEvidence({ failure }: { failure: Failure | undefined }) {
+function FailureDetails({ failure }: { failure: Failure | undefined }) {
+  if (!failure?.category && !failure?.summary && !failure?.nextStep)
+    return <p className="flow-muted">No failure details were recorded.</p>;
   return (
-    <div>
-      {failure?.category ? (
-        <p>
-          Failure category: <code>{failure.category}</code>
-        </p>
-      ) : null}
-      {failure?.summary ? (
+    <div className="flow-failure">
+      {failure.summary ? (
         <DetailValue value={failure.summary} />
       ) : (
         <p>Cause not recorded.</p>
       )}
-      {failure?.nextStep ? (
+      {failure.nextStep ? (
         <p>
-          <strong>Next step:</strong> {failure.nextStep}
+          <strong>Next step</strong> {failure.nextStep}
+        </p>
+      ) : null}
+      {failure.category ? (
+        <p className="flow-muted">
+          Category <code>{failure.category}</code>
         </p>
       ) : null}
     </div>
@@ -337,9 +88,10 @@ function StageEvidence({ event }: { event: AttemptEventRecord }) {
         typeof evidence.diagnosticExcerpt === "string"
       ) {
         return (
-          <div className="admin-workflow-diagnostic">
+          <div className="flow-diagnostic">
             <p>
-              Error code: <code>{evidence.errorCode}</code>
+              <span>Error code</span>
+              <code>{evidence.errorCode}</code>
             </p>
             <pre className="admin-detail-code">
               {evidence.diagnosticExcerpt}
@@ -348,22 +100,55 @@ function StageEvidence({ event }: { event: AttemptEventRecord }) {
         );
       }
     } catch {
-      // Keep older retained evidence readable.
+      // Older retained evidence still renders as text below.
     }
   }
   return <DetailValue value={event.detail} />;
 }
 
-export function ClientWorkflowRun({
+type RunState =
+  { loading: true } | { error: string } | { attempt: AttemptDetail };
+
+function runHeadline(
+  attempt: AttemptDetail,
+  stages: WorkflowStage[],
+  active: boolean,
+) {
+  const failed = stages.find((item) => item.status === "failed");
+  if (failed) return `${stageLabel(failed.stage)} failed`;
+  if (active) {
+    const running = stages.findLast((item) => item.status === "started");
+    return running
+      ? `${stageLabel(running.stage)} is running`
+      : "Run is starting";
+  }
+  if (attempt.executionStatus === "cancelled") return "Run was cancelled";
+  if (attempt.executionStatus === "failed") return "Run failed";
+  if (attempt.executionStatus === "unknown") return "Outcome unknown";
+  if (attempt.executionStatus === "succeeded")
+    return stages.some((item) => item.status === "skipped")
+      ? "Completed with skipped stages"
+      : "All recorded stages passed";
+  return "Run is queued";
+}
+
+export function WorkflowRunPanel({
   api,
   attemptId,
   initialStage,
+  data,
+  heading = "Workflow",
 }: {
   api: AdminApi;
   attemptId: string;
   initialStage: string | null;
+  /** Already-loaded detail avoids a second request inside the Sites drawer. */
+  data?: AttemptDetail;
+  heading?: string;
 }) {
-  const [result, setResult] = useState<RunState>({ loading: true });
+  const [result, setResult] = useState<RunState>(
+    data ? { attempt: data } : { loading: true },
+  );
   const [selection, setSelection] = useState(initialStage);
   const [refresh, setRefresh] = useState(0);
   const [older, setOlder] = useState<{
@@ -373,6 +158,7 @@ export function ClientWorkflowRun({
   const [olderLoading, setOlderLoading] = useState(false);
   const [olderError, setOlderError] = useState("");
   useEffect(() => {
+    if (data) return;
     const controller = new AbortController();
     api
       .getAttempt(attemptId, { signal: controller.signal })
@@ -384,7 +170,7 @@ export function ClientWorkflowRun({
           setResult({ error: requestErrorMessage(error) });
       });
     return () => controller.abort();
-  }, [api, attemptId, refresh]);
+  }, [api, attemptId, refresh, data]);
 
   function reload() {
     setResult({ loading: true });
@@ -415,9 +201,10 @@ export function ClientWorkflowRun({
         a.eventKey.localeCompare(b.eventKey),
     );
   const cursor = older ? older.cursor : attempt?.eventsNextCursor;
-  const failure = attempt?.failure;
   const failureStage =
-    attempt?.executionStatus === "failed" ? (failure?.stage ?? null) : null;
+    attempt?.executionStatus === "failed"
+      ? (attempt.failure.stage ?? null)
+      : null;
   const recorded = new Map<string, WorkflowStage>();
   for (const event of events) {
     const verified =
@@ -430,24 +217,28 @@ export function ClientWorkflowRun({
         ...(verified ? { verified: true } : {}),
       });
   }
-  const stages = orderedStages(
+  const allStages = orderedStages(
     withFailure([...recorded.values()], failureStage),
   );
-  const attributed = stages.find(
+  const graphStages = allStages.filter((item) => item.status !== "skipped");
+  const skipped = allStages.filter((item) => item.status === "skipped");
+  const active = attempt?.executionStatus === "running" && !attempt.stale;
+  const attributed = allStages.find(
     (item) => item.stage === failureStage && item.status === "failed",
   )?.stage;
+  const firstFailure =
+    attributed ?? graphStages.find((item) => item.status === "failed")?.stage;
   const selected =
-    selection ??
-    attributed ??
-    stages.find((item) => item.status === "failed")?.stage ??
-    stages.at(-1)?.stage;
+    selection ?? firstFailure ?? graphStages.at(-1)?.stage ?? null;
+  const selectedStage = allStages.find((item) => item.stage === selected);
   const stageEvents = events.filter((event) => event.stage === selected);
-  const showRunFailure = attempt?.executionStatus === "failed" && !attributed;
-  const active = attempt?.executionStatus === "running" && !attempt.stale;
+  const passed = allStages.filter((item) => item.status === "completed").length;
   const github =
     attempt?.repository === "WrazyAI/launchloom" && attempt.runId
       ? safeEvidenceUrl(
-          `https://github.com/WrazyAI/launchloom/actions/runs/${attempt.runId}${attempt.runAttempt ? `/attempts/${attempt.runAttempt}` : ""}`,
+          `https://github.com/WrazyAI/launchloom/actions/runs/${attempt.runId}${
+            attempt.runAttempt ? `/attempts/${attempt.runAttempt}` : ""
+          }`,
         )
       : null;
 
@@ -468,26 +259,71 @@ export function ClientWorkflowRun({
     }
   }
 
+  const selectedState = selectedStage
+    ? stageStatus(
+        selectedStage.status,
+        active,
+        selectedStage.stage,
+        attempt?.deliveryStatus ?? "none",
+      )
+    : null;
+  const shownEvent = stageEvents.find((event) => event.detail);
+
   return (
-    <section
-      className="admin-sheet__section admin-client-workflow"
-      aria-labelledby="client-workflow-title"
-    >
-      <div className="admin-inspector__block-head">
-        <h3 id="client-workflow-title">Workflow run</h3>
-        {attempt ? (
-          <button
-            className="admin-link-button"
-            type="button"
-            onClick={reload}
-            disabled={olderLoading}
-          >
-            Refresh run
-          </button>
-        ) : null}
-      </div>
+    <section className="workflow-panel" aria-label={heading} data-workflow-view>
+      <header className="workflow-panel__head">
+        <div>
+          <span className="workflow-panel__eyebrow">{heading}</span>
+          <h3 id="workflow-panel-title">
+            {attempt ? runHeadline(attempt, allStages, active) : "Workflow run"}
+          </h3>
+          <p className="workflow-panel__meta">
+            {attempt ? (
+              <>
+                <span>{formatProfile(attempt.profile)}</span>
+                <span aria-hidden="true">·</span>
+                <span>
+                  {formatTimestamp(attempt.startedAt ?? attempt.createdAt)}
+                </span>
+                <span aria-hidden="true">·</span>
+                <span>
+                  {formatElapsed(
+                    attempt.startedAt,
+                    attempt.completedAt,
+                    !active,
+                  )}
+                </span>
+              </>
+            ) : (
+              "Loading run evidence"
+            )}
+          </p>
+        </div>
+        <div className="workflow-panel__status">
+          {attempt ? (
+            <>
+              <ExecutionStatusBadge
+                status={attempt.executionStatus}
+                stale={attempt.stale}
+              />
+              <DeliveryStatusBadge status={attempt.deliveryStatus} />
+            </>
+          ) : null}
+          {!data ? (
+            <button
+              type="button"
+              className="admin-link-button"
+              onClick={reload}
+              disabled={olderLoading}
+            >
+              Refresh
+            </button>
+          ) : null}
+        </div>
+      </header>
+
       {"loading" in result ? (
-        <p role="status" className="admin-muted">
+        <p role="status" className="flow-muted">
           Loading workflow run…
         </p>
       ) : null}
@@ -499,90 +335,109 @@ export function ClientWorkflowRun({
           </button>
         </div>
       ) : null}
+
       {attempt ? (
         <>
-          <div className="admin-workflow-outcomes">
+          <div className="workflow-scorecard" aria-label="Run progress">
             <span>
-              Run{" "}
-              <ExecutionStatusBadge
-                status={attempt.executionStatus}
-                stale={attempt.stale}
-              />
+              <strong>{passed}</strong> of <strong>{allStages.length}</strong>{" "}
+              recorded stages passed
             </span>
-            <span>
-              Delivery <DeliveryStatusBadge status={attempt.deliveryStatus} />
-            </span>
+            {skipped.length ? (
+              <span>
+                <strong>{skipped.length}</strong> skipped
+              </span>
+            ) : null}
           </div>
-          {stages.length ? (
-            <ol
-              className="admin-workflow-track admin-workflow-track--detail"
-              aria-label="Recorded workflow stages"
-            >
-              {stages.map((item) => (
-                <li key={item.stage}>
-                  <StageButton
-                    item={item}
-                    active={active}
-                    delivery={attempt.deliveryStatus}
-                    selected={selected === item.stage}
-                    onClick={() => setSelection(item.stage)}
-                  />
-                </li>
-              ))}
-            </ol>
+          {graphStages.length ? (
+            <>
+              <WorkflowGraph
+                stages={graphStages}
+                active={active}
+                delivery={attempt.deliveryStatus}
+                selected={selected}
+                onSelect={setSelection}
+                label="Workflow stage graph"
+              />
+              <WorkflowLegend />
+            </>
           ) : (
-            <p className="admin-muted">
-              No stage events were recorded for this run.
+            <p className="flow-muted">
+              No stage outcomes were recorded for this run.
             </p>
           )}
-          {showRunFailure ? (
-            <div className="admin-workflow-evidence">
-              <h4>Run failure</h4>
-              <FailureEvidence failure={failure} />
-            </div>
-          ) : null}
-          {selected ? (
-            <div className="admin-workflow-evidence">
-              <h4>{stageName(selected)}</h4>
+
+          {selectedStage && selectedState ? (
+            <article
+              className="flow-focus"
+              data-tone={selectedState.tone}
+              aria-labelledby="flow-focus-title"
+            >
+              <header className="flow-focus__head">
+                <span className="flow-focus__dot" aria-hidden="true" />
+                <div>
+                  <h4 id="flow-focus-title">
+                    {stageLabel(selectedStage.stage)}
+                  </h4>
+                  <p>
+                    {selectedState.label}
+                    {shownEvent
+                      ? ` · ${formatTimestamp(shownEvent.createdAt)}`
+                      : ""}
+                  </p>
+                </div>
+              </header>
+              {shownEvent?.detail &&
+              stageStatus(
+                shownEvent.status,
+                active,
+                shownEvent.stage,
+                attempt.deliveryStatus,
+              ).label === selectedState.label ? (
+                <StageEvidence event={shownEvent} />
+              ) : null}
               {selected === attributed ? (
-                <FailureEvidence failure={failure} />
+                <FailureDetails failure={attempt.failure} />
               ) : null}
               {selected === "preview_ready" &&
               !["preview_ready", "published"].includes(
                 attempt.deliveryStatus,
               ) ? (
-                <p className="admin-muted">
+                <p className="flow-muted">
                   This run did not record a verified preview delivery.
                 </p>
               ) : null}
-              {stageEvents.length ? (
-                <ul className="admin-workflow-log">
-                  {stageEvents.map((event) => (
-                    <li key={event.eventKey}>
-                      <span className="admin-muted">
-                        {formatTimestamp(event.createdAt)} ·{" "}
-                        {
-                          stageState(
-                            stageOutcome(event, attempt.deliveryStatus),
-                            active,
-                          ).label
-                        }
-                      </span>
-                      {event.detail &&
-                      stageOutcome(event, attempt.deliveryStatus) ===
-                        event.status ? (
-                        <StageEvidence event={event} />
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="admin-muted">
-                  No stage log found in the loaded events.
+              {!shownEvent?.detail &&
+              !(selected === attributed) &&
+              selected !== "preview_ready" ? (
+                <p className="flow-muted">
+                  No additional detail was recorded for this stage.
                 </p>
-              )}
-            </div>
+              ) : null}
+            </article>
           ) : null}
+
+          {skipped.length ? (
+            <details className="flow-skipped">
+              <summary>
+                {skipped.length} skipped{" "}
+                {skipped.length === 1 ? "stage" : "stages"}
+              </summary>
+              <div>
+                {skipped.map((item) => (
+                  <button
+                    key={item.stage}
+                    type="button"
+                    className="admin-link-button"
+                    onClick={() => setSelection(item.stage)}
+                  >
+                    {stageLabel(item.stage)}
+                  </button>
+                ))}
+              </div>
+            </details>
+          ) : null}
+
           {olderError ? (
             <p role="alert" className="admin-inline-error">
               {olderError}
@@ -600,13 +455,14 @@ export function ClientWorkflowRun({
                 : "Load earlier stage events"}
             </button>
           ) : null}
-          {github ? (
-            <footer className="admin-workflow-footer">
+
+          <footer className="flow-footer">
+            {github ? (
               <a href={github} target="_blank" rel="noreferrer">
-                View on GitHub
+                View run on GitHub
               </a>
-            </footer>
-          ) : null}
+            ) : null}
+          </footer>
         </>
       ) : null}
     </section>
