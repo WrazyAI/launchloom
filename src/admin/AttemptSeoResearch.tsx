@@ -86,8 +86,12 @@ export function AttemptSeoResearch({
   const latest = snapshots.find(({ detail }) => detail);
   const detail = latest?.detail;
   const ready = detail?.publishReady;
-  const mode =
-    detail?.mode === "context-only" ? "Context only" : label(detail?.mode);
+  const fallback = detail?.mode === "fallback";
+  const mode = fallback
+    ? "Cited fallback"
+    : detail?.mode === "context-only"
+      ? "Context only"
+      : label(detail?.mode);
   const checks: Array<Record<string, unknown> & { stage: string }> =
     Array.isArray(detail?.stageCosts)
       ? detail.stageCosts.slice(0, 50).flatMap((item) => {
@@ -126,19 +130,32 @@ export function AttemptSeoResearch({
             <span className="admin-view-kicker">Recorded research verdict</span>
             <h4>
               {ready === true
-                ? "Measured research complete"
+                ? fallback
+                  ? "Cited fallback evidence complete"
+                  : "Measured research complete"
                 : ready === false
-                  ? "Measured research incomplete"
+                  ? fallback
+                    ? "Cited fallback evidence incomplete"
+                    : "Measured research incomplete"
                   : "Readiness not recorded"}
             </h4>
             <p>
               {ready === true
-                ? "This run reported sufficient measured evidence for SEO. Other publication checks still apply."
+                ? fallback
+                  ? "Production approval uses cited Brave web fallback research. These are not measured SEO metrics, and this limitation is recorded in the review and dashboard."
+                  : "This run reported sufficient measured evidence for SEO. Other publication checks still apply."
                 : ready === false
                   ? "Use this evidence to review the preview. This research cannot clear the SEO release gate."
                   : "The record does not say whether this research clears the SEO release gate."}
             </p>
             <span className="admin-seo-mode">{mode}</span>
+          {fallback ? (
+            <p className="admin-muted">
+              Fallback status: {label(detail.fallbackStatus)} ·{" "}
+              {count(detail.fallbackQueries)} queries ·{" "}
+              {count(detail.fallbackEvidence)} cited observations.
+            </p>
+          ) : null}
           </div>
           <dl className="admin-seo-metrics">
             <div>

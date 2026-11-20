@@ -159,7 +159,37 @@ describe("SEO publication readiness", () => {
     ).toBe(false);
   });
 
-  it("keeps completed cited fallback research reviewable but blocks production approval", () => {
+  const completeFallback = {
+    ...fallback,
+    mode: "fallback",
+    researchBasis: "cited-web-fallback",
+    publishReady: true,
+    marketSnapshot: {
+      primaryCity: "Cookeville, TN",
+      confirmedServices: ["Drain cleaning"],
+    },
+    externalSearchEvidence: [
+      {
+        ...fallback.externalSearchEvidence[0],
+        confirmedService: "Drain cleaning",
+      },
+    ],
+    fallbackSearch: {
+      ...fallback.fallbackSearch,
+      queriesAttempted: 1,
+      serviceCoverage: ["Drain cleaning"],
+      servicesRequired: 1,
+    },
+  };
+
+  it("allows complete cited fallback research but still labels it as fallback", () => {
+    expect(seoResearchReadiness({ seoResearch: completeFallback })).toEqual({
+      allowed: true,
+      mode: "fallback",
+    });
+  });
+
+  it("keeps an old context-only fallback reviewable but blocks production approval", () => {
     expect(seoResearchReadiness({ seoResearch: fallback })).toMatchObject({
       allowed: false,
       mode: "context-only",
@@ -173,14 +203,27 @@ describe("SEO publication readiness", () => {
       expect(
         seoResearchReadiness({
           seoResearch: {
-            ...fallback,
-            publishReady: true,
-            fallbackSearch: { ...fallback.fallbackSearch, status },
+            ...completeFallback,
+            fallbackSearch: { ...completeFallback.fallbackSearch, status },
           },
         }).allowed,
       ).toBe(false);
     },
   );
+
+  it("requires every confirmed service to have a cited fallback observation", () => {
+    expect(
+      seoResearchReadiness({
+        seoResearch: {
+          ...completeFallback,
+          marketSnapshot: {
+            ...completeFallback.marketSnapshot,
+            confirmedServices: ["Drain cleaning", "Water heater repair"],
+          },
+        },
+      }).allowed,
+    ).toBe(false);
+  });
 
   it("does not trust a complete label without cited evidence and bounded reported cost", () => {
     for (const change of [
@@ -188,14 +231,17 @@ describe("SEO publication readiness", () => {
       {
         externalSearchEvidence: [
           {
-            ...fallback.externalSearchEvidence[0],
+            ...completeFallback.externalSearchEvidence[0],
             sourceUrl: "javascript:alert(1)",
           },
         ],
       },
       {
         externalSearchEvidence: [
-          { ...fallback.externalSearchEvidence[0], provenance: "reasoned_gap" },
+          {
+            ...completeFallback.externalSearchEvidence[0],
+            provenance: "reasoned_gap",
+          },
         ],
       },
       ...[
@@ -206,12 +252,12 @@ describe("SEO publication readiness", () => {
         { failedQueries: 1 },
         { queriesAttempted: 0 },
       ].map((change) => ({
-        fallbackSearch: { ...fallback.fallbackSearch, ...change },
+        fallbackSearch: { ...completeFallback.fallbackSearch, ...change },
       })),
     ])
       expect(
         seoResearchReadiness({
-          seoResearch: { ...fallback, publishReady: true, ...change },
+          seoResearch: { ...completeFallback, ...change },
         }).allowed,
       ).toBe(false);
   });

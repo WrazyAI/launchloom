@@ -3559,6 +3559,34 @@ it("explains context-only SEO evidence without presenting missing metrics as zer
   }
 });
 
+it("labels cited fallback research as approval-ready but not measured", async () => {
+  seoDetail = JSON.stringify({
+    mode: "fallback",
+    researchBasis: "cited-web-fallback",
+    publishReady: true,
+    tasks: 0,
+    validatedQueries: 0,
+    fallbackStatus: "complete",
+    fallbackQueries: 5,
+    fallbackEvidence: 12,
+    stageCosts: [],
+  });
+  const { page } = await openPage({
+    path: "/admin/onboarding-invites?attempt=attempt-0000",
+  });
+  try {
+    const drawer = page.locator("#attempt-inspector");
+    await drawer.getByRole("button", { name: "SEO research", exact: true }).click();
+    await visible(drawer.getByText("Cited fallback evidence complete"));
+    await visible(drawer.getByText(/not measured SEO metrics/u));
+    await visible(drawer.getByText(/Fallback status: Complete/u));
+    await visible(drawer.getByText(/12 cited observations/u));
+  } finally {
+    seoDetail = null;
+    await page.close();
+  }
+});
+
 it("opens an uncropped site capture in its own view at 390px", async () => {
   const { page } = await openPage({
     viewport: { width: 390, height: 844 },

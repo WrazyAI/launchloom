@@ -19,6 +19,10 @@ export function seoResearchReadiness(config) {
   const research = config.seoResearch;
   if (!research || typeof research !== "object")
     return { allowed: true, mode: "legacy" };
+  const fallbackReady =
+    research.mode === "fallback" &&
+    research.publishReady === true &&
+    hasCompletedFallbackResearch(research);
   // New confirmed-city dossiers must prove readiness for every selected city.
   // Preserve the original policy for older single-city dossiers.
   if (
@@ -32,7 +36,7 @@ export function seoResearchReadiness(config) {
     const requireAll = coverage?.approvalPolicy === "all-confirmed-cities";
     const valid =
       research.version === 2 &&
-      research.mode === "researched" &&
+      (research.mode === "researched" || fallbackReady) &&
       research.publishReady === true &&
       coverage?.version === 1 &&
       ["primary-city", "all-confirmed-cities"].includes(
@@ -62,6 +66,7 @@ export function seoResearchReadiness(config) {
       (research.mode !== "researched" ||
         (research.cost?.complete === true &&
           research.cost.overBudget !== true)) &&
+      (research.mode !== "fallback" || fallbackReady) &&
       cities
         .filter(
           (entry, index) =>
@@ -87,16 +92,19 @@ export function seoResearchReadiness(config) {
         );
     // Retain the original top-level release checks as well as city provenance.
     // Nested proof must not bypass the actual site's page map or spend checks.
-    // Cited fallback observations can inform a private diagnostic review, but
-    // they do not meet the measured evidence required for production approval.
+    // Measured research must retain its complete map. A cited fallback clears
+    // the gate only through the explicit fallback policy and its own citation
+    // coverage checks.
     const primaryPolicyReady =
-      research.mode === "researched" &&
-      hasCompleteVersionTwoMap(config, research);
+      (research.mode === "researched" &&
+        hasCompleteVersionTwoMap(config, research)) ||
+      fallbackReady;
     return valid && primaryPolicyReady
       ? { allowed: true, mode: research.mode }
       : {
           allowed: false,
-          mode: "context-only",
+          mode:
+            research.mode === "fallback" ? "fallback" : "context-only",
           code: "seo_research_required",
           error:
             "Required local research is incomplete. The preview remains available, but publishing is blocked until research succeeds.",
@@ -122,9 +130,17 @@ export function seoResearchReadiness(config) {
     hasCompleteVersionTwoMap(config, research)
   )
     return { allowed: true, mode };
+  if (
+    schemaVersion === 2 &&
+    mode === "fallback" &&
+    publishReady === true &&
+    hasCompletedFallbackResearch(research)
+  )
+    return { allowed: true, mode };
   return {
     allowed: false,
-    mode: mode === "context-only" ? "context-only" : "baseline",
+    mode:
+      mode === "context-only" || mode === "fallback" ? mode : "baseline",
     code: "seo_research_required",
     error:
       "SEO research is incomplete. The preview remains available, but production publishing is blocked until research succeeds.",
@@ -241,7 +257,11 @@ function hasCompleteVersionTwoMap(config, research) {
 
 // Web observations permit human release review, never measured SEO claims.
 export function hasCompletedFallbackResearch(research) {
-  if (!research || research.version !== 2 || research.mode !== "context-only")
+  if (
+    !research ||
+    research.version !== 2 ||
+    !["context-only", "fallback"].includes(research.mode)
+  )
     return false;
   const fallback = research.fallbackSearch;
   const evidence = research.externalSearchEvidence;
@@ -267,6 +287,15 @@ export function hasCompletedFallbackResearch(research) {
     !evidence.length
   )
     return false;
+  const services = research.marketSnapshot?.confirmedServices;
+  if (Array.isArray(services) && services.length) {
+    const covered = new Set(
+      evidence
+        .map((item) => item.confirmedService)
+        .filter((service) => typeof service === "string" && service),
+    );
+    if (!services.every((service) => covered.has(service))) return false;
+  }
   return evidence.every((item) => {
     if (
       !item ||

@@ -381,7 +381,8 @@ export type SiteConfig = {
   };
   seoResearch?: {
     version: number;
-    mode: "researched" | "context-only" | "baseline";
+    mode: "researched" | "fallback" | "context-only" | "baseline";
+    researchBasis?: "cited-web-fallback" | "context-only";
     publishReady: boolean;
     metricLocation?: string;
     labsMetricLocation?: string;
