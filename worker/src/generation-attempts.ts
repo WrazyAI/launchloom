@@ -534,18 +534,23 @@ export class GenerationAttempts {
     const { attemptId, executionStatus, deliveryStatus, stale, failure } =
       JSON.parse(row.data) as AttemptInput;
     const events = this.storage.sql
-      .exec<WorkflowStage>(
-        `SELECT json_extract(data,'$.stage') AS stage, json_extract(data,'$.status') AS status
+      .exec<{ stage: string; status: string; verified: number }>(
+        `SELECT json_extract(data,'$.stage') AS stage, json_extract(data,'$.status') AS status,
+                (json_extract(data,'$.source')='github-reconcile' AND substr(event_key,1,12)='github-step:') AS verified
          FROM attempt_events WHERE attempt_id=?
            AND event_key NOT LIKE 'cost:%' AND instr(event_key, ':cost:')=0
            AND json_extract(data,'$.stage') NOT IN ('execution','delivery')
-         ORDER BY created_at DESC, CAST(json_extract(data,'$.observedAt') AS INTEGER) DESC, event_key DESC LIMIT 40`,
+         ORDER BY verified DESC, created_at DESC, CAST(json_extract(data,'$.observedAt') AS INTEGER) DESC, event_key DESC LIMIT 64`,
         attemptId,
       )
       .toArray();
     const stages = new Map<string, WorkflowStage>();
     for (const event of events) {
-      if (!stages.has(event.stage)) stages.set(event.stage, event);
+      if (!stages.has(event.stage)) stages.set(event.stage, {
+        stage: event.stage,
+        status: event.status,
+        ...(event.verified ? { verified: true } : {}),
+      });
     }
     return {
       attemptId,
@@ -553,7 +558,7 @@ export class GenerationAttempts {
       deliveryStatus,
       stale,
       failureStage: failure.stage,
-      stages: [...stages.values()].slice(0, 4).reverse(),
+      stages: [...stages.values()].reverse(),
     };
   }
 
@@ -978,9 +983,20 @@ export class GenerationAttempts {
     const row = this.row(id);
     if (!row) return null;
     const page = this.getAttemptEvents(id);
+    const workflowEvents = this.storage.sql
+      .exec<EventRow>(
+        `SELECT data FROM attempt_events WHERE attempt_id=?
+         AND event_key >= 'github-step:' AND event_key < 'github-step;'
+         AND json_extract(data,'$.source')='github-reconcile'
+         LIMIT 64`,
+        id,
+      )
+      .toArray()
+      .map((event) => JSON.parse(event.data) as AttemptEventRecord);
     return {
       ...this.summary(row),
       events: page.items,
+      ...(workflowEvents.length ? { workflowEvents } : {}),
       eventsNextCursor: page.nextCursor,
       eventCount: page.total,
       relatedPreview: null,

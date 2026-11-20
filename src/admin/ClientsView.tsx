@@ -10,7 +10,7 @@ import type { AdminRouteState } from "./route-state";
 import { ActorLabel } from "./ActorLabel";
 import { AdminIcon } from "./AdminIcon";
 import { ClientDossier } from "./ClientDossier";
-import { ClientWorkflowStrip } from "./ClientWorkflow";
+import { ClientWorkflowDirectory } from "./ClientWorkflow";
 import { groupClients } from "./client-groups";
 import { HealthNotice } from "./HealthNotice";
 import {
@@ -658,23 +658,37 @@ export function ClientsView({
           aria-label="Client directory table"
           tabIndex={0}
         >
-          <table className="admin-client-table">
+          <table className="admin-client-table" role="table">
             <caption className="admin-visually-hidden">
               Accepted clients across the shared workspace
             </caption>
-            <thead>
-              <tr>
-                <th scope="col">Client</th>
-                <th scope="col">Contact</th>
-                <th scope="col">Submitted</th>
-                <th scope="col">Inviting admin</th>
-                <th scope="col">Latest workflow</th>
-                <th scope="col">
+            <thead role="rowgroup">
+              <tr role="row">
+                <th scope="col" role="columnheader">
+                  Client
+                </th>
+                <th scope="col" role="columnheader">
+                  Contact
+                </th>
+                <th scope="col" role="columnheader">
+                  Submitted
+                </th>
+                <th scope="col" role="columnheader">
+                  Inviting admin
+                </th>
+                <th
+                  scope="col"
+                  role="columnheader"
+                  className="admin-visually-hidden"
+                >
+                  Latest workflow
+                </th>
+                <th scope="col" role="columnheader">
                   <span className="admin-visually-hidden">Client dossier</span>
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody role="rowgroup">
               {clientGroups.map((group) => {
                 const record = group.clients[0];
                 const siteUrl = group.clients.find(
@@ -683,6 +697,7 @@ export function ClientsView({
                 const selected = group.key === selectedGroupKey;
                 return (
                   <tr
+                    role="row"
                     key={group.key}
                     data-client-id={record.clientId}
                     data-client-group={group.key}
@@ -700,7 +715,7 @@ export function ClientsView({
                       if (trigger) selectClient(record, trigger);
                     }}
                   >
-                    <td data-label="Client">
+                    <td data-label="Client" role="cell">
                       <div className="admin-client-cell">
                         <span
                           className="admin-client-monogram"
@@ -753,7 +768,7 @@ export function ClientsView({
                         </div>
                       </div>
                     </td>
-                    <td data-label="Contact">
+                    <td data-label="Contact" role="cell">
                       <span className="admin-client-contact-name">
                         {record.contactName ||
                           (emailIsPrimary(record)
@@ -766,16 +781,20 @@ export function ClientsView({
                         </span>
                       )}
                     </td>
-                    <td data-label="Submitted">
+                    <td data-label="Submitted" role="cell">
                       <span className="admin-client-date">
                         {formatDate(record.submittedAt)}
                       </span>
                     </td>
-                    <td data-label="Inviting admin">
+                    <td data-label="Inviting admin" role="cell">
                       <ActorLabel actor={record.creator} showSource={false} />
                     </td>
-                    <td data-label="Latest workflow">
-                      <ClientWorkflowStrip
+                    <td
+                      data-label="Latest workflow"
+                      role="cell"
+                      className="admin-client-workflow-cell"
+                    >
+                      <ClientWorkflowDirectory
                         workflow={record.workflow}
                         onOpen={(stage, trigger) =>
                           selectClient(record, trigger, stage)
@@ -784,6 +803,7 @@ export function ClientsView({
                     </td>
                     <td
                       data-label="Client dossier"
+                      role="cell"
                       className="admin-client-action"
                     >
                       <button

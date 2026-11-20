@@ -431,6 +431,17 @@ async function serve(
         status: "completed",
         detail: "Preview ready state recorded.",
       });
+      detail.events.push({
+        ...detail.events[0],
+        eventKey: "github-step:setup",
+        stage: "setup",
+        status: "failed",
+        source: "github-reconcile",
+        detail: JSON.stringify({
+          errorCode: "LL_STAGE_SETUP_FAILED",
+          diagnosticExcerpt: "Verify required secrets: failure.",
+        }),
+      });
     }
     const detailOverride = eventDetails.get(id);
     const events = eventPage(attempt, params);
@@ -1445,9 +1456,30 @@ describe("real admin workspace browser behavior", () => {
       try {
         const row = page.locator('[data-client-id="submission:client-a"]');
         await visible(row.getByRole("link", { name: "View site" }));
+        const graph = row.locator("[data-workflow-graph]");
+        const compact = row.locator("[data-workflow-compact]");
+        if (width === 1440) {
+          await visible(graph);
+          expect(await compact.isVisible()).toBe(false);
+          expect(
+            await graph.getByText("Creative", { exact: true }).isVisible(),
+          ).toBe(true);
+          expect(await graph.locator("[data-workflow-edge]").count()).toBe(2);
+          await visible(
+            graph.getByRole("button", { name: "Inspect failed stage: Setup" }),
+          );
+          const graphWidth = (await graph.boundingBox())!.width;
+          expect(graphWidth).toBeGreaterThan(
+            (await row.boundingBox())!.width * 0.75,
+          );
+        } else {
+          await visible(compact);
+          expect(await graph.isVisible()).toBe(false);
+        }
         expect(await row.locator('a[href*="github.com"]').count()).toBe(0);
         expect(await row.getByText(/Issue #|Intake #/u).count()).toBe(0);
-        await visible(row.getByText("Setup failed", { exact: true }));
+        if (width === 390)
+          await visible(row.getByText("Setup failed", { exact: true }));
         const noRun = page.locator('[data-client-id="submission:client-b"]');
         await visible(noRun.getByText("No run recorded"));
         const captures = process.env.CLIENT_WORKFLOW_SCREENSHOTS;
@@ -1480,6 +1512,16 @@ describe("real admin workspace browser behavior", () => {
         ).toBe(0);
         await workflow.getByRole("button", { name: "Setup: Failed" }).click();
         await visible(workflow.getByText("prerequisite", { exact: true }));
+        await visible(
+          workflow
+            .locator("code")
+            .getByText("LL_STAGE_SETUP_FAILED", { exact: true }),
+        );
+        await visible(
+          workflow
+            .locator("pre")
+            .getByText("Verify required secrets: failure.", { exact: true }),
+        );
         expect(page.url()).toContain("view=clients");
         const github = workflow
           .locator("footer")
@@ -3026,7 +3068,9 @@ describe("real admin workspace browser behavior", () => {
           element.textContent = "intake-flow-1792764962080@launchloom.test";
         });
       const admin = await row.locator("td:nth-child(4)").boundingBox();
-      const action = await row.locator("td:nth-child(5)").boundingBox();
+      const action = await row
+        .getByRole("cell", { name: /Open client/u })
+        .boundingBox();
       expect(admin).not.toBeNull();
       expect(action).not.toBeNull();
       expect(admin!.x + admin!.width).toBeLessThanOrEqual(action!.x + 1);

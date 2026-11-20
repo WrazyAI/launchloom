@@ -87,6 +87,125 @@ function fixture(
   };
 }
 describe("fixture-only independent history reconciliation", () => {
+  it("records exact attempt step outcomes with bounded, allowlisted failure evidence", async () => {
+    const f = fixture([
+      run(9001, {
+        run_attempt: 2,
+        display_title:
+          "LLGEN issue=5 profile=full renderer=creative request=none",
+      }),
+      run(9002, {
+        display_title:
+          "LLGEN op=operation-test profile=full renderer=pack request=none",
+      }),
+    ]);
+    const report = await history.reconcileGenerationHistory({
+      ...f,
+      fetchImpl: (url: string, init?: RequestInit) =>
+        url.includes("/jobs")
+          ? Promise.resolve(
+              Response.json({
+                total_count: 1,
+                jobs: [
+                  {
+                    id: 70001,
+                    name: "generate",
+                    steps: [
+                      {
+                        name: "Read and generate from intake",
+                        status: "completed",
+                        conclusion: "success",
+                      },
+                      {
+                        name: "Analyze reserved inspiration and freeze creative session",
+                        status: "completed",
+                        conclusion: "skipped",
+                      },
+                      {
+                        name: "Build and direct-upload public preview",
+                        status: "completed",
+                        conclusion: url.includes("/attempts/2/")
+                          ? "failure"
+                          : "cancelled",
+                        output: "token=private-failure-payload",
+                      },
+                      {
+                        name: "Wait for secure preview URL",
+                        status: "completed",
+                        conclusion: "failure",
+                      },
+                      {
+                        name: "Record preview ready",
+                        status: "completed",
+                        conclusion: "success",
+                      },
+                      {
+                        name: "private raw text",
+                        status: "completed",
+                        conclusion: "failure",
+                      },
+                    ],
+                  },
+                ],
+              }),
+            )
+          : f.fetchImpl(url, init),
+      dryRun: false,
+    });
+    expect(report.complete).toBe(true);
+    const [oldRun, latest, unrelated] = f.writes.flatMap(
+      (body) => body.attempts,
+    );
+    expect(unrelated).toBeUndefined();
+    expect(oldRun.observation.runAttempt).toBe(1);
+    expect(
+      oldRun.events.find((event: any) => event.stage === "preview_deploy")
+        ?.status,
+    ).toBe("cancelled");
+    expect(latest.observation.runAttempt).toBe(2);
+    expect(
+      latest.events.map(({ stage, status }: any) => [stage, status]),
+    ).toEqual([
+      ["intake", "completed"],
+      ["reference_analysis", "skipped"],
+      ["preview_deploy", "failed"],
+      ["preview_verification", "failed"],
+    ]);
+    const failed = latest.events.find(
+      (event: any) => event.stage === "preview_deploy",
+    );
+    expect(failed.detail).toEqual({
+      errorCode: "LL_STAGE_PREVIEW_DEPLOY_FAILED",
+      diagnosticExcerpt: "Build and direct-upload public preview: failure.",
+    });
+    expect(JSON.stringify(latest)).not.toMatch(
+      /private-failure-payload|private raw text/u,
+    );
+  });
+
+  it("rejects jobs attributed to a different run attempt without advancing the cursor", async () => {
+    const f = fixture([run()]);
+    const report = await history.reconcileGenerationHistory({
+      ...f,
+      dryRun: false,
+      fetchImpl: (url: string, init?: RequestInit) =>
+        url.includes("/jobs")
+          ? Promise.resolve(
+              Response.json({
+                total_count: 1,
+                jobs: [{ id: 1, run_id: 9001, run_attempt: 2 }],
+              }),
+            )
+          : f.fetchImpl(url, init),
+    });
+    expect(report.errors).toContain("invalid GitHub jobs page");
+    expect(f.writes.flatMap((body) => body.attempts)).toEqual([]);
+    expect(JSON.parse(report.nextCheckpoint!)).toMatchObject({
+      workflow: 0,
+      page: 1,
+    });
+  });
+
   it.each([
     [
       "truncated",

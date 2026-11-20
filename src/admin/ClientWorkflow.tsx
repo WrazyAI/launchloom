@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { generationStageOrder } from "../../scripts/generation-stage-outcomes.mjs";
 import type {
   AttemptDetail,
   AttemptEventRecord,
@@ -49,7 +50,9 @@ function withFailure(stages: WorkflowStage[], failure: string | null) {
   const found = stages.some((item) => item.stage === failure);
   return found
     ? stages.map((item) =>
-        item.stage === failure ? { ...item, status: "failed" } : item,
+        item.stage === failure && !item.verified
+          ? { ...item, status: "failed" }
+          : item,
       )
     : [...stages, { stage: failure, status: "failed" }];
 }
@@ -75,12 +78,14 @@ function StageButton({
   active,
   delivery,
   selected,
+  showLabel = selected !== undefined,
   onClick,
 }: {
   item: WorkflowStage;
   active: boolean;
   delivery: DeliveryStatus;
   selected?: boolean;
+  showLabel?: boolean;
   onClick: (element: HTMLButtonElement) => void;
 }) {
   const state = stageState(stageOutcome(item, delivery), active);
@@ -99,13 +104,28 @@ function StageButton({
       <span className="admin-workflow-node__glyph" aria-hidden="true">
         {state.glyph}
       </span>
-      {selected !== undefined ? <span>{name}</span> : null}
-      {selected !== undefined ? <small>{state.label}</small> : null}
+      {showLabel ? (
+        <span className="admin-workflow-node__copy">
+          <span>{name}</span>
+          <small>{state.label}</small>
+        </span>
+      ) : null}
     </button>
   );
 }
 
-export function ClientWorkflowStrip({
+function orderedStages(stages: WorkflowStage[]) {
+  if (!stages.some((item) => item.verified)) return stages;
+  return [...stages].sort((a, b) => {
+    const position = (stage: string) => {
+      const index = generationStageOrder.indexOf(stage);
+      return index < 0 ? Number.MAX_SAFE_INTEGER : index;
+    };
+    return position(a.stage) - position(b.stage);
+  });
+}
+
+export function ClientWorkflowDirectory({
   workflow,
   onOpen,
 }: {
@@ -119,49 +139,109 @@ export function ClientWorkflowStrip({
       </span>
     );
   const { executionStatus, deliveryStatus, stale } = workflow;
-  const stages = withFailure(
-    workflow.stages,
-    executionStatus === "failed" ? workflow.failureStage : null,
+  const stages = orderedStages(
+    withFailure(
+      workflow.stages,
+      executionStatus === "failed" ? workflow.failureStage : null,
+    ),
   );
   const active = !stale && executionStatus === "running";
-  const latest = stages.at(-1);
+  const failure =
+    stages.find(
+      (item) =>
+        item.stage === workflow.failureStage && item.status === "failed",
+    ) ?? stages.find((item) => item.status === "failed");
+  const latest =
+    failure ??
+    stages.findLast((item) => item.status !== "skipped") ??
+    stages.at(-1);
+  const compact = stages.filter((item) => item.status !== "skipped").slice(-4);
+  if (failure && !compact.includes(failure)) compact.splice(0, 1, failure);
+  const status = (
+    <button
+      type="button"
+      className="admin-workflow-status"
+      aria-haspopup="dialog"
+      onClick={(event) => onOpen(null, event.currentTarget)}
+    >
+      <ExecutionStatusBadge status={executionStatus} stale={stale} />
+    </button>
+  );
   return (
-    <div className="admin-workflow-strip">
-      <button
-        type="button"
-        className="admin-workflow-status"
-        aria-haspopup="dialog"
-        onClick={(event) => onOpen(null, event.currentTarget)}
-      >
-        <ExecutionStatusBadge status={executionStatus} stale={stale} />
-      </button>
-      {stages.length ? (
-        <ol
-          className="admin-workflow-track"
-          aria-label="Recent workflow stages"
-        >
-          {stages.map((item) => (
-            <li key={item.stage}>
-              <StageButton
-                item={item}
-                active={active}
-                delivery={deliveryStatus}
-                onClick={(trigger) => onOpen(item.stage, trigger)}
-              />
-            </li>
-          ))}
-        </ol>
-      ) : null}
-      {latest ? (
-        <span className="admin-workflow-caption">
-          {stageName(latest.stage)}{" "}
-          {stageState(
-            stageOutcome(latest, deliveryStatus),
-            active,
-          ).label.toLowerCase()}
-        </span>
-      ) : null}
-    </div>
+    <>
+      <div className="admin-workflow-graph" data-workflow-graph>
+        <div className="admin-workflow-graph__head">
+          <span>Latest workflow</span>
+          {status}
+          {failure ? (
+            <button
+              type="button"
+              className="admin-link-button"
+              onClick={(event) => onOpen(failure.stage, event.currentTarget)}
+            >
+              Inspect failed stage: {stageName(failure.stage)}
+            </button>
+          ) : null}
+        </div>
+        {stages.length ? (
+          <ol
+            className="admin-workflow-graph__nodes"
+            role="list"
+            aria-label="Workflow stage graph"
+          >
+            {stages.map((item, index) => (
+              <li key={item.stage}>
+                {index ? (
+                  <span
+                    className="admin-workflow-graph__edge"
+                    data-workflow-edge
+                    aria-hidden="true"
+                  />
+                ) : null}
+                <StageButton
+                  item={item}
+                  active={active}
+                  delivery={deliveryStatus}
+                  showLabel
+                  onClick={(trigger) => onOpen(item.stage, trigger)}
+                />
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <span className="admin-muted">No stage outcomes recorded</span>
+        )}
+      </div>
+      <div className="admin-workflow-strip" data-workflow-compact>
+        {status}
+        {compact.length ? (
+          <ol
+            className="admin-workflow-track"
+            aria-label="Recent workflow stages"
+          >
+            {compact.map((item) => (
+              <li key={item.stage}>
+                <StageButton
+                  item={item}
+                  active={active}
+                  delivery={deliveryStatus}
+                  onClick={(trigger) => onOpen(item.stage, trigger)}
+                />
+              </li>
+            ))}
+          </ol>
+        ) : null}
+        {latest ? (
+          <span className="admin-workflow-caption">
+            {stageName(latest.stage)}{" "}
+            {stageState(
+              stageOutcome(latest, deliveryStatus),
+              active,
+            ).label.toLowerCase()}
+          </span>
+        ) : null}
+      </div>
+    </>
   );
 }
 
@@ -188,6 +268,37 @@ function FailureEvidence({ failure }: { failure: Failure | undefined }) {
       ) : null}
     </div>
   );
+}
+
+function StageEvidence({ event }: { event: AttemptEventRecord }) {
+  if (!event.detail) return null;
+  if (
+    event.source === "github-reconcile" &&
+    event.eventKey === `github-step:${event.stage}`
+  ) {
+    try {
+      const evidence = JSON.parse(event.detail);
+      if (
+        typeof evidence?.errorCode === "string" &&
+        /^LL_STAGE_[A-Z_]+_(FAILED|TIMED_OUT)$/u.test(evidence.errorCode) &&
+        typeof evidence.diagnosticExcerpt === "string"
+      ) {
+        return (
+          <div className="admin-workflow-diagnostic">
+            <p>
+              Error code: <code>{evidence.errorCode}</code>
+            </p>
+            <pre className="admin-detail-code">
+              {evidence.diagnosticExcerpt}
+            </pre>
+          </div>
+        );
+      }
+    } catch {
+      // Keep older retained evidence readable.
+    }
+  }
+  return <DetailValue value={event.detail} />;
 }
 
 export function ClientWorkflowRun({
@@ -232,10 +343,11 @@ export function ClientWorkflowRun({
   const attempt = "attempt" in result ? result.attempt : null;
   const events = [
     ...new Map(
-      [...(attempt?.events ?? []), ...(older?.events ?? [])].map((event) => [
-        event.eventKey,
-        event,
-      ]),
+      [
+        ...(attempt?.events ?? []),
+        ...(older?.events ?? []),
+        ...(attempt?.workflowEvents ?? []),
+      ].map((event) => [event.eventKey, event]),
     ).values(),
   ]
     .filter(
@@ -253,22 +365,31 @@ export function ClientWorkflowRun({
   const failure = attempt?.failure;
   const failureStage =
     attempt?.executionStatus === "failed" ? (failure?.stage ?? null) : null;
-  const stages = withFailure(
-    [
-      ...new Map(
-        events.map(({ stage, status }) => [stage, { stage, status }]),
-      ).values(),
-    ],
-    failureStage,
+  const recorded = new Map<string, WorkflowStage>();
+  for (const event of events) {
+    const verified =
+      event.source === "github-reconcile" &&
+      event.eventKey === `github-step:${event.stage}`;
+    if (verified || !recorded.get(event.stage)?.verified)
+      recorded.set(event.stage, {
+        stage: event.stage,
+        status: event.status,
+        ...(verified ? { verified: true } : {}),
+      });
+  }
+  const stages = orderedStages(
+    withFailure([...recorded.values()], failureStage),
   );
+  const attributed = stages.find(
+    (item) => item.stage === failureStage && item.status === "failed",
+  )?.stage;
   const selected =
     selection ??
-    stages.find((item) => item.stage === failureStage)?.stage ??
+    attributed ??
+    stages.find((item) => item.status === "failed")?.stage ??
     stages.at(-1)?.stage;
   const stageEvents = events.filter((event) => event.stage === selected);
-  const showRunFailure =
-    attempt?.executionStatus === "failed" &&
-    !stages.some((item) => item.stage === failureStage);
+  const showRunFailure = attempt?.executionStatus === "failed" && !attributed;
   const active = attempt?.executionStatus === "running" && !attempt.stale;
   const github =
     attempt?.repository === "WrazyAI/launchloom" && attempt.runId
@@ -370,7 +491,7 @@ export function ClientWorkflowRun({
           {selected ? (
             <div className="admin-workflow-evidence">
               <h4>{stageName(selected)}</h4>
-              {selected === failureStage ? (
+              {selected === attributed ? (
                 <FailureEvidence failure={failure} />
               ) : null}
               {selected === "preview_ready" &&
@@ -397,7 +518,7 @@ export function ClientWorkflowRun({
                       {event.detail &&
                       stageOutcome(event, attempt.deliveryStatus) ===
                         event.status ? (
-                        <DetailValue value={event.detail} />
+                        <StageEvidence event={event} />
                       ) : null}
                     </li>
                   ))}

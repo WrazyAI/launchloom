@@ -158,6 +158,8 @@ export type RelatedIssuePreview = {
 };
 export type AttemptDetail = AttemptSummary & {
   events: AttemptEventRecord[];
+  /** Verified terminal stages, available independently of timeline pagination. */
+  workflowEvents?: AttemptEventRecord[];
   eventsNextCursor: string | null;
   eventCount: number;
   /**
@@ -180,7 +182,12 @@ export type ClientInput = {
   creator: ActorSnapshot;
   submittedAt: number | null;
 };
-export type WorkflowStage = { stage: string; status: string };
+export type WorkflowStage = {
+  stage: string;
+  status: string;
+  /** Exact terminal conclusion from the matching workflow step. */
+  verified?: true;
+};
 export type ClientWorkflow = Pick<
   AttemptInput,
   "attemptId" | "executionStatus" | "deliveryStatus" | "stale"
