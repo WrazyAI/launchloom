@@ -7,7 +7,7 @@ const NOISE =
   /^(?:\+|##\[|::debug|shell:|env:|command:|post job cleanup|cleaning up orphan|- |at\s|locator resolved|waiting for|strict mode violation)/iu;
 const MARKUP = /<\/?[a-z][^>]*>/iu;
 const SOURCE_LIKE =
-  /^(?:--|\\|echo|printf|node\s|npm\s|npx\s|gh\s|git\s|bash\s|cat\s|cd\s|mkdir\s|rm\s|cp\s|mv\s|if\s|elif\s|then$|else$|fi$|for\s|while\s|local\s|export\s|set\s|trap\s|const\s|let\s|var\s|import\s|require\s|test\s|\[\[|#|\$|\}|\{)|^[A-Z][A-Z0-9_]+=/u;
+  /^(?:--|\\|echo|printf|node\s|npm\s|npx\s|pnpm\s|yarn\s|gh\s|git\s|bash\s|grep\s|sed\s|awk\s|jq\s|curl\s|wget\s|python\s|cat\s|wc\s|head\s|tail\s|find\s|sleep\s|cd\s|mkdir\s|rm\s|cp\s|mv\s|if\s|elif\s|then$|else$|fi$|for\s|while\s|until\s|case\s|esac$|done$|do$|local\s|export\s|set\s|trap\s|const\s|let\s|var\s|import\s|require\s|test\s|\[\[|#|\$|\}|\{)|^[A-Z][A-Z0-9_]+=/u;
 
 /** GitHub CLI prefixes each line with job, step and an ISO timestamp. */
 function stripLogPrefix(line) {
