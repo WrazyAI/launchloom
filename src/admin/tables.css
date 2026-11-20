@@ -162,19 +162,22 @@
 
 /* Column rhythm: identity first, action last with room to breathe. */
 .admin-page .admin-client-table th:nth-child(1) {
-  width: 34%;
+  width: 27%;
 }
 .admin-page .admin-client-table th:nth-child(2) {
-  width: 24%;
+  width: 21%;
 }
 .admin-page .admin-client-table th:nth-child(3) {
-  width: 13%;
+  width: 11%;
 }
 .admin-page .admin-client-table th:nth-child(4) {
-  width: 17%;
+  width: 12%;
 }
 .admin-page .admin-client-table th:nth-child(5) {
-  width: 12%;
+  width: 20%;
+}
+.admin-page .admin-client-table th:nth-child(6) {
+  width: 9%;
 }
 
 .admin-page .admin-ledger th:nth-child(1) {
@@ -548,6 +551,7 @@
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       "client action"
+      "workflow workflow"
       "contact contact"
       "submitted admin";
     gap: 14px 16px;
@@ -568,6 +572,9 @@
     grid-area: admin;
   }
   .admin-page .admin-client-table td:nth-child(5) {
+    grid-area: workflow;
+  }
+  .admin-page .admin-client-table td:nth-child(6) {
     grid-area: action;
     align-self: start;
     justify-self: end;

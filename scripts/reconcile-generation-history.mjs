@@ -4,6 +4,7 @@ import {
   parseGenerationRunName,
   TRACKING_REPOSITORY,
 } from "./generation-tracking-contract.mjs";
+import { generationStageOutcomes } from "./generation-stage-outcomes.mjs";
 
 const workflows = ["generate-client.yml", "test-generation.yml"];
 const api = `https://api.github.com/repos/${TRACKING_REPOSITORY}`;
@@ -150,6 +151,8 @@ export async function reconcileGenerationHistory({
           Array.isArray(job) ||
           !Number.isSafeInteger(job.id) ||
           job.id < 1 ||
+          (job.run_id !== undefined && job.run_id !== run.id) ||
+          (job.run_attempt !== undefined && job.run_attempt !== run.run_attempt) ||
           ids.has(job.id)
         )
           throw new Error("invalid GitHub jobs page");
@@ -269,8 +272,7 @@ export async function reconcileGenerationHistory({
           const started = jobs
             .filter((j) => j.started_at)
             .map((j) => timestamp(j.started_at));
-          // Never ingest job names, raw errors/logs, or infer diagnostic delivery
-          // from a successful deploy step. Absent structured evidence stays null.
+          // Never copy raw job names or logs, or infer delivery from a passed step.
           const observation = buildAttemptObservation({
             repository: TRACKING_REPOSITORY,
             runId: String(run.id),
@@ -291,7 +293,14 @@ export async function reconcileGenerationHistory({
               evidenceUrl: `https://github.com/${TRACKING_REPOSITORY}/actions/runs/${run.id}/attempts/${attempt}`,
             },
           });
-          attempts.push({ observation, events: [] });
+          attempts.push({
+            observation,
+            events:
+              definition.path === ".github/workflows/generate-client.yml" &&
+              metadata.profile === "full"
+                ? generationStageOutcomes(jobs, observedAt)
+                : [],
+          });
           seen.add(key);
           report.coverageStart =
             report.coverageStart === null
@@ -308,17 +317,24 @@ export async function reconcileGenerationHistory({
       if (!dryRun) {
         if (typeof postImpl !== "function")
           throw new Error("reconciliation sink required for writes");
-        // A large rerun history may exceed the bounded endpoint batch size.
+        // Keep each request below the endpoint byte limit as stage data grows.
         // Intermediate chunks retain the current page cursor; exact replay is safe.
-        for (
-          let offset = 0;
-          offset < Math.max(1, attempts.length);
-          offset += 100
-        ) {
-          const last = offset + 100 >= attempts.length;
+        const batches = [[]];
+        let bytes = 0;
+        for (const entry of attempts) {
+          const size = Buffer.byteLength(JSON.stringify(entry)) + 1;
+          if (batches.at(-1).length === 100 || bytes + size > 480000) {
+            batches.push([]);
+            bytes = 0;
+          }
+          batches.at(-1).push(entry);
+          bytes += size;
+        }
+        for (const [index, batch] of batches.entries()) {
+          const last = index === batches.length - 1;
           if (now() >= deadline) throw new Error("deadline exceeded");
           await postImpl({
-            attempts: attempts.slice(offset, offset + 100),
+            attempts: batch,
             checkpoint: last
               ? complete
                 ? null

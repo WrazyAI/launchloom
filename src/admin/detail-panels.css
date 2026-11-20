@@ -1,6 +1,6 @@
 /* Both record panels share one fixed header and one scrolling content area. */
 .admin-page .admin-sheet.admin-detail-panel {
-  width: min(760px, calc(100vw - 64px));
+  width: min(860px, calc(100vw - 64px));
   max-width: none;
   height: 100dvh;
   max-height: none;

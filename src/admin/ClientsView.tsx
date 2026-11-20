@@ -10,6 +10,7 @@ import type { AdminRouteState } from "./route-state";
 import { ActorLabel } from "./ActorLabel";
 import { AdminIcon } from "./AdminIcon";
 import { ClientDossier } from "./ClientDossier";
+import { ClientWorkflowDirectory } from "./ClientWorkflow";
 import { groupClients } from "./client-groups";
 import { HealthNotice } from "./HealthNotice";
 import {
@@ -240,36 +241,26 @@ export function ClientsView({
   }, [api, selectedId, clientToken]);
 
   useEffect(() => {
-    if (!selectedId || !client?.issueNumber) return;
+    if (!selectedId || client?.clientId !== selectedId) return;
     const requestId = ++attemptsRequest.current;
     const controller = new AbortController();
     setAttemptsLoading(true);
     setAttemptsError(null);
-    Promise.all([
-      api.listAttempts(
+    api
+      .listAttempts(
         { clientId: selectedId, limit: 100 },
         { signal: controller.signal },
-      ),
-      api.listAttempts(
-        { issueNumber: client.issueNumber, limit: 100 },
-        { signal: controller.signal },
-      ),
-    ])
-      .then(([byClient, byIssue]) => {
+      )
+      .then((page) => {
         if (
           controller.signal.aborted ||
           attemptsRequest.current !== requestId ||
           detailIdRef.current !== selectedId
         )
           return;
-        const seen = new Set(byIssue.items.map((item) => item.attemptId));
-        const items = [
-          ...byIssue.items,
-          ...byClient.items.filter((item) => !seen.has(item.attemptId)),
-        ].sort((a, b) => b.createdAt - a.createdAt);
-        setAttempts(items);
-        setAttemptTotal(Math.max(byClient.total, byIssue.total, items.length));
-        setAttemptsNextCursor(byIssue.nextCursor ?? byClient.nextCursor);
+        setAttempts(page.items);
+        setAttemptTotal(page.total);
+        setAttemptsNextCursor(page.nextCursor);
         setAttemptsLoading(false);
       })
       .catch((failure) => {
@@ -283,7 +274,7 @@ export function ClientsView({
         setAttemptsLoading(false);
       });
     return () => controller.abort();
-  }, [api, selectedId, client?.issueNumber, clientToken]);
+  }, [api, selectedId, client?.clientId, client?.issueNumber, clientToken]);
 
   useEffect(() => {
     if (selectedId) {
@@ -397,7 +388,7 @@ export function ClientsView({
     setAttemptsError(null);
     api
       .listAttempts({
-        issueNumber: client.issueNumber,
+        clientId: activeId,
         cursor: attemptsNextCursor,
         limit: 100,
       })
@@ -439,7 +430,7 @@ export function ClientsView({
         ? "Needs attention"
         : health.coverageStart === null
           ? "Coverage unknown"
-          : "Directory current"
+          : "Intake data current"
       : "Checking coverage";
   const showing =
     clients.length > 0
@@ -482,7 +473,7 @@ export function ClientsView({
         <span className="admin-pulse__sep" />
         <span>{directoryState}</span>
         <span className="admin-pulse__sep" />
-        <span>Accepted intake only</span>
+        <span>Accepted intakes · Legacy workflows</span>
       </div>
 
       <form
@@ -649,33 +640,39 @@ export function ClientsView({
           aria-label="Client directory table"
           tabIndex={0}
         >
-          <table className="admin-client-table">
+          <table className="admin-client-table" role="table">
             <caption className="admin-visually-hidden">
               Accepted clients across the shared workspace
             </caption>
-            <thead>
-              <tr>
-                <th scope="col">Client</th>
-                <th scope="col">Contact</th>
-                <th scope="col">Submitted</th>
-                <th scope="col">Inviting admin</th>
-                <th scope="col">
+            <thead role="rowgroup">
+              <tr role="row">
+                <th scope="col" role="columnheader">
+                  Client
+                </th>
+                <th scope="col" role="columnheader">
+                  Contact
+                </th>
+                <th scope="col" role="columnheader">
+                  Submitted
+                </th>
+                <th scope="col" role="columnheader">
+                  Inviting admin
+                </th>
+                <th scope="col" role="columnheader">
                   <span className="admin-visually-hidden">Client dossier</span>
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody role="rowgroup">
               {clientGroups.map((group) => {
                 const record = group.clients[0];
                 const siteUrl = group.clients.find(
                   (client) => client.siteUrl,
                 )?.siteUrl;
-                const issues = [
-                  ...new Set(group.clients.map((c) => c.issueNumber)),
-                ].sort((a, b) => b - a);
                 const selected = group.key === selectedGroupKey;
                 return (
                   <tr
+                    role="row"
                     key={group.key}
                     data-client-id={record.clientId}
                     data-client-group={group.key}
@@ -693,7 +690,7 @@ export function ClientsView({
                       if (trigger) selectClient(record, trigger);
                     }}
                   >
-                    <td data-label="Client">
+                    <td data-label="Client" role="cell">
                       <div className="admin-client-cell">
                         <span
                           className="admin-client-monogram"
@@ -704,13 +701,6 @@ export function ClientsView({
                         <div className="admin-client-copy">
                           <span className="admin-client-name">
                             {formatClientName(record)}
-                          </span>
-                          <span className="admin-client-meta">
-                            {issues.length === 1
-                              ? `Issue #${issues[0]}`
-                              : `Intakes ${issues
-                                  .map((issue) => `#${issue}`)
-                                  .join(", ")}`}
                           </span>
                           {group.clients.length > 1 ? (
                             <details className="admin-client-intakes">
@@ -729,8 +719,10 @@ export function ClientsView({
                                         );
                                       }}
                                     >
-                                      Intake #{client.issueNumber} ·{" "}
-                                      {formatDate(client.submittedAt)}
+                                      {client === record
+                                        ? "Latest intake"
+                                        : "Intake"}{" "}
+                                      · {formatDate(client.submittedAt)}
                                     </button>
                                   </li>
                                 ))}
@@ -751,7 +743,7 @@ export function ClientsView({
                         </div>
                       </div>
                     </td>
-                    <td data-label="Contact">
+                    <td data-label="Contact" role="cell">
                       <span className="admin-client-contact-name">
                         {record.contactName ||
                           (emailIsPrimary(record)
@@ -764,16 +756,24 @@ export function ClientsView({
                         </span>
                       )}
                     </td>
-                    <td data-label="Submitted">
+                    <td data-label="Submitted" role="cell">
                       <span className="admin-client-date">
                         {formatDate(record.submittedAt)}
                       </span>
                     </td>
-                    <td data-label="Inviting admin">
+                    <td data-label="Inviting admin" role="cell">
                       <ActorLabel actor={record.creator} showSource={false} />
                     </td>
                     <td
+                      data-label="Latest workflow"
+                      role="cell"
+                      className="admin-client-workflow-cell"
+                    >
+                      <ClientWorkflowDirectory workflow={record.workflow} />
+                    </td>
+                    <td
                       data-label="Client dossier"
+                      role="cell"
                       className="admin-client-action"
                     >
                       <button
@@ -830,7 +830,9 @@ export function ClientsView({
 
       {selectedId ? (
         <ClientDossier
-          client={client}
+          key={selectedId}
+          api={api}
+          client={client?.clientId === selectedId ? client : null}
           loading={clientLoading}
           error={clientError}
           attempts={attempts}
@@ -842,18 +844,6 @@ export function ClientsView({
           onClose={() => onNavigate({ ...state, clientId: null })}
           onRetry={() => setClientToken((token) => token + 1)}
           onLoadMoreAttempts={loadMoreAttempts}
-          onOpenAttempt={(attemptId) =>
-            onNavigate(
-              {
-                view: "generations",
-                attemptId,
-                clientId: null,
-                filters: { clientId: selectedId },
-                cursor: null,
-              },
-              { cursorTrail: [] },
-            )
-          }
         />
       ) : null}
     </div>

@@ -210,11 +210,11 @@ function diagnosticAttempt(): AttemptSummary {
     deliveryStatus: "diagnostic",
     completedAt: BASE_TIME - 47 * 60_000,
     failure: {
-      category: "prerequisite",
-      stage: "setup",
-      summary: "The workflow could not verify its required inputs.",
+      category: "preview_delivery",
+      stage: "preview_deploy",
+      summary: "The public preview upload did not complete.",
       evidenceUrl: "https://github.com/WrazyAI/launchloom/actions/runs/90123",
-      nextStep: "Review the run log and confirm the missing input.",
+      nextStep: "Check the deployment service before retrying this run.",
     },
     costs: { actualUsd: 0.42, estimatedUsd: 0.5, unreportedCount: 0 },
   };

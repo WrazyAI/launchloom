@@ -14,6 +14,8 @@ import type {
   Page,
   ClientInput,
   ClientRecord,
+  ClientWorkflow,
+  WorkflowStage,
   ClientFilters,
   DispatchRequest,
 } from "../../src/lib/admin-contracts";
@@ -211,6 +213,7 @@ export class GenerationAttempts {
         WHERE repository IS NOT NULL AND run_id IS NOT NULL AND run_attempt IS NOT NULL;
       CREATE INDEX IF NOT EXISTS generation_attempts_date ON generation_attempts(created_at DESC, attempt_id DESC);
       CREATE INDEX IF NOT EXISTS generation_attempts_client ON generation_attempts(client_id, created_at DESC, attempt_id DESC);
+      CREATE INDEX IF NOT EXISTS generation_attempts_legacy_issue ON generation_attempts(issue_number, created_at DESC, attempt_id DESC) WHERE client_id IS NULL;
       CREATE INDEX IF NOT EXISTS generation_attempts_status ON generation_attempts(execution_status, created_at DESC, attempt_id DESC);
       CREATE INDEX IF NOT EXISTS generation_attempts_initiator ON generation_attempts(initiator_id, created_at DESC, attempt_id DESC);
       CREATE INDEX IF NOT EXISTS generation_attempts_creator ON generation_attempts(creator_id, created_at DESC, attempt_id DESC);
@@ -507,6 +510,58 @@ export class GenerationAttempts {
       .toArray()[0];
     return row ? JSON.parse(row.data) : null;
   }
+  clientWorkflow(client: ClientRecord): ClientWorkflow | null {
+    const row = this.storage.sql
+      .exec<{ data: string }>(
+        `SELECT data FROM (
+          SELECT * FROM (
+            SELECT data, created_at, attempt_id, run_attempt FROM generation_attempts
+            WHERE client_id=? AND profile='full'
+            ORDER BY created_at DESC, run_attempt DESC, attempt_id DESC LIMIT 1
+          )
+          UNION ALL
+          SELECT * FROM (
+            SELECT data, created_at, attempt_id, run_attempt FROM generation_attempts
+            WHERE issue_number=? AND client_id IS NULL AND profile='full'
+            ORDER BY created_at DESC, run_attempt DESC, attempt_id DESC LIMIT 1
+          )
+        ) ORDER BY created_at DESC, run_attempt DESC, attempt_id DESC LIMIT 1`,
+        client.clientId,
+        client.issueNumber,
+      )
+      .toArray()[0];
+    if (!row) return null;
+    const { attemptId, executionStatus, deliveryStatus, stale, failure } =
+      JSON.parse(row.data) as AttemptInput;
+    const events = this.storage.sql
+      .exec<{ stage: string; status: string; verified: number }>(
+        `SELECT json_extract(data,'$.stage') AS stage, json_extract(data,'$.status') AS status,
+                (json_extract(data,'$.source')='github-reconcile' AND substr(event_key,1,12)='github-step:') AS verified
+         FROM attempt_events WHERE attempt_id=?
+           AND event_key NOT LIKE 'cost:%' AND instr(event_key, ':cost:')=0
+           AND json_extract(data,'$.stage') NOT IN ('execution','delivery')
+         ORDER BY verified DESC, created_at DESC, CAST(json_extract(data,'$.observedAt') AS INTEGER) DESC, event_key DESC LIMIT 64`,
+        attemptId,
+      )
+      .toArray();
+    const stages = new Map<string, WorkflowStage>();
+    for (const event of events) {
+      if (!stages.has(event.stage)) stages.set(event.stage, {
+        stage: event.stage,
+        status: event.status,
+        ...(event.verified ? { verified: true } : {}),
+      });
+    }
+    return {
+      attemptId,
+      executionStatus,
+      deliveryStatus,
+      stale,
+      failureStage: failure.stage,
+      stages: [...stages.values()].reverse(),
+    };
+  }
+
   listClients(query: ClientFilters): Page<ClientRecord> {
     const filters = {
       search: query.search?.trim().toLowerCase() || null,
@@ -928,9 +983,20 @@ export class GenerationAttempts {
     const row = this.row(id);
     if (!row) return null;
     const page = this.getAttemptEvents(id);
+    const workflowEvents = this.storage.sql
+      .exec<EventRow>(
+        `SELECT data FROM attempt_events WHERE attempt_id=?
+         AND event_key >= 'github-step:' AND event_key < 'github-step;'
+         AND json_extract(data,'$.source')='github-reconcile'
+         LIMIT 64`,
+        id,
+      )
+      .toArray()
+      .map((event) => JSON.parse(event.data) as AttemptEventRecord);
     return {
       ...this.summary(row),
       events: page.items,
+      ...(workflowEvents.length ? { workflowEvents } : {}),
       eventsNextCursor: page.nextCursor,
       eventCount: page.total,
       relatedPreview: null,
@@ -1008,13 +1074,18 @@ export class GenerationAttempts {
       ["initiatorId", "initiator_id"],
       ["creatorId", "creator_id"],
       ["profile", "profile"],
-      ["clientId", "client_id"],
       ["issueNumber", "issue_number"],
     ] as const) {
       if (normalized[key] !== null) {
         clauses.push(`${column} = ?`);
         args.push(normalized[key]!);
       }
+    }
+    if (normalized.clientId !== null) {
+      clauses.push(
+        "(client_id = ? OR (client_id IS NULL AND issue_number = (SELECT issue_number FROM admin_clients WHERE client_id = ?)))",
+      );
+      args.push(normalized.clientId, normalized.clientId);
     }
     if (normalized.attention) {
       clauses.push(

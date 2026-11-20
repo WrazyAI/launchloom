@@ -287,7 +287,7 @@ export function buildAttemptEvents(events, observation) {
 }
 export function parseGenerationRunName(value) {
   const match =
-    /^LLGEN issue=([1-9]\d*) profile=(full|full-preview|creative-only|seo-only) request=(none|[A-Za-z0-9][A-Za-z0-9_-]{7,119})$/u.exec(
+    /^LLGEN issue=([1-9]\d*) profile=(full|full-preview|creative-only|seo-only)(?: renderer=(?:creative|pack|foundation))? request=(none|[A-Za-z0-9][A-Za-z0-9_-]{7,119})$/u.exec(
       value ?? "",
     );
   if (!match || !Number.isSafeInteger(Number(match[1]))) return null;

@@ -30,7 +30,29 @@ import {
 } from "./fixtures/admin-workspace";
 
 const ATTEMPTS = syntheticAttempts();
-const CLIENTS = syntheticClients();
+const CLIENTS = syntheticClients().map((client) =>
+  client.clientId === "submission:client-a"
+    ? {
+        ...client,
+        workflow: {
+          attemptId: "attempt-diagnostic",
+          executionStatus: "failed" as const,
+          deliveryStatus: "diagnostic" as const,
+          stale: false,
+          failureStage: "preview_deploy",
+          stages: [
+            { stage: "intake", status: "completed" },
+            { stage: "seo_telemetry", status: "completed" },
+            { stage: "client_repo", status: "completed" },
+            { stage: "pack_select", status: "completed" },
+            { stage: "preview_deploy", status: "failed" },
+            { stage: "preview_verification", status: "skipped" },
+            { stage: "preview_ready", status: "completed" },
+          ],
+        },
+      }
+    : { ...client, workflow: null },
+);
 const ATTENTION_ATTEMPTS = ATTEMPTS.filter(
   (attempt) =>
     attempt.executionStatus === "failed" ||
@@ -151,7 +173,14 @@ function attemptPage(params: URLSearchParams) {
       (!initiator || attempt.initiator.id === initiator) &&
       (!creator || attempt.invitationCreator.id === creator) &&
       (!profile || attempt.profile === profile) &&
-      (!clientId || attempt.clientId === clientId) &&
+      (!clientId ||
+        attempt.clientId === clientId ||
+        (!attempt.clientId &&
+          CLIENTS.some(
+            (record) =>
+              record.clientId === clientId &&
+              record.issueNumber === attempt.issueNumber,
+          ))) &&
       (!issueNumber || attempt.issueNumber === issueNumber) &&
       (!siteOnly ||
         attempt.profile === "full" ||
@@ -399,6 +428,66 @@ async function serve(
       return;
     }
     const detail = attemptDetail(attempt);
+    if (id === "attempt-diagnostic") {
+      const base = detail.events[0];
+      detail.events = [
+        {
+          ...base,
+          eventKey: "github-step:intake",
+          stage: "intake",
+          status: "completed",
+          source: "github-reconcile",
+          detail: "Intake parsed and site configuration prepared.",
+        },
+        {
+          ...base,
+          eventKey: "github-step:seo_telemetry",
+          stage: "seo_telemetry",
+          status: "completed",
+          source: "github-reconcile",
+        },
+        {
+          ...base,
+          eventKey: "github-step:client_repo",
+          stage: "client_repo",
+          status: "completed",
+          source: "github-reconcile",
+        },
+        {
+          ...base,
+          eventKey: "github-step:pack_select",
+          stage: "pack_select",
+          status: "completed",
+          source: "github-reconcile",
+        },
+        {
+          ...base,
+          eventKey: "github-step:preview_deploy",
+          stage: "preview_deploy",
+          status: "failed",
+          source: "github-reconcile",
+          detail: JSON.stringify({
+            errorCode: "LL_STAGE_PREVIEW_DEPLOY_FAILED",
+            diagnosticExcerpt:
+              "Build and direct-upload public preview: failure.",
+          }),
+        },
+        {
+          ...base,
+          eventKey: "github-step:preview_verification",
+          stage: "preview_verification",
+          status: "skipped",
+          source: "github-reconcile",
+        },
+        {
+          ...base,
+          eventKey: "github-step:preview_ready",
+          stage: "preview_ready",
+          status: "completed",
+          source: "github-reconcile",
+        },
+      ];
+    }
     const detailOverride = eventDetails.get(id);
     const events = eventPage(attempt, params);
     if (seoDetail && id === "attempt-0000" && !params.has("cursor")) {
@@ -1401,6 +1490,133 @@ describe("real admin workspace browser behavior", () => {
       await second.page.close();
     }
   });
+
+  it("opens the workflow inside Sites instead of sending the admin to GitHub", async () => {
+    const { page, errors } = await openPage({
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
+    });
+    try {
+      const inspector = page.locator("#attempt-inspector");
+      await visible(
+        inspector.getByRole("heading", { name: "Attempt attempt-diagnostic" }),
+      );
+      expect(await inspector.locator('a[href*="github.com"]').count()).toBe(0);
+      expect(
+        await inspector.getByRole("link", { name: /workflow run/iu }).count(),
+      ).toBe(0);
+      await inspector
+        .getByRole("button", { name: "View workflow", exact: true })
+        .click();
+      const workflow = inspector.getByRole("region", { name: "Workflow run" });
+      await visible(
+        workflow.getByRole("list", { name: "Workflow stage graph" }),
+      );
+      await visible(
+        workflow.getByRole("button", { name: "Preview deploy: Failed" }),
+      );
+      expect(page.url()).toContain("view=generations");
+      const github = workflow
+        .locator("footer")
+        .getByRole("link", { name: "View run on GitHub" });
+      await visible(github);
+      expect(await github.getAttribute("href")).toMatch(/actions\/runs\/\d+/u);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it.each([390, 1440])(
+    "summarizes the run in Clients at %ipx and opens the connected graph in the drawer",
+    async (width) => {
+      const { page, errors } = await openPage({
+        viewport: { width, height: 844 },
+        path: "/admin/onboarding-invites?view=clients&search=same@example.test",
+      });
+      try {
+        const row = page.locator('[data-client-id="submission:client-a"]');
+        await visible(row.getByText("Preview deploy failed", { exact: true }));
+        await visible(row.getByText("5 of 7 stages passed", { exact: true }));
+        expect(await row.locator("[data-flow-canvas]").count()).toBe(0);
+        expect(await row.locator('a[href*="github.com"]').count()).toBe(0);
+        expect(await row.getByText(/Issue #|Intake #/u).count()).toBe(0);
+        await visible(
+          page
+            .locator('[data-client-id="submission:client-b"]')
+            .getByText("No workflow yet"),
+        );
+        const captures = process.env.CLIENT_WORKFLOW_SCREENSHOTS;
+        if (captures) {
+          await page.screenshot({
+            path: path.join(captures, `clients-${width}.png`),
+            animations: "disabled",
+          });
+        }
+        const trigger = row.getByRole("button", {
+          name: /Open client submission:client-a/u,
+        });
+        await trigger.click();
+        const dossier = page.getByRole("dialog", {
+          name: "Client dossier: Acme & Sons",
+        });
+        const workflow = dossier.getByRole("region", { name: "Workflow" });
+        await page.waitForTimeout(1200);
+        await visible(
+          workflow.getByRole("heading", { name: "Preview deploy failed" }),
+        );
+        const graph = workflow.getByRole("list", {
+          name: "Workflow stage graph",
+        });
+        await visible(graph);
+        await visible(
+          graph.getByRole("button", { name: "Preview deploy: Failed" }),
+        );
+        expect(
+          await workflow.locator(".flow-edge").count(),
+        ).toBeGreaterThanOrEqual(5);
+        await visible(
+          workflow.getByText("The public preview upload did not complete."),
+        );
+        await visible(
+          workflow
+            .locator("code")
+            .getByText("LL_STAGE_PREVIEW_DEPLOY_FAILED", { exact: true }),
+        );
+        await visible(
+          workflow.getByText(
+            "Build and direct-upload public preview: failure.",
+            { exact: true },
+          ),
+        );
+        await visible(workflow.getByText("1 skipped stage", { exact: true }));
+        await graph
+          .getByRole("button", { name: "Pack choice: Passed" })
+          .click();
+        await visible(workflow.getByRole("heading", { name: "Pack choice" }));
+        const github = workflow
+          .locator("footer")
+          .getByRole("link", { name: "View run on GitHub" });
+        await visible(github);
+        expect(await github.getAttribute("href")).toBe(
+          "https://github.com/WrazyAI/launchloom/actions/runs/90008/attempts/1",
+        );
+        if (captures) {
+          await page.screenshot({
+            path: path.join(captures, `workflow-${width}.png`),
+            animations: "disabled",
+          });
+        }
+        expect(
+          await dossier.evaluate((el) => el.scrollWidth),
+        ).toBeLessThanOrEqual(width);
+        await page.keyboard.press("Escape");
+        await focused(trigger);
+        autoErrors(errors);
+      } finally {
+        await page.close();
+      }
+    },
+  );
 
   it("keeps failed diagnostic execution separate and never demotes a published site", async () => {
     const { page, errors } = await openPage({
@@ -2913,7 +3129,9 @@ describe("real admin workspace browser behavior", () => {
           element.textContent = "intake-flow-1792764962080@launchloom.test";
         });
       const admin = await row.locator("td:nth-child(4)").boundingBox();
-      const action = await row.locator("td:nth-child(5)").boundingBox();
+      const action = await row
+        .getByRole("cell", { name: /Open client/u })
+        .boundingBox();
       expect(admin).not.toBeNull();
       expect(action).not.toBeNull();
       expect(admin!.x + admin!.width).toBeLessThanOrEqual(action!.x + 1);

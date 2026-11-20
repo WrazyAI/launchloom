@@ -66,7 +66,12 @@ Data is stored in the `GenerationLedger` Durable Object
 `issue:<number>`, with the intake submission id kept as a field. Cost and
 status events are keyed by `(generation_id, event_key)`, so a retried workflow,
 a second repair round, or a revision appends evidence instead of double
-counting. Hero thumbnails are stored as bounded WebP blobs inside the same
+counting. For full, issue-linked generations, reconciliation reads the exact
+GitHub attempt's step conclusions and maps known step names to stable stages.
+Skipped and cancelled stages require explicit step evidence. A stage failure
+has a stable error code and an allowlisted diagnostic line; raw console output
+is not fetched. A successful reporting step does not verify the preview.
+Hero thumbnails are stored as bounded WebP blobs inside the same
 ledger and are only served through the Cloudflare Access protected admin API.
 No review or approval token is ever stored.
 

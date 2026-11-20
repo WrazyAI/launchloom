@@ -158,6 +158,8 @@ export type RelatedIssuePreview = {
 };
 export type AttemptDetail = AttemptSummary & {
   events: AttemptEventRecord[];
+  /** Verified terminal stages, available independently of timeline pagination. */
+  workflowEvents?: AttemptEventRecord[];
   eventsNextCursor: string | null;
   eventCount: number;
   /**
@@ -180,6 +182,20 @@ export type ClientInput = {
   creator: ActorSnapshot;
   submittedAt: number | null;
 };
+export type WorkflowStage = {
+  stage: string;
+  status: string;
+  /** Exact terminal conclusion from the matching workflow step. */
+  verified?: true;
+};
+export type ClientWorkflow = Pick<
+  AttemptInput,
+  "attemptId" | "executionStatus" | "deliveryStatus" | "stale"
+> & {
+  failureStage: string | null;
+  /** Recent stage outcomes only. No log text, run URLs, or provider metadata. */
+  stages: WorkflowStage[];
+};
 export type ClientRecord = ClientInput & {
   createdAt: number;
   updatedAt: number;
@@ -187,6 +203,8 @@ export type ClientRecord = ClientInput & {
   productionUrl: string | null;
   /** Display-only verified site resolved from the trusted issue generation. */
   siteUrl?: string | null;
+  /** Undefined on older responses; null when no full-site workflow is recorded. */
+  workflow?: ClientWorkflow | null;
 };
 export type ClientFilters = {
   search?: string;

@@ -36,6 +36,105 @@ const post = (
 const ledger = () =>
   bindings.GENERATION_LEDGER.getByName("launchloom-generations");
 describe("trusted attempt ingestion", () => {
+  it("retains reconciled failure evidence in the exact run without copying it into Clients", async () => {
+    const store = ledger();
+    const client = await store.upsertClient({
+      clientId: "submission:stage-outcomes-test",
+      inviteId: null,
+      submissionId: "stage-outcomes-test",
+      issueNumber: 8271,
+      businessName: "Stage outcomes test",
+      contactName: null,
+      email: null,
+      phone: null,
+      creator: {
+        kind: "unknown",
+        id: null,
+        name: null,
+        email: null,
+        source: "legacy",
+      },
+      submittedAt: 1000,
+    });
+    const detail = {
+      errorCode: "LL_STAGE_PREVIEW_DEPLOY_FAILED",
+      diagnosticExcerpt: "Build and direct-upload public preview: failure.",
+    };
+    const body = {
+      attempts: [
+        {
+          observation: observation({
+            runId: "82710",
+            runAttempt: 2,
+            issueNumber: 8271,
+            source: "github-reconcile",
+            deliveryStatus: "none",
+          }),
+          events: [
+            {
+              eventKey: "github-step:intake",
+              stage: "intake",
+              status: "completed",
+            },
+            {
+              eventKey: "github-step:reference_analysis",
+              stage: "reference_analysis",
+              status: "skipped",
+            },
+            {
+              eventKey: "github-step:preview_deploy",
+              stage: "preview_deploy",
+              status: "failed",
+              detail,
+            },
+          ],
+        },
+      ],
+      checkpoint: null,
+      health: {
+        lastSyncAt: null,
+        coverageStart: null,
+        partial: true,
+        lastError: null,
+      },
+    };
+    expect(
+      (await post(body, "test-secret", "generation-reconciliation")).status,
+    ).toBe(200);
+    const summary = (await store.getClient(client.clientId))?.workflow;
+    expect(summary?.attemptId).toBe("github:82710:2");
+    expect(summary?.stages).toEqual(
+      expect.arrayContaining([
+        { stage: "intake", status: "completed", verified: true },
+        { stage: "reference_analysis", status: "skipped", verified: true },
+        { stage: "preview_deploy", status: "failed", verified: true },
+      ]),
+    );
+    expect(JSON.stringify(summary)).not.toContain(
+      "LL_STAGE_PREVIEW_DEPLOY_FAILED",
+    );
+    await store.recordAttemptEvents(
+      "github:82710:2",
+      Array.from({ length: 55 }, (_, index) => ({
+        eventKey: `cost:synthetic:${index}`,
+        stage: "seo_research",
+        status: "recorded",
+        source: "callback" as const,
+        observedAt: 3000 + index,
+      })),
+    );
+    const attempt = await store.getAttempt("github:82710:2");
+    expect(attempt?.deliveryStatus).toBe("none");
+    expect(
+      JSON.parse(
+        attempt?.workflowEvents?.find(
+          (event) => event.stage === "preview_deploy",
+        )?.detail ?? "{}",
+      ),
+    ).toEqual(detail);
+    expect(await store.getAttempt("github:82710:1")).toBeNull();
+  });
+
   it("preserves a diagnostic URL on the exact run attempt after reconciliation", async () => {
     const previewUrl = "https://abc123.launchloom-pipeline-preview.pages.dev/";
     expect(
