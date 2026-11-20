@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { generationStageOrder } from "../../scripts/generation-stage-outcomes.mjs";
 import type {
   AttemptDetail,
@@ -58,9 +58,10 @@ function withFailure(stages: WorkflowStage[], failure: string | null) {
 }
 
 function stageName(stage: string) {
-  return stage === "preview_ready"
-    ? "Preview delivery"
-    : activityStageLabel(stage) || "Unnamed stage";
+  if (stage === "preview_ready") return "Preview delivery";
+  if (stage === "preview_verification") return "Preview check";
+  if (stage === "seo_telemetry") return "SEO reporting";
+  return activityStageLabel(stage) || "Unnamed stage";
 }
 
 function stageOutcome(item: WorkflowStage, delivery: DeliveryStatus) {
@@ -118,6 +119,10 @@ function orderedStages(stages: WorkflowStage[]) {
   if (!stages.some((item) => item.verified)) return stages;
   return [...stages].sort((a, b) => {
     const position = (stage: string) => {
+      if (stage === "seo_research")
+        return generationStageOrder.indexOf("seo_telemetry") - 0.5;
+      if (stage === "preview_ready")
+        return generationStageOrder.indexOf("preview_verification") + 0.5;
       const index = generationStageOrder.indexOf(stage);
       return index < 0 ? Number.MAX_SAFE_INTEGER : index;
     };
@@ -132,6 +137,29 @@ export function ClientWorkflowDirectory({
   workflow: WorkflowSnapshot | null | undefined;
   onOpen: (stage: string | null, trigger: HTMLButtonElement) => void;
 }) {
+  const trackRef = useRef<HTMLOListElement>(null);
+  const [scrollState, setScrollState] = useState(0);
+  const updateScrollState = (track: HTMLOListElement) => {
+    const before = track.scrollLeft > 1;
+    const after = track.scrollWidth - track.clientWidth - track.scrollLeft > 1;
+    setScrollState(Number(before) | (Number(after) << 1));
+  };
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const update = () => updateScrollState(track);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(track);
+    if (track.lastElementChild) observer.observe(track.lastElementChild);
+    return () => observer.disconnect();
+  }, [workflow]);
+
+  function moveStages(direction: -1 | 1) {
+    const track = trackRef.current;
+    if (track) track.scrollBy({ left: direction * track.clientWidth * 0.8 });
+  }
+
   if (!workflow)
     return (
       <span className="admin-muted">
@@ -182,9 +210,34 @@ export function ClientWorkflowDirectory({
               Inspect failed stage: {stageName(failure.stage)}
             </button>
           ) : null}
+          {scrollState ? (
+            <div className="admin-workflow-graph__controls">
+              <button
+                type="button"
+                className="admin-workflow-scroll"
+                aria-label="Previous stages"
+                aria-disabled={!(scrollState & 1)}
+                onClick={() => scrollState & 1 && moveStages(-1)}
+              >
+                <span aria-hidden="true">←</span>
+              </button>
+              <button
+                type="button"
+                className="admin-workflow-scroll"
+                aria-label="Next stages"
+                aria-disabled={!(scrollState & 2)}
+                onClick={() => scrollState & 2 && moveStages(1)}
+              >
+                <span aria-hidden="true">→</span>
+                <span>More stages</span>
+              </button>
+            </div>
+          ) : null}
         </div>
         {stages.length ? (
           <ol
+            ref={trackRef}
+            onScroll={(event) => updateScrollState(event.currentTarget)}
             className="admin-workflow-graph__nodes"
             role="list"
             aria-label="Workflow stage graph"

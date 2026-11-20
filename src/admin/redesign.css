@@ -1778,10 +1778,42 @@
 
 .admin-workflow-graph__head {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 6px 10px;
   align-items: center;
   font-size: 12px;
   font-weight: 700;
+}
+
+.admin-workflow-graph__controls {
+  display: flex;
+  gap: 4px;
+  margin-inline-start: auto;
+}
+
+.admin-workflow-scroll {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 2px 8px;
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  background: var(--admin-paper);
+  color: var(--admin-forest);
+  font: inherit;
+  cursor: pointer;
+}
+
+.admin-workflow-scroll[aria-disabled="true"] {
+  color: var(--admin-muted);
+  opacity: 0.65;
+  cursor: default;
+}
+
+.admin-workflow-scroll:focus-visible {
+  outline: 2px solid var(--admin-forest);
+  outline-offset: 2px;
 }
 
 .admin-workflow-graph__nodes {

@@ -41,6 +41,12 @@ const CLIENTS = syntheticClients().map((client) =>
           stale: false,
           failureStage: "setup",
           stages: [
+            { stage: "intake", status: "completed" },
+            { stage: "seo_research", status: "completed" },
+            { stage: "reference_analysis", status: "skipped" },
+            { stage: "client_repo", status: "completed" },
+            { stage: "review_branch", status: "completed" },
+            { stage: "imagery", status: "completed" },
             { stage: "creative", status: "succeeded" },
             { stage: "preview_ready", status: "completed" },
           ],
@@ -1464,7 +1470,22 @@ describe("real admin workspace browser behavior", () => {
           expect(
             await graph.getByText("Creative", { exact: true }).isVisible(),
           ).toBe(true);
-          expect(await graph.locator("[data-workflow-edge]").count()).toBe(2);
+          expect(await graph.locator("[data-workflow-edge]").count()).toBe(8);
+          const track = graph.getByRole("list", {
+            name: "Workflow stage graph",
+          });
+          const next = graph.getByRole("button", { name: "Next stages" });
+          const previous = graph.getByRole("button", {
+            name: "Previous stages",
+          });
+          await next.click({ timeout: 2000 });
+          await expect
+            .poll(() => track.evaluate((el) => el.scrollLeft))
+            .toBeGreaterThan(0);
+          await previous.click();
+          await expect
+            .poll(() => track.evaluate((el) => el.scrollLeft))
+            .toBe(0);
           await visible(
             graph.getByRole("button", { name: "Inspect failed stage: Setup" }),
           );
