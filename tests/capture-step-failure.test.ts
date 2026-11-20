@@ -30,6 +30,22 @@ describe("bounded failure evidence", () => {
     expect(evidence.detail).not.toContain("required secret");
   });
 
+  it("strips GitHub CLI log prefixes and shell source before selecting evidence", () => {
+    const evidence = extractFailureEvidence(
+      [
+        'generate\tUNKNOWN STEP\t2026-11-20T17:43:39.1005074Z \u001b[36;1m --failure-next-step "Inspect the run"',
+        "generate\tBuild and direct-upload public preview\t2026-11-20T17:43:39.2000000Z \u001b[31mError: preview upload failed with HTTP 502\u001b[0m",
+        "generate\tUNKNOWN STEP\t2026-11-20T17:43:39.3000000Z ERROR: unrelated summary",
+      ].join("\n"),
+      1,
+    );
+    expect(evidence.code).toBe("HTTP_502");
+    expect(evidence.detail).toContain("HTTP 502");
+    expect(evidence.detail).not.toMatch(
+      /UNKNOWN STEP|2026-|failure-next-step|\u001b/u,
+    );
+  });
+
   it("derives stable codes for common failures", () => {
     expect(failureCodeFor("request timed out", 1)).toBe("TIMEOUT");
     expect(failureCodeFor("permission denied", 1)).toBe("DENIED");
