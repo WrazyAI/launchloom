@@ -15,14 +15,22 @@ evidence="$runtime_dir/launchloom-step-failure.json"
 
 if [ "${OPERATION_ID:-}" = "" ]; then
   umask 077
+  out="$runtime_dir/launchloom-legacy-out-$$-${RANDOM}.log"
+  err="$runtime_dir/launchloom-legacy-err-$$-${RANDOM}.log"
   log="$runtime_dir/launchloom-legacy-step-$$-${RANDOM}.log"
+  : >"$out"; : >"$err"
+  exec 3> >(tee "$out")
+  exec 4> >(tee "$err" >&2)
   set +e
-  bash --noprofile --norc -eo pipefail "$1" 2>&1 | tee "$log"
-  status=${PIPESTATUS[0]}
+  bash --noprofile --norc -eo pipefail "$1" >&3 2>&4
+  status=$?
+  exec 3>&- 4>&-
+  wait
   if [ "$status" -ne 0 ] && [ ! -s "$evidence" ] && command -v node >/dev/null 2>&1; then
+    cat "$out" "$err" >"$log" 2>/dev/null || true
     node "$script_dir/capture-step-failure.mjs" --log "$log" --status "$status" --out "$evidence" || true
   fi
-  rm -f "$log"
+  rm -f "$out" "$err" "$log"
   exit "$status"
 fi
 
