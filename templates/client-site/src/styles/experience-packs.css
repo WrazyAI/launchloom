@@ -1058,6 +1058,17 @@
   color: #d4d0c7;
 }
 
+.xp-folio :is(.xp-folio__header, .xp-folio__intro, .xp-folio__service-index, .xp-folio__faqs)
+  :is(a, button, summary):focus-visible,
+.inner-experience-cinematic-narrative .inner-hero :is(a, button):focus-visible {
+  outline: 2px solid #efece4;
+  outline-offset: 3px;
+}
+.xp-folio .xp-folio__header :is(a, button):focus-visible {
+  box-shadow: 0 0 0 10px var(--folio-black);
+  outline-offset: 2px;
+}
+
 .inner-experience-cinematic-narrative .inner-hero h1,
 .inner-experience-cinematic-narrative .section-heading h2 {
   font-family: var(--font-heading, Georgia, serif);
@@ -1066,7 +1077,9 @@
 }
 
 .inner-experience-cinematic-narrative .inner-hero-grid {
-  grid-template-columns: minmax(18rem, 0.75fr) minmax(26rem, 1.25fr);
+  /* Keep the editorial split at tablet widths without imposing a track sum
+     wider than the container once the gap and page gutters are included. */
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
 }
 
 /* The bold-utility inner routes keep the pack's fixed light polarity so a dark

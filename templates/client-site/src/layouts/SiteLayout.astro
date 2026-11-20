@@ -54,6 +54,11 @@ const colorRoles = semanticColorCss(palette) + `
 .recipe-local-trades .inner-hero:not(.service-hero) .cta {color:var(--on-brand,#000000);background:var(--brand,${palette.primaryColor});}
 .recipe-local-trades .inner-hero:not(.service-hero) .breadcrumb {color:#bac9c4;}
 .recipe-local-trades .inner-hero:not(.service-hero) .call-link {color:#ffffff;}
+/* The cinematic process section paints the hero surface behind its heading
+   and fixed light surfaces behind the step cards. Pair each with its own ink. */
+.inner-experience-cinematic-narrative .inner-band .section-heading h2 {color:${palette.surfaces.hero.text};}
+.inner-experience-cinematic-narrative .inner-band .section-heading .kicker {color:var(--ll-accent-text-on-hero,${palette.surfaces.hero.link});}
+.inner-experience-cinematic-narrative .inner-band .process-grid span {color:${palette.surfaces.contact.link};}
 /* The header logo sits over the generated header image, so its focus ring is
    measured against "background variable" and #348f7e measured 2.888:1 there
    even though it clears 3:1 on every flat band. Paint the ring over the nav
