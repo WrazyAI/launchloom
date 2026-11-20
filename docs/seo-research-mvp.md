@@ -80,21 +80,20 @@ become invented numeric scores. Missing numeric competition remains unavailable.
 - **Blog opportunities:** up to five evidence-backed informational topics are
   proposed. They are not generated as articles during initial site creation.
 
-When DataForSEO credentials are absent, the generation workflow can use the
-already-configured `OPENROUTER_API_KEY` for a bounded live-search fallback.
-The same bounded fallback runs when DataForSEO responds successfully but the
-required measured map is still incomplete, such as a confirmed service with
-sparse metrics or a missing local SERP snapshot. This provides cited context
-for private review; it does not fill a metric field or satisfy a release gate.
-That path runs at most the configured number of queries (default 3, hard maximum
-5), caps each query at four web results, and stops when provider-reported spend
-reaches the fallback budget (default $0.05, hard maximum $0.25). If a completed
-request does not report cost, LaunchLoom keeps that request's cited evidence but
-does not issue another fallback query because the budget can no longer be
-enforced. The dossier records fallback spend and budget state separately from
-DataForSEO cost. It stores only provider-returned URL citations: query, source
-URL, title, extracted snippet, retrieval time, provider, and provenance.
-Model-authored prose is discarded and is never treated as search evidence.
+When DataForSEO credentials are absent, the generation workflow uses
+`BRAVE_SEARCH_API_KEY` for a bounded Brave Search fallback. The same bounded
+fallback runs when DataForSEO responds successfully but the required measured
+map is still incomplete, such as a confirmed service with sparse metrics or a
+missing local SERP snapshot. This provides cited context for private review; it
+does not fill a metric field or satisfy a release gate. That path runs at most
+the configured number of queries (default 3, hard maximum 5), caps each query at
+four web results, and stays within the fallback query budget (default $0.05,
+hard maximum $0.25). Brave Search pricing is plan-based and does not report a
+per-query charge; the dossier records `$0` incremental spend with an explicit
+warning instead of inventing a metered cost. The dossier stores only
+provider-returned URL citations: query, source URL, title, extracted snippet,
+retrieval time, provider, and provenance. Model-authored prose is discarded and
+is never treated as search evidence.
 
 Fallback web observations remain separate from confirmed business facts and
 measured SEO fields. They do not create search volume, Keyword Difficulty,
@@ -109,7 +108,7 @@ measured SEO, so production approval remains blocked. Missing, empty, failed,
 partial, or unreported-cost fallback research remains blocked. The Worker,
 rendered review controls, and production build require measured version-two
 research for new-site publication; a ready flag alone cannot unlock it.
-If OpenRouter is unavailable or not configured, the result stays explicitly
+If Brave Search is unavailable or not configured, the result stays explicitly
 degraded/context-only and is not described as researched.
 
 Missing provider values stay `null` or are listed as unavailable. The report
@@ -139,8 +138,8 @@ GitHub Actions secrets in `WrazyAI/launchloom`:
 
 - `DATAFORSEO_LOGIN`
 - `DATAFORSEO_PASSWORD`
-- `OPENROUTER_API_KEY` (already required for generation; also supplies the
-  bounded web-search fallback when DataForSEO is absent)
+- `BRAVE_SEARCH_API_KEY` (supplies the bounded cited web-search fallback when
+  DataForSEO is absent; it never supplies measured SEO metrics)
 - `GOOGLE_PLACES_API_KEY` with Places API (New) and Geocoding API enabled
 
 GitHub Actions variables:
