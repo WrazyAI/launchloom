@@ -2214,6 +2214,34 @@
   margin: 0;
 }
 
+.flow-failure__code {
+  color: var(--admin-muted);
+  font-size: 11.5px;
+}
+
+.flow-failure__code span {
+  margin-right: 6px;
+}
+
+.flow-failure__code code {
+  color: var(--admin-forest);
+  font-weight: 700;
+}
+
+.flow-failure__detail {
+  max-height: 9rem;
+  margin: 0;
+  padding: 10px 12px;
+  overflow: auto;
+  border-radius: 8px;
+  background: #f7f5ee;
+  color: var(--admin-forest);
+  font-family: "Source Sans 3", ui-monospace, monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .flow-diagnostic {
   display: grid;
   gap: 6px;

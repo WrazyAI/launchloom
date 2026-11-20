@@ -4,12 +4,26 @@
 # GitHub logs the stdout/stderr of every `run` step. Generation processes
 # private client content, so in new mode the complete step output is captured
 # to an ephemeral 0600 file on the runner and only a generic status is printed.
-# The file is never uploaded and is deleted immediately. Legacy mode keeps its
-# existing shell behavior and output unchanged.
+# The file is never uploaded and is deleted immediately. Legacy mode preserves
+# its live output but keeps the same ephemeral file long enough to extract a
+# bounded, scrubbed failure excerpt before deleting it.
 set -uo pipefail
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+runtime_dir="${RUNNER_TEMP:-/tmp}"
+evidence="$runtime_dir/launchloom-step-failure.json"
+
 if [ "${OPERATION_ID:-}" = "" ]; then
-  exec bash --noprofile --norc -eo pipefail "$1"
+  umask 077
+  log="$runtime_dir/launchloom-legacy-step-$$-${RANDOM}.log"
+  set +e
+  bash --noprofile --norc -eo pipefail "$1" 2>&1 | tee "$log"
+  status=${PIPESTATUS[0]}
+  if [ "$status" -ne 0 ] && [ ! -s "$evidence" ] && command -v node >/dev/null 2>&1; then
+    node "$script_dir/capture-step-failure.mjs" --log "$log" --status "$status" --out "$evidence" || true
+  fi
+  rm -f "$log"
+  exit "$status"
 fi
 
 umask 077

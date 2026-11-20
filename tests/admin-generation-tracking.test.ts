@@ -533,8 +533,12 @@ describe("trusted attempt producer", () => {
       "failure-stage": "authoring",
       "failure-category": "creative_authoring",
       "failure-next-step": "Inspect the rejected candidate source.",
+      "failure-code": "LL_AUTHORING_HTTP_500",
+      "failure-detail": "Error: authoring request failed with HTTP 500",
     });
     expect(failurePayload?.observation.failure).toMatchObject({
+      code: "LL_AUTHORING_HTTP_500",
+      detail: "Error: authoring request failed with HTTP 500",
       summary: "Generation workflow stopped before a preview was ready.",
       stage: "authoring",
       category: "creative_authoring",
@@ -566,6 +570,9 @@ describe("trusted attempt producer", () => {
       expect(workflow).toContain(`--stage ${stage}`);
     expect(workflow).toContain("--failure-stage");
     expect(workflow).toContain("--failure-category");
+    expect(workflow).toContain("--failure-code");
+    expect(workflow).toContain("--failure-detail");
+    expect(workflow).toContain("launchloom-step-failure.json");
     expect(workflow).toContain("--stage-status failed");
   });
 

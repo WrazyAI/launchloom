@@ -135,6 +135,72 @@ describe("trusted attempt ingestion", () => {
     expect(await store.getAttempt("github:82710:1")).toBeNull();
   });
 
+  it("adds bounded failure evidence to the exact attempt only", async () => {
+    const seeded = await post(
+      {
+        observation: observation({ runId: "7710" }),
+        events: [],
+      },
+      "test-secret",
+    );
+    expect(seeded.status).toBe(200);
+    const route = "generation-failure-evidence";
+    expect(
+      (
+        await post(
+          {
+            repository: "WrazyAI/launchloom",
+            runId: "7710",
+            runAttempt: 1,
+            code: "LL_PREVIEW_DEPLOY_HTTP_502",
+            detail:
+              "Error: preview upload failed with HTTP 502 token=super-secret owner@example.test",
+          },
+          "test-secret",
+          route,
+        )
+      ).status,
+    ).toBe(200);
+    const item = (await ledger().listAttempts({ search: "7710" })).items[0]!;
+    const stored = await ledger().getAttempt(item.attemptId);
+    expect(stored?.failure.code).toBe("LL_PREVIEW_DEPLOY_HTTP_502");
+    expect(stored?.failure.detail).toContain("HTTP 502");
+    expect(stored?.failure.detail).not.toMatch(/super-secret|owner@example/);
+    for (const bad of [
+      { code: "not-a-code", detail: "reason" },
+      { code: "LL_PREVIEW_DEPLOY_HTTP_502", detail: "" },
+    ])
+      expect(
+        (
+          await post(
+            {
+              repository: "WrazyAI/launchloom",
+              runId: "7710",
+              runAttempt: 1,
+              ...bad,
+            },
+            "test-secret",
+            route,
+          )
+        ).status,
+      ).toBe(400);
+    expect(
+      (
+        await post(
+          {
+            repository: "WrazyAI/launchloom",
+            runId: "9999",
+            runAttempt: 1,
+            code: "LL_PREVIEW_DEPLOY_EXIT_1",
+            detail: "No matching attempt.",
+          },
+          "test-secret",
+          route,
+        )
+      ).status,
+    ).toBe(404);
+  });
+
   it("preserves a diagnostic URL on the exact run attempt after reconciliation", async () => {
     const previewUrl = "https://abc123.launchloom-pipeline-preview.pages.dev/";
     expect(

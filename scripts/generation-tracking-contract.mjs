@@ -203,6 +203,8 @@ export function buildAttemptObservation(input) {
     "summary",
     "evidenceUrl",
     "nextStep",
+    "code",
+    "detail",
   ]);
   return {
     repository: input.repository,
@@ -227,6 +229,8 @@ export function buildAttemptObservation(input) {
       summary: redactTrackingText(failure.summary),
       evidenceUrl: safeEvidenceUrl(failure.evidenceUrl),
       nextStep: redactTrackingText(failure.nextStep),
+      code: redactTrackingText(failure.code, 80),
+      detail: redactTrackingText(failure.detail, 600),
     },
   };
 }

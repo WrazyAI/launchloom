@@ -215,6 +215,8 @@ function diagnosticAttempt(): AttemptSummary {
       summary: "The public preview upload did not complete.",
       evidenceUrl: "https://github.com/WrazyAI/launchloom/actions/runs/90123",
       nextStep: "Check the deployment service before retrying this run.",
+      code: "LL_PREVIEW_DEPLOY_HTTP_502",
+      detail: "Error: public preview upload failed with HTTP 502",
     },
     costs: { actualUsd: 0.42, estimatedUsd: 0.5, unreportedCount: 0 },
   };

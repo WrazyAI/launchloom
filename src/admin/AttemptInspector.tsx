@@ -94,6 +94,15 @@ function FailureSection({ attempt }: { attempt: AttemptDetail }) {
           <dd>{failure.stage || "Not recorded"}</dd>
         </div>
       </dl>
+      {failure.code ? (
+        <p className="admin-muted">
+          Code <code>{failure.code}</code>
+        </p>
+      ) : null}
+      {failure.detail &&
+      failure.detail.trim() !== (failure.summary || "").trim() ? (
+        <pre className="admin-detail-code">{failure.detail}</pre>
+      ) : null}
       <div className="admin-inspector__summary">
         <DetailValue value={failure.summary || "Cause not recorded."} />
       </div>

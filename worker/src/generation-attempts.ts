@@ -21,6 +21,7 @@ import type {
 } from "../../src/lib/admin-contracts";
 import { pageRecords } from "./admin/pagination";
 import {
+  redactTrackingText,
   safeClientPreviewUrl,
   safeDiagnosticPreviewUrl,
   type AttemptObservation,
@@ -166,8 +167,14 @@ function validateInput(input: AttemptInput) {
     "summary",
     "evidenceUrl",
     "nextStep",
+    "code",
+    "detail",
   ] as const)
-    if (input.failure[key] !== null && typeof input.failure[key] !== "string")
+    if (
+      input.failure[key] !== null &&
+      input.failure[key] !== undefined &&
+      typeof input.failure[key] !== "string"
+    )
       invalid("failure");
 }
 
@@ -546,11 +553,12 @@ export class GenerationAttempts {
       .toArray();
     const stages = new Map<string, WorkflowStage>();
     for (const event of events) {
-      if (!stages.has(event.stage)) stages.set(event.stage, {
-        stage: event.stage,
-        status: event.status,
-        ...(event.verified ? { verified: true } : {}),
-      });
+      if (!stages.has(event.stage))
+        stages.set(event.stage, {
+          stage: event.stage,
+          status: event.status,
+          ...(event.verified ? { verified: true } : {}),
+        });
     }
     return {
       attemptId,
@@ -669,6 +677,8 @@ export class GenerationAttempts {
           summary: null,
           evidenceUrl: null,
           nextStep: null,
+          code: null,
+          detail: null,
         },
       });
       return this.registerInitialDispatch({
@@ -857,6 +867,8 @@ export class GenerationAttempts {
             summary: input.failure.summary ?? old.failure.summary,
             evidenceUrl: input.failure.evidenceUrl ?? old.failure.evidenceUrl,
             nextStep: input.failure.nextStep ?? old.failure.nextStep,
+            code: input.failure.code ?? old.failure.code ?? null,
+            detail: input.failure.detail ?? old.failure.detail ?? null,
           };
         }
         merged.stale = input.stale;
@@ -963,7 +975,9 @@ export class GenerationAttempts {
       return null;
     }
     const repository =
-      typeof data.repository === "string" && data.repository ? data.repository : null;
+      typeof data.repository === "string" && data.repository
+        ? data.repository
+        : null;
     const runId =
       typeof data.runId === "string" && /^[1-9][0-9]{0,19}$/u.test(data.runId)
         ? data.runId
@@ -977,6 +991,35 @@ export class GenerationAttempts {
     )
       return null;
     return { repository, runId, runAttempt: runAttempt as number };
+  }
+
+  recordFailureEvidence(input: {
+    repository: string;
+    runId: string;
+    runAttempt: number;
+    code: string;
+    detail: string;
+  }): boolean {
+    const row = this.storage.sql
+      .exec<AttemptRow>(
+        "SELECT attempt_id, data, state FROM generation_attempts WHERE repository=? COLLATE NOCASE AND run_id=? AND run_attempt=?",
+        input.repository,
+        input.runId,
+        input.runAttempt,
+      )
+      .toArray()[0];
+    if (!row) return false;
+    const attempt = JSON.parse(row.data) as AttemptInput;
+    const state: State = JSON.parse(row.state);
+    attempt.failure = {
+      ...attempt.failure,
+      code: redactTrackingText(input.code, 80) ?? attempt.failure.code ?? null,
+      detail:
+        redactTrackingText(input.detail, 600) ?? attempt.failure.detail ?? null,
+    };
+    attempt.updatedAt = Math.max(attempt.updatedAt, Date.now());
+    this.save(attempt, state);
+    return true;
   }
 
   getAttempt(id: string): AttemptDetail | null {

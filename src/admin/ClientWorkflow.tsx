@@ -59,9 +59,19 @@ function FailureDetails({
 }) {
   if (!failure?.category && !failure?.summary && !failure?.nextStep)
     return <p className="flow-muted">No failure details were recorded.</p>;
+  const detail = failure.detail?.trim() ?? "";
+  const summary = failure.summary?.trim() ?? "";
   return (
     <div className="flow-failure">
       {structuredFailure(event) ? <StageEvidence event={event!} /> : null}
+      {failure.code ? (
+        <p className="flow-failure__code">
+          <span>Code</span> <code>{failure.code}</code>
+        </p>
+      ) : null}
+      {detail && detail !== summary ? (
+        <pre className="flow-failure__detail">{detail}</pre>
+      ) : null}
       {failure.summary ? (
         <DetailValue value={failure.summary} />
       ) : (

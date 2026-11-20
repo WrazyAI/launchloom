@@ -577,3 +577,51 @@ export async function workspaceApi(
     );
   }
 }
+
+/** Narrow internal update for bounded, already-scrubbed failure evidence. */
+export async function failureEvidenceIngest(request: Request, env: Env) {
+  if (request.method !== "POST")
+    return workspaceError("method_not_allowed", "Use POST.", 405);
+  if (Number(request.headers.get("Content-Length")) > 10_000)
+    return workspaceError("too_large", "Payload too large.", 413);
+  try {
+    const text = await request.text();
+    if (text.length > 10_000) throw new Error("too_large");
+    const body = JSON.parse(text) as Record<string, unknown>;
+    strictKeys(body, ["repository", "runId", "runAttempt", "code", "detail"]);
+    if (
+      body.repository !== "WrazyAI/launchloom" ||
+      typeof body.runId !== "string" ||
+      !/^[1-9][0-9]{0,19}$/u.test(body.runId) ||
+      !Number.isSafeInteger(body.runAttempt) ||
+      (body.runAttempt as number) < 1 ||
+      (body.runAttempt as number) > 1000 ||
+      typeof body.code !== "string" ||
+      !/^LL_[A-Z0-9_]{1,80}$/u.test(body.code) ||
+      typeof body.detail !== "string" ||
+      !body.detail.trim() ||
+      body.detail.length > 600
+    )
+      throw new Error("invalid failure evidence");
+    const detail = (redactTrackingText(body.detail, 600) ?? "")
+      .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/giu, "[email]")
+      .trim();
+    if (!detail) throw new Error("invalid failure evidence");
+    const updated = await env.GENERATION_LEDGER.getByName(
+      "launchloom-generations",
+    ).recordFailureEvidence({
+      repository: body.repository,
+      runId: body.runId,
+      runAttempt: body.runAttempt as number,
+      code: body.code,
+      detail,
+    });
+    return updated
+      ? json({ updated: true })
+      : workspaceError("not_found", "Attempt not found.", 404);
+  } catch (error) {
+    if (error instanceof Error && error.message === "too_large")
+      return workspaceError("too_large", "Payload too large.", 413);
+    return workspaceError("invalid_input", "Invalid failure evidence.", 400);
+  }
+}
