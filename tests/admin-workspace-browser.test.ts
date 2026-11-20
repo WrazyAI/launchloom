@@ -452,6 +452,10 @@ async function serve(
               stage,
               status: stage === "workflow" ? "failed" : "completed",
               source: "github-reconcile" as const,
+              detail:
+                stage === "workflow"
+                  ? "The workflow stopped before a preview was ready."
+                  : null,
               createdAt: attempt.updatedAt + index,
             })),
           }

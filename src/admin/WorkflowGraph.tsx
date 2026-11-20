@@ -186,7 +186,10 @@ export function workflowState(workflow: ClientWorkflow | null | undefined) {
   if (failure)
     return {
       tone: "failure" as const,
-      headline: `${stageLabel(failure.stage)} failed`,
+      headline:
+        failure.stage === "workflow"
+          ? "Run failed"
+          : `${stageLabel(failure.stage)} failed`,
       detail: `${passed} of ${stages.length} stages passed`,
     };
   if (
