@@ -375,7 +375,7 @@ export async function reviewGeneratedAsset({
       // costs no FAL request and keeps a good image from being skipped by a
       // single bad structured response.
       let diagnostics = { model, imageBytes: imageData?.byteLength };
-      for (let reviewAttempt = 1; reviewAttempt <= 2; reviewAttempt += 1) {
+      for (let reviewAttempt = 1; reviewAttempt <= 3; reviewAttempt += 1) {
         const result = await completeGoCreative({
           logicalModel: model,
           signal: controller.signal,
@@ -390,7 +390,8 @@ export async function reviewGeneratedAsset({
             sessionId: reviewSessionKey({
               model,
               policyVersion: policy.version,
-              scene: instructions,
+              // A cached malformed response must not be replayed on retry.
+              scene: `${instructions}\nreview-attempt:${reviewAttempt}`,
             }),
           }),
         });
@@ -1392,6 +1393,20 @@ async function generateContextualAssetsForRoute({
     });
   }
   manifest.generationRequests = requests;
+  const routeReviews = [
+    ...manifest.placements.map((entry) => entry.imageReview),
+    ...manifest.skipped.flatMap((entry) => entry.imageReviews || []),
+  ].filter(Boolean);
+  manifest.reviewStats = {
+    approved: routeReviews.filter((review) => review.status === "approved")
+      .length,
+    rejected: routeReviews.filter((review) => review.status === "rejected")
+      .length,
+    unavailable: routeReviews.filter(
+      (review) => review.status === "unavailable",
+    ).length,
+    total: routeReviews.length,
+  };
   if (manifestPath) {
     await fs.mkdir(path.dirname(manifestPath), { recursive: true });
     await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
@@ -1526,6 +1541,17 @@ export async function generateContextualAssets(options = {}) {
     }
   }
 
+  const reviews = [
+    ...placements.map((entry) => entry.imageReview),
+    ...skipped.flatMap((entry) => entry.imageReviews || []),
+  ].filter(Boolean);
+  const reviewStats = {
+    approved: reviews.filter((review) => review.status === "approved").length,
+    rejected: reviews.filter((review) => review.status === "rejected").length,
+    unavailable: reviews.filter((review) => review.status === "unavailable")
+      .length,
+    total: reviews.length,
+  };
   const manifest = {
     version: 4,
     provider: "fal.ai",
@@ -1535,6 +1561,7 @@ export async function generateContextualAssets(options = {}) {
     generatedAt: new Date().toISOString(),
     generationRequests: totalRequests,
     routes: routeManifests,
+    reviewStats,
     placements,
     skipped,
   };

@@ -544,6 +544,11 @@ async function inspect(page) {
       heroActionBottom: Math.round(heroActionBottom),
       heroMediaTop: Math.round(heroMediaTop),
       heroMediaVisibleHeight: Math.round(heroMediaVisibleHeight),
+      heroMediaRegionCount: mediaRegions.length,
+      heroMediaVisualCount: mediaRegions.reduce(
+        (count, region) => count + region.visuals.length,
+        0,
+      ),
       heroCopyAreaRatio,
       heroCopyWidthRatio,
       heroCopyHeightRatio,
@@ -617,6 +622,11 @@ async function inspect(page) {
         mediaCoverage: {
           top: heroMediaTop,
           visibleHeight: heroMediaVisibleHeight,
+          regionCount: mediaRegions.length,
+          visualCount: mediaRegions.reduce(
+            (count, region) => count + region.visuals.length,
+            0,
+          ),
         },
         media: mediaRegions,
         utilityCount:
