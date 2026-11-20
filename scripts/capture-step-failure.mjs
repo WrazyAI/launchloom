@@ -6,7 +6,16 @@ const ERROR_SHAPE =
 const NOISE =
   /^(?:\+|##\[|::debug|shell:|env:|command:|post job cleanup|cleaning up orphan)/iu;
 const SOURCE_LIKE =
-  /^(?:echo|printf|node\s|npm\s|npx\s|if\s|elif\s|then$|else$|fi$|for\s|while\s|local\s|export\s|const\s|let\s|var\s|import\s|require\s|test\s|\[\[|#|\$|\}|\{)|^[A-Z][A-Z0-9_]+=/u;
+  /^(?:--|\\|echo|printf|node\s|npm\s|npx\s|gh\s|git\s|bash\s|cat\s|cd\s|mkdir\s|rm\s|cp\s|mv\s|if\s|elif\s|then$|else$|fi$|for\s|while\s|local\s|export\s|set\s|trap\s|const\s|let\s|var\s|import\s|require\s|test\s|\[\[|#|\$|\}|\{)|^[A-Z][A-Z0-9_]+=/u;
+
+/** GitHub CLI prefixes each line with job, step and an ISO timestamp. */
+function stripLogPrefix(line) {
+  return line
+    .replace(/^[^\t]*\t[^\t]*\t\d{4}-\d{2}-\d{2}T\S+\s/u, "")
+    .replace(/\^\[\[[0-9;]*[A-Za-z]/gu, "")
+    .replace(/\u001b\[[0-9;]*[A-Za-z]/gu, "")
+    .trim();
+}
 const GENERIC_EXIT = /^##\[error\]Process completed with exit code \d+\.?$/iu;
 
 export function failureCodeFor(text, status) {
@@ -40,7 +49,7 @@ export function extractFailureEvidence(log, status = 1) {
   const seen = new Set();
   const candidates = [];
   for (const raw of text.split("\n")) {
-    const line = raw.trim();
+    const line = stripLogPrefix(raw.trim());
     if (
       line.length < 8 ||
       NOISE.test(line) ||
