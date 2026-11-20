@@ -18,12 +18,24 @@ import {
   creativeLaneProvider,
   parseGoCreativeOutput,
 } from "./creative-lane-inference.mjs";
+import {
+  IMAGE_REVIEW_POLICY_VERSION,
+  REVIEW_REASON_CODES,
+  assetReviewReasonCodes,
+  buildReviewInstructions,
+  imageRetryPrompt,
+  normalizeReviewChecks,
+  reviewPolicyFor,
+  reviewSchema,
+  reviewSessionKey,
+} from "./image-review-policy.mjs";
 
 export const DEFAULT_FAL_MODEL = "fal-ai/minimax/image-01";
 export const DEFAULT_MAX_IMAGES = 3;
 export const DEFAULT_MAX_REQUESTS = 15;
 export const DEFAULT_MAX_PROMPT_LENGTH = 1500;
-export const GENERATED_ASSET_REVIEW_POLICY_VERSION = "visual-review-v1";
+export const GENERATED_ASSET_REVIEW_POLICY_VERSION =
+  IMAGE_REVIEW_POLICY_VERSION;
 // Reviewed stock fallbacks may only be downloaded from their documented
 // licensed source host. A site config cannot turn this into a general fetch.
 const STOCK_FALLBACK_HOSTS = new Set(["images.unsplash.com"]);
@@ -32,15 +44,9 @@ const STOCK_FALLBACK_HOSTS = new Set(["images.unsplash.com"]);
 // pipeline. GLM-5.3 is not approved for production use.
 const GENERATED_ASSET_REVIEW_MODEL =
   process.env.FAL_IMAGE_REVIEW_MODEL || "deepseek/deepseek-v4.1-flash";
-const GENERATED_ASSET_REVIEW_REASONS = new Set([
-  "not_standalone_image",
-  "website_or_interface",
-  "visible_text",
-  "logo_or_watermark",
-  "irrelevant_subject",
-  "review_unavailable",
-  "review_rejected",
-]);
+const REVIEW_SYSTEM_PROMPT =
+  "You are a strict visual asset integrity reviewer. Evaluate only what is visible in the supplied pixels against the supplied intended scene. Reject fake website or app screenshots, interface chrome, collage panels, logos, watermarks, prominent headline or interface lettering, and people that the stated people policy does not allow. Allow small incidental labels, distant unreadable signage, photographic grain, motion blur, and a still life with several physical objects. A generic image that does not depict the intended scene is not relevant. Return only the required structured fields.";
+
 const GENERATED_ASSET_REVIEW_FAILURE_CODES = new Set([
   "not_configured",
   "timeout",
@@ -59,45 +65,6 @@ const FAL_VALIDATION_FIELDS = new Set([
   "image_size",
   "output_format",
 ]);
-const IMAGE_RETRY_DIRECTIVE =
-  "Do not create a webpage, interface, readable words, signage, labels, packaging lettering, or logos. Regenerate only a single standalone photographic image asset with no readable text.";
-const GENERATED_ASSET_REVIEW_SCHEMA = {
-  name: "launchloom_generated_asset_review",
-  strict: true,
-  schema: {
-    type: "object",
-    additionalProperties: false,
-    required: [
-      "isStandaloneImage",
-      "containsWebsiteOrInterface",
-      "containsVisibleTextOrTextLikeMarks",
-      "containsLogoOrWatermark",
-      "containsPeople",
-      "isRelevantToBusiness",
-    ],
-    properties: {
-      isStandaloneImage: { type: "boolean" },
-      containsWebsiteOrInterface: { type: "boolean" },
-      containsVisibleTextOrTextLikeMarks: { type: "boolean" },
-      containsLogoOrWatermark: { type: "boolean" },
-      containsPeople: { type: "boolean" },
-      isRelevantToBusiness: { type: "boolean" },
-    },
-  },
-};
-
-const GENERATED_ASSET_REVIEW_REQUIRED_CHECKS = [
-  "isStandaloneImage",
-  "containsWebsiteOrInterface",
-  "containsVisibleTextOrTextLikeMarks",
-  "containsLogoOrWatermark",
-  "containsPeople",
-  "isRelevantToBusiness",
-];
-
-const GENERATED_ASSET_REVIEW_SYSTEM_PROMPT =
-  "You are a strict visual asset integrity reviewer. Evaluate only what is visible in the supplied pixels. Reject fake website screenshots, browser or app interfaces, readable words, fake interface copy, prominent signage, logos, watermarks, and any person, face, human figure, hands, or body parts. Do not reject incidental unreadable texture, blurry background marks, photographic grain, or a photographic still life containing several physical objects; those are normal editorial photography. A collage of interface panels is not a standalone image, but a still-life arrangement of physical objects is. Return only the required structured fields.";
-
 function configuredNumber(value, fallback) {
   if (value === undefined || value === null || value === "") return fallback;
   const parsed = Number(value);
@@ -291,30 +258,13 @@ function falRequestFailure(error) {
   };
 }
 
-function retryPromptFor(prompt) {
-  const availablePrefixLength = Math.max(
-    0,
-    DEFAULT_MAX_PROMPT_LENGTH - IMAGE_RETRY_DIRECTIVE.length - 1,
+function retryPromptFor(prompt, reasonCodes, policy) {
+  return imageRetryPrompt(
+    prompt,
+    reasonCodes,
+    policy,
+    DEFAULT_MAX_PROMPT_LENGTH,
   );
-  const prefix = String(prompt || "")
-    .slice(0, availablePrefixLength)
-    .trimEnd();
-  return `${prefix} ${IMAGE_RETRY_DIRECTIVE}`
-    .trim()
-    .slice(0, DEFAULT_MAX_PROMPT_LENGTH);
-}
-
-function normalizeReviewChecks(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const checks = {};
-  for (const key of GENERATED_ASSET_REVIEW_REQUIRED_CHECKS) {
-    const raw = value[key];
-    if (typeof raw === "boolean") checks[key] = raw;
-    else if (raw === "true" || raw === 1) checks[key] = true;
-    else if (raw === "false" || raw === 0) checks[key] = false;
-    else return null;
-  }
-  return checks;
 }
 
 function reviewRetryable(review) {
@@ -339,7 +289,7 @@ function normalizeImageReview(
   const approved = available && review?.approved === true;
   const reasons = Array.isArray(review?.reasonCodes)
     ? review.reasonCodes.filter((reason) =>
-        GENERATED_ASSET_REVIEW_REASONS.has(reason),
+        REVIEW_REASON_CODES.has(reason),
       )
     : [];
   return {
@@ -371,26 +321,12 @@ function normalizeImageReview(
   };
 }
 
-function assetReviewReasonCodes(checks) {
-  const reasons = [];
-  if (checks.isStandaloneImage !== true) reasons.push("not_standalone_image");
-  if (checks.containsWebsiteOrInterface === true)
-    reasons.push("website_or_interface");
-  if (checks.containsVisibleTextOrTextLikeMarks === true)
-    reasons.push("visible_text");
-  if (checks.containsLogoOrWatermark === true)
-    reasons.push("logo_or_watermark");
-  if (checks.containsPeople === true) reasons.push("people_or_faces");
-  if (checks.isRelevantToBusiness !== true) reasons.push("irrelevant_subject");
-  return reasons;
-}
-
 /**
  * Inspect a newly generated image as pixels before it is persisted or bound to
  * the client config. Provider/model errors are represented as an unavailable
  * review so callers can fall back without leaking unsafe assets.
  *
- * @param {{ imageData: Buffer, placement: string, businessKind?: string, services?: string[], familyId?: string, model?: string, apiKey?: string, timeoutMs?: number }} input
+ * @param {{ imageData: Buffer, placement: string, businessKind?: string, services?: string[], familyId?: string, scene?: string, model?: string, apiKey?: string, timeoutMs?: number }} input
  */
 export async function reviewGeneratedAsset({
   imageData,
@@ -398,6 +334,7 @@ export async function reviewGeneratedAsset({
   businessKind = "local business",
   services = [],
   familyId = "",
+  scene = "",
   model = GENERATED_ASSET_REVIEW_MODEL,
   apiKey = process.env.OPENROUTER_API_KEY,
   timeoutMs = 45_000,
@@ -413,25 +350,17 @@ export async function reviewGeneratedAsset({
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
+    const policy = reviewPolicyFor({ businessKind, placement, familyId });
+    const instructions = buildReviewInstructions({
+      placement,
+      businessKind,
+      services,
+      familyId,
+      scene,
+      policy,
+    });
     const content = [
-      {
-        type: "text",
-        text: [
-          `Review this generated ${text(placement, 30)} image asset for a ${safePromptPart(businessKind, 90) || "local business"}.`,
-          `Relevant service context: ${
-            services
-              .map((service) => safePromptPart(service, 80))
-              .filter(Boolean)
-              .slice(0, 4)
-              .join(", ") || "general business context"
-          }.`,
-          `Reference family: ${safePromptPart(familyId || "unspecified", 80) || "unspecified"}.`,
-          "Judge visible pixels, not the prompt or filename. Reject a fake website/page screenshot, browser or UI layout, a collage of interface panels, readable words or fake interface copy, prominent signage, logos, watermarks, or an unrelated subject.",
-          "Allow incidental unreadable texture, blurry background marks, photographic grain, and a photographic still life with several physical objects. Do not treat those as text or as a UI collage.",
-          "Reject any image containing people, faces, hands, or body parts; generated imagery must never imply staff or customers.",
-          "Approve only one standalone image asset with a relevant subject, no readable text or fake interface copy, no interface, no branding, and no people.",
-        ].join(" "),
-      },
+      { type: "text", text: instructions },
       {
         type: "image_url",
         image_url: {
@@ -453,16 +382,16 @@ export async function reviewGeneratedAsset({
           env: process.env,
           maxAttempts: 2,
           request: buildGoCreativeRequest({
-            systemPrompt: GENERATED_ASSET_REVIEW_SYSTEM_PROMPT,
+            systemPrompt: REVIEW_SYSTEM_PROMPT,
             userContent: content,
-            schemaName: GENERATED_ASSET_REVIEW_SCHEMA.name,
-            schema: GENERATED_ASSET_REVIEW_SCHEMA.schema,
+            schemaName: reviewSchema().name,
+            schema: reviewSchema().schema,
             maxOutputTokens: 1000,
-            sessionId: openRouterSessionId(
-              "generated-asset-review",
+            sessionId: reviewSessionKey({
               model,
-              sha256(imageData),
-            ),
+              policyVersion: policy.version,
+              scene: instructions,
+            }),
           }),
         });
         diagnostics = {
@@ -481,7 +410,7 @@ export async function reviewGeneratedAsset({
         }
         checks = normalizeReviewChecks(checks);
         if (!checks) continue;
-        const reasonCodes = assetReviewReasonCodes(checks);
+        const reasonCodes = assetReviewReasonCodes(checks, policy);
         return {
           available: true,
           approved: reasonCodes.length === 0,
@@ -499,11 +428,11 @@ export async function reviewGeneratedAsset({
     const response = await openRouterChatCompletion({
       title: "LaunchLoom generated asset review",
       signal: controller.signal,
-      sessionId: openRouterSessionId(
-        "generated-asset-review",
+      sessionId: reviewSessionKey({
         model,
-        sha256(imageData),
-      ),
+        policyVersion: policy.version,
+        scene: instructions,
+      }),
       responseCache: true,
       responseCacheTtlSeconds: 86_400,
       body: {
@@ -513,10 +442,10 @@ export async function reviewGeneratedAsset({
         provider: { require_parameters: true },
         response_format: {
           type: "json_schema",
-          json_schema: GENERATED_ASSET_REVIEW_SCHEMA,
+          json_schema: reviewSchema(),
         },
         messages: [
-          { role: "system", content: GENERATED_ASSET_REVIEW_SYSTEM_PROMPT },
+          { role: "system", content: REVIEW_SYSTEM_PROMPT },
           { role: "user", content },
         ],
       },
@@ -548,7 +477,7 @@ export async function reviewGeneratedAsset({
     }
     checks = normalizeReviewChecks(checks);
     if (!checks) return unavailableAssetReview("invalid_checks", diagnostics);
-    const reasonCodes = assetReviewReasonCodes(checks);
+    const reasonCodes = assetReviewReasonCodes(checks, policy);
     return {
       available: true,
       approved: reasonCodes.length === 0,
@@ -1184,6 +1113,11 @@ async function generateContextualAssetsForRoute({
       ),
     );
     const prompt = promptFor(site, route, placement);
+    const reviewPolicy = reviewPolicyFor({
+      businessKind: site.businessKind || site.industry || "local business",
+      placement: placement.id,
+      familyId: routeContract.familyId,
+    });
     // Bump this contract whenever image acceptance policy changes so a stale
     // unreviewed (or rejected) bitmap cannot be reused by its old prompt hash.
     const promptHash = sha256(
@@ -1274,7 +1208,14 @@ async function generateContextualAssetsForRoute({
         requested = await requestImage({
           client: falClient,
           model,
-          prompt: attempt === 0 ? prompt : retryPromptFor(prompt),
+          prompt:
+            attempt === 0
+              ? prompt
+              : retryPromptFor(
+                  prompt,
+                  finalReview?.reasonCodes || [],
+                  reviewPolicy,
+                ),
           aspectRatio: placement.aspectRatio,
           timeoutMs,
         });
@@ -1328,6 +1269,7 @@ async function generateContextualAssetsForRoute({
                 .filter(Boolean)
                 .slice(0, 4),
               familyId: routeContract.familyId,
+              scene: prompt,
               attempt: attempt + 1,
             });
           } catch {
