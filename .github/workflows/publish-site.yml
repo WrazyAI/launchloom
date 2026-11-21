@@ -95,9 +95,9 @@ jobs:
           PRODUCTION="https://$PROJECT.pages.dev"
           npm ci
           PUBLIC_SITE_URL="$PRODUCTION" PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
-          node "$GITHUB_WORKSPACE/scripts/verify-contrast.mjs" --site "$RUNNER_TEMP/client-build" --report "$RUNNER_TEMP/production-contrast.json"
+          node "$GITHUB_WORKSPACE/scripts/verify-contrast.mjs" --site "$RUNNER_TEMP/client-build" --report "$RUNNER_TEMP/production-contrast.json" --screenshots "$RUNNER_TEMP/production-route-screenshots/contrast"
           node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode production --config src/site.config.json --dist dist --origin "$PRODUCTION"
-          node "$GITHUB_WORKSPACE/scripts/verify-site-routes.mjs" --mode production --config src/site.config.json --dist dist --origin "$PRODUCTION" --site "$RUNNER_TEMP/client" --commit "$APPROVED_SHA" --report "$RUNNER_TEMP/production-route-handoff.json" --screenshots "$RUNNER_TEMP/production-route-screenshots" --write-manifest true
+          node "$GITHUB_WORKSPACE/scripts/verify-site-routes.mjs" --mode production --config src/site.config.json --dist dist --origin "$PRODUCTION" --site "$RUNNER_TEMP/client" --commit "$APPROVED_SHA" --report "$RUNNER_TEMP/production-route-handoff.json" --screenshots "$RUNNER_TEMP/production-route-screenshots" --contrast-report "$RUNNER_TEMP/production-contrast.json" --write-manifest true
           if [ "$DEVELOPER_OVERRIDE" = "true" ]; then
             MARKER="<!-- launchloom-human-gate-override:$OVERRIDE_SESSION_ID -->"
             if ! gh api "repos/$CLIENT_REPO/issues/$CLIENT_PR/comments?per_page=100" --paginate --jq '.[].body' | grep -Fq "$MARKER"; then
@@ -108,12 +108,13 @@ jobs:
           test "$CURRENT_MAIN" = "$APPROVED_SHA" || { echo "Approved production commit was superseded"; exit 1; }
           PUBLICATION_ACTION=authorize-upload node "$GITHUB_WORKSPACE/scripts/publication-client.mjs"
           PUBLICATION_PROJECT="$PROJECT" node "$GITHUB_WORKSPACE/scripts/publication-deployment.mjs"
+          export PATH="$PATH:$GITHUB_WORKSPACE/node_modules/.bin"
           if [ ! -s "$PUBLICATION_DEPLOYMENT_FILE" ]; then
             npx wrangler pages deploy dist --project-name "$PROJECT" --branch main --commit-hash "$APPROVED_SHA" --commit-message "LaunchLoom publication $PUBLICATION_ID"
             PUBLICATION_PROJECT="$PROJECT" PUBLICATION_REQUIRE_DEPLOYMENT=true node "$GITHUB_WORKSPACE/scripts/publication-deployment.mjs"
           fi
           PUBLICATION_ACTION=uploaded node "$GITHUB_WORKSPACE/scripts/publication-client.mjs"
-          node "$GITHUB_WORKSPACE/scripts/verify-site-routes.mjs" --mode production --config src/site.config.json --dist dist --origin "$PRODUCTION" --destination "$PRODUCTION" --site "$RUNNER_TEMP/client" --commit "$APPROVED_SHA" --report "$RUNNER_TEMP/destination-route-handoff.json" --screenshots "$RUNNER_TEMP/destination-route-screenshots"
+          node "$GITHUB_WORKSPACE/scripts/verify-site-routes.mjs" --mode production --config src/site.config.json --dist dist --origin "$PRODUCTION" --destination "$PRODUCTION" --site "$RUNNER_TEMP/client" --commit "$APPROVED_SHA" --report "$RUNNER_TEMP/destination-route-handoff.json" --screenshots "$RUNNER_TEMP/destination-route-screenshots" --contrast-report "$RUNNER_TEMP/production-contrast.json"
           TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" --stage client --sha "$APPROVED_SHA" --repo "$CLIENT_REPO" --site "$PROJECT" --email "$CLIENT_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$PRODUCTION" --token-only true)
           echo "::add-mask::$TOKEN"
           NAME="$(node -e 'const x=require("./src/site.config.json"); console.log(x.business.name)')"

@@ -216,6 +216,7 @@ jobs:
             node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$CLIENT_DIR" --manifest "$RUNNER_TEMP/revision-scope.json"
           fi
           BRANCH_SAFE=$(printf '%s' "$REVISION_BRANCH" | tr '/' '-')
+          export PATH="$PATH:$GITHUB_WORKSPACE/node_modules/.bin"
           npx wrangler pages deploy dist --project-name "$PROJECT" --branch "$BRANCH_SAFE" --commit-hash "$(git rev-parse HEAD)" --commit-message "LaunchLoom revision"
           echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "project=$PROJECT" >> "$GITHUB_OUTPUT"

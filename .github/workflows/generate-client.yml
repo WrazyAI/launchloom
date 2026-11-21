@@ -1310,6 +1310,7 @@ jobs:
         if: always() && (success() || steps.pack_fallback.outputs.active == 'true')
         run: |
           cd "${{ steps.branch.outputs.dir }}"
+          export PATH="$PATH:$GITHUB_WORKSPACE/node_modules/.bin"
           LOCK_SHA=$(sha256sum package-lock.json | cut -d' ' -f1)
           if [ ! -d node_modules ] || [ "$(cat node_modules/.ll-lock-sha 2>/dev/null || true)" != "$LOCK_SHA" ]; then
             npm ci

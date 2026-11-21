@@ -3,6 +3,42 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 export const contentDigest = (bytes) =>
   createHash("sha256").update(bytes).digest("hex");
+const RELEASE_MANIFEST_EXCLUDED_FILES = new Set([
+  ".launchloom-release.json",
+  "_headers",
+  "_redirects",
+  "_worker.js",
+  "_routes.json",
+]);
+async function collectDistFileDigests(dist) {
+  const root = path.resolve(dist);
+  const files = {};
+  async function visit(relative = "") {
+    for (const entry of await fs.readdir(path.join(root, relative), {
+      withFileTypes: true,
+    })) {
+      const name = path.join(relative, entry.name);
+      if (entry.isDirectory()) await visit(name);
+      else if (entry.isFile() && !RELEASE_MANIFEST_EXCLUDED_FILES.has(name)) {
+        files["/" + name.split(path.sep).join("/")] = contentDigest(
+          await fs.readFile(path.join(root, name)),
+        );
+      }
+    }
+  }
+  await visit();
+  return files;
+}
+export async function distArtifactDigest(dist) {
+  const files = await collectDistFileDigests(dist);
+  const hash = createHash("sha256");
+  for (const [route, digest] of Object.entries(files).sort(([a], [b]) =>
+    a.localeCompare(b),
+  )) {
+    hash.update(`${route}\0${digest}\n`);
+  }
+  return hash.digest("hex");
+}
 export function approvedDestination(value) {
   const url = new URL(value);
   if (
@@ -30,30 +66,7 @@ export async function createReleaseManifest({
     !/^[a-f0-9]{64}$/u.test(configDigest)
   )
     throw new Error("Release identity requires full commit and config digest.");
-  const files = {};
-  async function visit(relative = "") {
-    for (const entry of await fs.readdir(path.join(dist, relative), {
-      withFileTypes: true,
-    })) {
-      const name = path.join(relative, entry.name);
-      if (entry.isDirectory()) await visit(name);
-      else if (
-        entry.isFile() &&
-        ![
-          ".launchloom-release.json",
-          "_headers",
-          "_redirects",
-          "_worker.js",
-          "_routes.json",
-        ].includes(name)
-      ) {
-        files["/" + name.split(path.sep).join("/")] = contentDigest(
-          await fs.readFile(path.join(dist, name)),
-        );
-      }
-    }
-  }
-  await visit();
+  const files = await collectDistFileDigests(dist);
   if (!files["/404.html"])
     throw new Error(
       "Pages release requires a top-level 404.html artifact to prevent SPA soft 404s.",
