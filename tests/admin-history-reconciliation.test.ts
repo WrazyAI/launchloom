@@ -528,4 +528,83 @@ describe("fixture-only independent history reconciliation", () => {
     expect(report.upsertCount).toBe(0);
     expect(report.warnings.length).toBeGreaterThan(0);
   });
+  it("fetches jobs concurrently within bounds while preserving deterministic attempt order", async () => {
+    const runs = [run(101), run(102), run(103), run(104), run(105), run(106)];
+    const f = fixture(runs);
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const posted: Array<{ attempts: Array<{ observation: { runId: string } }> }> = [];
+    const baseFetch = f.fetchImpl;
+    const report = await history.reconcileGenerationHistory({
+      fetchImpl: async (url, init) => {
+        if (String(url).includes("/jobs?")) {
+          inFlight++;
+          maxInFlight = Math.max(maxInFlight, inFlight);
+          await new Promise((resolve) => setTimeout(resolve, 15));
+          inFlight--;
+        }
+        return baseFetch(url, init);
+      },
+      postImpl: async (batch) => {
+        posted.push(batch);
+      },
+      mode: "incremental",
+      dryRun: false,
+      concurrency: 3,
+    });
+    expect(report.complete).toBe(true);
+    expect(report.errors).toEqual([]);
+    expect(maxInFlight).toBeGreaterThan(1);
+    expect(maxInFlight).toBeLessThanOrEqual(3);
+    const recordedIds = posted
+      .flatMap((batch) => batch.attempts)
+      .map((entry) => entry.observation.runId);
+    expect(recordedIds).toEqual(["101", "102", "103", "104", "105", "106"]);
+  });
+  it("applies lookbackHours as a created>= filter in incremental mode without breaking backfill", async () => {
+    const seenUrls: string[] = [];
+    const fixedNow = Date.parse("2026-11-21T12:00:00Z");
+    const f = fixture([run(501)]);
+    const baseFetch = f.fetchImpl;
+    const report = await history.reconcileGenerationHistory({
+      fetchImpl: async (url, init) => {
+        const text = String(url);
+        seenUrls.push(text);
+        const normalized = text.replace(/&created=[^&]+/u, "");
+        return baseFetch(normalized, init);
+      },
+      mode: "incremental",
+      lookbackHours: 72,
+      dryRun: true,
+      now: () => fixedNow,
+    });
+    expect(report.complete).toBe(true);
+    expect(report.errors).toEqual([]);
+    const runUrls = seenUrls.filter((url) => url.includes("/runs?per_page=100"));
+    expect(runUrls.length).toBeGreaterThan(0);
+    for (const url of runUrls) {
+      expect(url).toContain(
+        `created=${encodeURIComponent(">=2026-11-18T12:00:00.000Z")}`,
+      );
+    }
+  });
+  it("reports fetch AbortError/TimeoutError as deadline exceeded instead of opaque failure", async () => {
+    const f = fixture([run(601)]);
+    const baseFetch = f.fetchImpl;
+    const report = await history.reconcileGenerationHistory({
+      fetchImpl: async (url, init) => {
+        if (String(url).includes("/jobs?")) {
+          const err = new Error("The operation timed out");
+          err.name = "TimeoutError";
+          throw err;
+        }
+        return baseFetch(url, init);
+      },
+      mode: "incremental",
+      dryRun: true,
+      sleepImpl: async () => {},
+    });
+    expect(report.complete).toBe(false);
+    expect(report.errors).toEqual(["deadline exceeded"]);
+  });
 });
