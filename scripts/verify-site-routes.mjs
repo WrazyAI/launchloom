@@ -3,7 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
 import { inspectSeoRelease } from "./seo-release-gate.mjs";
-import { auditBuiltContrast } from "./contrast-sweep.mjs";
+import { auditBuiltContrast, builtRoutes } from "./contrast-sweep.mjs";
 import {
   serveBuiltSite,
   verifyApprovedRoutes,
@@ -16,8 +16,48 @@ import {
 import {
   createReleaseManifest,
   contentDigest,
+  distArtifactDigest,
   verifyDestinationArtifact,
 } from "./destination-route-verification.mjs";
+
+export async function loadVerifiedContrastReport({ reportPath, dist }) {
+  const parsed = JSON.parse(await fs.readFile(path.resolve(reportPath), "utf8"));
+  if (
+    !parsed ||
+    typeof parsed !== "object" ||
+    parsed.version !== 1 ||
+    parsed.pass !== true ||
+    !parsed.after ||
+    parsed.after.version !== 1 ||
+    parsed.after.pass !== true
+  )
+    throw new Error(
+      "Contrast report is not a valid passing verification artifact.",
+    );
+  const expectedDigest = await distArtifactDigest(dist);
+  if (
+    typeof parsed.distDigest !== "string" ||
+    parsed.distDigest !== expectedDigest
+  )
+    throw new Error(
+      "Contrast report digest does not match the current built dist directory.",
+    );
+  const expectedRoutes = await builtRoutes(dist);
+  const recordedRoutes = Array.isArray(parsed.after.routes)
+    ? [...parsed.after.routes].sort()
+    : [];
+  if (
+    !expectedRoutes.length ||
+    JSON.stringify(recordedRoutes) !== JSON.stringify(expectedRoutes)
+  )
+    throw new Error(
+      "Contrast report route coverage does not match the built dist routes.",
+    );
+  if (!Array.isArray(parsed.after.pages) || !parsed.after.pages.length)
+    throw new Error("Contrast report contains no verified page evidence.");
+  return parsed.after;
+}
+
 export async function verifySiteRoutes({
   config,
   dist,
@@ -29,6 +69,7 @@ export async function verifySiteRoutes({
   commit,
   destination,
   writeManifest = false,
+  contrastReportPath,
 }) {
   dist = path.resolve(dist);
   const configDigest = contentDigest(JSON.stringify(config));
@@ -73,10 +114,15 @@ export async function verifySiteRoutes({
       formMode: diagnosticFormMode(config, mode),
       screenshotsDir,
     });
-    contrast = await auditBuiltContrast({
-      dist,
-      screenshotsDir: screenshotsDir && path.join(screenshotsDir, "contrast"),
-    });
+    contrast = contrastReportPath
+      ? await loadVerifiedContrastReport({
+          reportPath: contrastReportPath,
+          dist,
+        })
+      : await auditBuiltContrast({
+          dist,
+          screenshotsDir: screenshotsDir && path.join(screenshotsDir, "contrast"),
+        });
   } finally {
     await server?.close();
   }
@@ -164,6 +210,7 @@ if (
     commit: args.commit,
     destination: args.destination,
     writeManifest: args["write-manifest"] === "true",
+    contrastReportPath: args["contrast-report"],
   });
   console.log(
     JSON.stringify({

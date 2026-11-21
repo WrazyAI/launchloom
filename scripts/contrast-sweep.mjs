@@ -22,6 +22,7 @@ import {
   darkenToContrast,
   parseFlatContrastFindings,
 } from "./flat-contrast-repair.mjs";
+import { distArtifactDigest } from "./destination-route-verification.mjs";
 
 export const CONTRAST_VIEWPORTS = [
   { name: "desktop", width: 1536, height: 864, min: 1440, max: null },
@@ -669,7 +670,15 @@ export async function enforceBuiltContrast({
     }
   } else if (screenshotsDir && repair)
     after = await auditBuiltContrast({ dist, browser, routes, screenshotsDir });
-  const report = { version: 1, pass: after.pass, before, repairs, after };
+  const distDigest = await distArtifactDigest(dist);
+  const report = {
+    version: 1,
+    pass: after.pass,
+    distDigest,
+    before,
+    repairs,
+    after,
+  };
   if (reportPath) {
     await fs.mkdir(path.dirname(reportPath), { recursive: true });
     await fs.writeFile(reportPath, JSON.stringify(report, null, 2) + "\n");

@@ -238,6 +238,7 @@ jobs:
           if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash" >&2; exit 1; fi
           git add .launchloom/creative-repair/final-attempt/review-screenshots
           if ! git diff --cached --quiet; then git commit -m "Record repaired preview verification"; git push origin HEAD:review/initial; fi
+          export PATH="$PATH:$GITHUB_WORKSPACE/node_modules/.bin"
           npx wrangler pages deploy dist --project-name "$SITE_ID" --branch review-initial --commit-hash "$(git rev-parse HEAD)" --commit-message "One-time repaired developer preview"
           PREVIEW="https://review-initial.$SITE_ID.pages.dev"
           node "$GITHUB_WORKSPACE/scripts/wait-for-pages-preview.mjs" --url "$PREVIEW"
