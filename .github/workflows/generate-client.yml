@@ -456,7 +456,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Install rendered acceptance browser
-        run: npx playwright install --with-deps chromium || npx playwright install chromium
+        uses: ./.github/actions/install-playwright-chromium
       - name: Verify required secrets
         run: |
           for key in GITHUB_ORG_TOKEN OPENCODE_GO_API_KEY REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_DEVELOPER_EMAIL; do test -n "${!key}" || { echo "Missing: $key"; exit 1; }; done
@@ -1068,7 +1068,11 @@ jobs:
         id: creative_render
         run: |
           cd "${{ steps.branch.outputs.dir }}"
-          npm ci
+          LOCK_SHA=$(sha256sum package-lock.json | cut -d' ' -f1)
+          if [ ! -d node_modules ] || [ "$(cat node_modules/.ll-lock-sha 2>/dev/null || true)" != "$LOCK_SHA" ]; then
+            npm ci
+            printf '%s\n' "$LOCK_SHA" > node_modules/.ll-lock-sha
+          fi
           SESSION_ARGS=()
           # Only the session this run produced is authoritative. A committed
           # .launchloom/reasoning-preflight.json survives across runs in the
@@ -1306,7 +1310,11 @@ jobs:
         if: always() && (success() || steps.pack_fallback.outputs.active == 'true')
         run: |
           cd "${{ steps.branch.outputs.dir }}"
-          npm ci
+          LOCK_SHA=$(sha256sum package-lock.json | cut -d' ' -f1)
+          if [ ! -d node_modules ] || [ "$(cat node_modules/.ll-lock-sha 2>/dev/null || true)" != "$LOCK_SHA" ]; then
+            npm ci
+            printf '%s\n' "$LOCK_SHA" > node_modules/.ll-lock-sha
+          fi
           # A content-gate failure must not hide the design. Safety gates
           # (facts, licensing, forms, contrast) still fail the run; SEO substance
           # falls back to a noindex diagnostic preview for developer review.

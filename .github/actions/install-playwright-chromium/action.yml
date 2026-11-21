@@ -1,0 +1,25 @@
+name: Install cached Playwright Chromium
+description: Restores ~/.cache/ms-playwright keyed on runner OS, architecture, and Playwright version, skipping browser download on cache hit.
+runs:
+  using: composite
+  steps:
+    - name: Resolve Playwright version
+      id: pw
+      shell: bash
+      run: |
+        VERSION=$(node -p "require('./node_modules/playwright/package.json').version")
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+    - name: Cache Playwright browsers
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.pw.outputs.version }}
+    - name: Install Chromium system dependencies (cache hit)
+      if: steps.cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: npx playwright install-deps chromium || true
+    - name: Install Chromium browser and dependencies (cache miss)
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: npx playwright install --with-deps chromium || npx playwright install chromium

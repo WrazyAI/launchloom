@@ -43,7 +43,9 @@ jobs:
             !/data/reference-library/dossiers/
             !/data/reference-library/*.png
       - uses: actions/setup-node@v5
-        with: { node-version: 22 }
+        with:
+          node-version: 22
+          cache: npm
       - name: Claim publication before building
         id: claim
         env:
@@ -54,7 +56,7 @@ jobs:
         run: npm ci
       - name: Install contrast verifier browser
         if: steps.claim.outputs.run == 'true'
-        run: npx playwright install --with-deps chromium || npx playwright install chromium
+        uses: ./.github/actions/install-playwright-chromium
       - name: Build and direct-upload approved client site
         if: steps.claim.outputs.run == 'true'
         id: publish

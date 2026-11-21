@@ -303,7 +303,7 @@ describe("new-mode workflow authorization", () => {
     const claimStepStart = generate.lastIndexOf("      - name:", claim);
     expect(claimStepStart).toBeGreaterThan(0);
     expect(claim).toBeLessThan(generate.indexOf("npm ci"));
-    expect(claim).toBeLessThan(generate.indexOf("playwright install"));
+    expect(claim).toBeLessThan(generate.indexOf("install-playwright-chromium"));
     expect(claim).toBeLessThan(generate.indexOf("Record generation started"));
     expect(claim).toBeLessThan(generate.indexOf("coverage-areas.mjs"));
     expect(claim).toBeLessThan(generate.indexOf("Create private repository"));
