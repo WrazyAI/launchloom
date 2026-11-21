@@ -283,7 +283,7 @@ describe("experience-pack compiler", () => {
       'HISTORY_DIR="$RUNNER_TEMP/launchloom-history-main"',
     );
     expect(reservationBlock).toContain(
-      'git worktree add --detach "$HISTORY_DIR" origin/main',
+      'git worktree add --no-checkout --detach "$HISTORY_DIR" origin/main',
     );
     expect(reservationBlock).toContain('--history "$HISTORY_FILE"');
     expect(reservationBlock).toContain(

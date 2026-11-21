@@ -45,6 +45,12 @@ jobs:
       REVIEWED_PAGE: ${{ github.event.client_payload.reviewedPage }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/data/reference-library/dossiers/
+            !/data/reference-library/*.png
       - name: Verify OpenCode Go credential
         run: |
           test -n "$OPENCODE_GO_API_KEY" || { echo "Missing: OPENCODE_GO_API_KEY" >&2; exit 1; }

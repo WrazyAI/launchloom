@@ -1,6 +1,5 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import sharp from "sharp";
 import { decimal } from './exact-money.mjs';
 import { appendGenerationEvent, requestOidcToken, apiOrigin } from './operations-client.mjs';
 import {
@@ -140,6 +139,7 @@ export class HeroUploadError extends Error {
 }
 
 async function encodeWithSharp(input, { width, quality, effort }) {
+  const { default: sharp } = await import("sharp");
   return sharp(input)
     .rotate()
     .resize({ width, withoutEnlargement: true })

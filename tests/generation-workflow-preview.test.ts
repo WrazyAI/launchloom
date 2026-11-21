@@ -61,7 +61,12 @@ it("selects branch-preview canaries against latest main history without recordin
   );
   expect(reserveBlock).toContain('HISTORY_DIR="$RUNNER_TEMP/launchloom-history-main"');
   expect(reserveBlock).toContain('git fetch origin main');
-  expect(reserveBlock).toContain('git worktree add --detach "$HISTORY_DIR" origin/main');
+  expect(reserveBlock).toContain(
+    'git worktree add --no-checkout --detach "$HISTORY_DIR" origin/main',
+  );
+  expect(reserveBlock).toContain(
+    'git -C "$HISTORY_DIR" sparse-checkout set --no-cone /data/recent-launch-signatures.json',
+  );
   expect(reserveBlock).toContain('--history "$HISTORY_FILE"');
   expect(reserveBlock.indexOf('if [ "$LAUNCHLOOM_READ_ONLY_HISTORY" = "true" ]; then')).toBeGreaterThanOrEqual(0);
   expect(reserveBlock.indexOf('if [ "$LAUNCHLOOM_READ_ONLY_HISTORY" = "true" ]; then')).toBeLessThan(
