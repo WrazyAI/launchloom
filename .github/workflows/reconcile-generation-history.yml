@@ -46,6 +46,11 @@ jobs:
         with:
           ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/data/reference-library/dossiers/
+            !/data/reference-library/*.png
       - uses: actions/setup-node@v5
         with: { node-version: 22 }
       - name: Bounded metadata reconciliation with trusted default-branch code
