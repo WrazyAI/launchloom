@@ -3,10 +3,21 @@ name: Deploy LaunchLoom platform
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "README.md"
+      - "AGENTS.md"
+      - "docs/**"
+      - ".github/agents/**"
+      - "tests/**"
+      - "data/reference-library/**"
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: deploy-platform-main
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -91,35 +102,49 @@ jobs:
           esac
       - name: Configure Worker secrets
         run: |
-          for key in GITHUB_ORG_TOKEN REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET OPENCODE_GO_API_KEY GOOGLE_PLACES_API_KEY RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_FEEDBACK_EMAIL REVISION_COORDINATOR_SECRET ONBOARDING_INVITE_SIGNING_SECRET; do
-            printf '%s' "${!key}" | npx wrangler secret put "$key"
-          done
-          # Neon mode secrets are written only when the deployment is explicitly
-          # switched to neon. Access-mode deployments keep working without any
-          # Neon Auth project, membership database or cookie secret.
-          if [ "${ADMIN_AUTH_MODE:-access}" = "neon" ]; then
-            printf '%s' "$NEON_AUTH_COOKIE_SECRET" | npx wrangler secret put NEON_AUTH_COOKIE_SECRET
-            printf '%s' "$ADMIN_DATABASE_URL" | npx wrangler secret put ADMIN_DATABASE_URL
-          fi
-          # Optional generation tracking. Keep it out of the required list so a
-          # missing repository secret cannot break platform deployment; the
-          # tracking API reports itself unconfigured until this is set.
-          if [ -n "${GENERATION_TRACKING_SECRET:-}" ]; then
-            printf '%s' "$GENERATION_TRACKING_SECRET" | npx wrangler secret put GENERATION_TRACKING_SECRET
-          fi
-          # Optional: enables review-time image generation. Reviewers can still
-          # upload their own replacement images without it.
-          if [ -n "${FAL_KEY:-}" ]; then
-            printf '%s' "$FAL_KEY" | npx wrangler secret put FAL_KEY
-          fi
-          # Optional: lets the authenticated preview proxy fetch preview hosts
-          # still covered by the legacy Cloudflare Access application. Without
-          # it, protected preview links fail closed instead of exposing the
-          # Access login page.
-          if [ -n "${CLOUDFLARE_ACCESS_CLIENT_ID:-}" ] && [ -n "${CLOUDFLARE_ACCESS_CLIENT_SECRET:-}" ]; then
-            printf '%s' "$CLOUDFLARE_ACCESS_CLIENT_ID" | npx wrangler secret put CLOUDFLARE_ACCESS_CLIENT_ID
-            printf '%s' "$CLOUDFLARE_ACCESS_CLIENT_SECRET" | npx wrangler secret put CLOUDFLARE_ACCESS_CLIENT_SECRET
-          fi
+          node -e '
+            const secrets = {};
+            const required = [
+              "GITHUB_ORG_TOKEN",
+              "REVIEW_SIGNING_SECRET",
+              "LEAD_SIGNING_SECRET",
+              "OPENCODE_GO_API_KEY",
+              "GOOGLE_PLACES_API_KEY",
+              "RESEND_API_KEY",
+              "LAUNCHLOOM_FROM_EMAIL",
+              "LAUNCHLOOM_FEEDBACK_EMAIL",
+              "REVISION_COORDINATOR_SECRET",
+              "ONBOARDING_INVITE_SIGNING_SECRET",
+            ];
+            for (const key of required) secrets[key] = process.env[key];
+            // Neon mode secrets are written only when the deployment is explicitly
+            // switched to neon. Access-mode deployments keep working without any
+            // Neon Auth project, membership database or cookie secret.
+            if ((process.env.ADMIN_AUTH_MODE || "access") === "neon") {
+              secrets.NEON_AUTH_COOKIE_SECRET = process.env.NEON_AUTH_COOKIE_SECRET;
+              secrets.ADMIN_DATABASE_URL = process.env.ADMIN_DATABASE_URL;
+            }
+            // Optional generation tracking. Keep it out of the required list so a
+            // missing repository secret cannot break platform deployment; the
+            // tracking API reports itself unconfigured until this is set.
+            if (process.env.GENERATION_TRACKING_SECRET) {
+              secrets.GENERATION_TRACKING_SECRET = process.env.GENERATION_TRACKING_SECRET;
+            }
+            // Optional: enables review-time image generation. Reviewers can still
+            // upload their own replacement images without it.
+            if (process.env.FAL_KEY) {
+              secrets.FAL_KEY = process.env.FAL_KEY;
+            }
+            // Optional: lets the authenticated preview proxy fetch preview hosts
+            // still covered by the legacy Cloudflare Access application. Without
+            // it, protected preview links fail closed instead of exposing the
+            // Access login page.
+            if (process.env.CLOUDFLARE_ACCESS_CLIENT_ID && process.env.CLOUDFLARE_ACCESS_CLIENT_SECRET) {
+              secrets.CLOUDFLARE_ACCESS_CLIENT_ID = process.env.CLOUDFLARE_ACCESS_CLIENT_ID;
+              secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET = process.env.CLOUDFLARE_ACCESS_CLIENT_SECRET;
+            }
+            process.stdout.write(JSON.stringify(secrets));
+          ' | npx wrangler secret bulk
       - name: Build platform
         run: npm run build
       - name: Build admin workspace assets
