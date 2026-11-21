@@ -31,9 +31,11 @@ export type ReconcileBatch = {
 export function reconcileGenerationHistory(options?: {
   mode?: "incremental" | "backfill";
   from?: number | string;
+  lookbackHours?: number | null;
   dryRun?: boolean;
   pageBudget?: number;
   deadlineMs?: number;
+  concurrency?: number;
   fetchImpl?: (url: string, init?: RequestInit) => Promise<Response>;
   postImpl?: (batch: ReconcileBatch) => Promise<unknown>;
   checkpoint?: string | ReconcileCheckpoint | null;
