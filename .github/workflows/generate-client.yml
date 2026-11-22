@@ -715,17 +715,34 @@ jobs:
         if: env.GENERATION_RENDERER == 'creative'
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage reference_analysis --status started --detail "Analyzing reference evidence and freezing the creative session."
+      - name: Restore reference DNA analysis cache
+        if: env.GENERATION_RENDERER == 'creative'
+        id: reference_dna_cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/launchloom-reference-dna
+          key: ref-dna-v1-${{ hashFiles('scripts/analyze-reference-dna.mjs', 'data/inspiration-registry.json') }}-${{ github.run_id }}
+          restore-keys: |
+            ref-dna-v1-${{ hashFiles('scripts/analyze-reference-dna.mjs', 'data/inspiration-registry.json') }}-
+            ref-dna-v1-
       - name: Analyze reserved inspiration and freeze creative session
         id: reference_analysis
         if: env.GENERATION_RENDERER == 'creative'
         env:
           LAUNCHLOOM_INTAKE_ID: ${{ steps.intake.outputs.intake_key }}
         run: |
+          CACHE_DIR="$HOME/.cache/launchloom-reference-dna"
+          export LL_REFERENCE_DNA_CACHE_DIR="$CACHE_DIR"
+          CACHE_UPDATED=false
           if [ "$REUSE_AUTHORED_CANDIDATES" != "true" ]; then
-            node scripts/analyze-reference-dna.mjs \
+            ANALYZE_JSON=$(node scripts/analyze-reference-dna.mjs \
               --inspiration /tmp/inspiration-pack.json \
               --out /tmp/inspiration-pack.json \
-              --usage-out /tmp/reference-dna-usage.json
+              --usage-out /tmp/reference-dna-usage.json)
+            echo "$ANALYZE_JSON"
+            if printf '%s' "$ANALYZE_JSON" | jq -e '(.cacheWrites // 0) > 0' >/dev/null 2>&1; then
+              CACHE_UPDATED=true
+            fi
             rm -f /tmp/reasoning-preflight.json
             if [ "$CREATIVE_EXPERIENCE_MODEL" = "openai/gpt-6-luna" ]; then
               node scripts/run-reasoning-preflight.mjs \
@@ -737,6 +754,7 @@ jobs:
                 --session-key "$LAUNCHLOOM_INTAKE_ID"
             fi
           fi
+          echo "cache_updated=$CACHE_UPDATED" >> "$GITHUB_OUTPUT"
           jq -e '.referenceDnaAnalyzed == true and .referenceDossiersRequired == true and .referenceLibrary.policy == "permission-cleared-only" and .referenceLibrary.selectedDossierCount == 3 and (.routes | length == 3) and all(.routes[]; .referenceDna.analyzedFromEvidence == true and (.referenceDna.measurements != null) and (.referenceDossier.path | type == "string") and (.referenceDossier.digest | type == "string") and (.referenceDossier.designPrompt | type == "string" and length > 900) and (.referenceDna.evidence.desktopScreenshot.available == true) and (.referenceDna.evidence.mobileScreenshot.available == true) and (.referenceDna.evidence.desktopScreenshot.fullPage == true) and (.referenceDna.evidence.mobileScreenshot.fullPage == true) and (.referenceDna.rights as $rights | ["owned", "licensed", "permission-cleared"] | index($rights) != null))' /tmp/inspiration-pack.json >/dev/null || { echo "Reference DNA or permission-cleared dossier evidence is incomplete"; exit 1; }
           if [ -f /tmp/reasoning-preflight.json ]; then
             jq -e '(.creativeModel == "openai/gpt-6-luna") and (.reasoningEffort == "xhigh" or .reasoningEffort == "max") and (.recommendedEffort == "xhigh" or .recommendedEffort == "max") and (.sessionId | startswith("launchloom:creative:"))' /tmp/reasoning-preflight.json >/dev/null || { echo "Reasoning preflight did not produce a valid frozen session"; exit 1; }
@@ -755,6 +773,13 @@ jobs:
             echo "reasoning_recommended=static" >> "$GITHUB_OUTPUT"
             echo "reasoning_fallback=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Save reference DNA analysis cache
+        if: env.GENERATION_RENDERER == 'creative' && steps.reference_analysis.outputs.cache_updated == 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/launchloom-reference-dna
+          key: ref-dna-v1-${{ hashFiles('scripts/analyze-reference-dna.mjs', 'data/inspiration-registry.json') }}-${{ github.run_id }}
       - name: Record reference analysis stage
         if: env.GENERATION_RENDERER == 'creative'
         continue-on-error: true
