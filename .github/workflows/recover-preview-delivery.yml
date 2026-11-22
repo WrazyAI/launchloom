@@ -1,7 +1,7 @@
 name: Recover pending developer preview emails
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 concurrency:
   group: recover-preview-delivery

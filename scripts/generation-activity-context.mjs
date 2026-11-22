@@ -57,6 +57,10 @@ export function createActivityTransport({
   // Reuse the short-lived OIDC token across sends. Acquiring a fresh token for
   // every batch can exceed the delivery deadline on a cold runner.
   let cached = null;
+  // Once the operations API permanently rejects our OIDC identity (401/403),
+  // stop issuing redundant OIDC/HTTP requests and log warnings for the rest of
+  // the process lifetime.
+  let permanentlyRejected = null;
   async function token() {
     if (cached && cached.expiresAt > Date.now() + 60_000) return cached.value;
     const value = await requestOidcToken({ audience, env, fetchImpl });
@@ -75,6 +79,13 @@ export function createActivityTransport({
   }
   return {
     async send(events, { signal } = {}) {
+      if (permanentlyRejected) {
+        return {
+          status: permanentlyRejected.status,
+          suppressed: true,
+          expired: false,
+        };
+      }
       const bearer = await token();
       const response = await fetchImpl(
         `${api}/api/internal/generation-activity`,
@@ -98,12 +109,19 @@ export function createActivityTransport({
       );
       const body = await response.json().catch(() => null);
       if (!response.ok) {
+        const code = body?.error?.code || "unknown";
         // Controlled status/code only. Never log the token, body or evidence.
         console.warn(
-          `generation_activity_delivery=rejected status=${response.status} code=${
-            body?.error?.code || "unknown"
-          }`,
+          `generation_activity_delivery=rejected status=${response.status} code=${code}`,
         );
+        if (response.status === 401 || response.status === 403) {
+          permanentlyRejected = { status: response.status, code };
+          return {
+            status: response.status,
+            suppressed: true,
+            expired: body?.expired === true,
+          };
+        }
       }
       return {
         status: response.status,

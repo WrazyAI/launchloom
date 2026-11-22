@@ -146,11 +146,21 @@ export async function waitForPagesPreview({
         throw error;
       lastFailure = error instanceof Error ? error.message : String(error);
     }
-    const remaining = Math.max(0, Math.ceil((deadline - now()) / 1_000));
+    const remainingMs = Math.max(0, deadline - now());
+    const remaining = Math.ceil(remainingMs / 1_000);
     onAttempt(
       `Preview is not ready yet (attempt ${attempt}: ${lastFailure}). Retrying for up to ${remaining}s.`,
     );
-    if (now() < deadline) await wait(intervalSeconds * 1_000);
+    if (remainingMs > 0) {
+      const configuredMs = intervalSeconds * 1_000;
+      const rampMs =
+        attempt === 1
+          ? Math.min(configuredMs, 2_000)
+          : attempt === 2
+            ? Math.min(configuredMs, 4_000)
+            : configuredMs;
+      await wait(Math.min(remainingMs, rampMs));
+    }
   }
   throw new Error(
     `Cloudflare Pages preview did not become securely reachable within ${timeoutSeconds}s (${lastFailure}). No review email was sent.`,
