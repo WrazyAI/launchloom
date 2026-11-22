@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
@@ -327,7 +328,62 @@ const ANALYZER_GO_MAX_ATTEMPTS = 4;
 const ANALYZER_GO_RETRY_DELAY_MS = 4_000;
 const ANALYZER_TIMEOUT_MS = 600_000;
 
-async function analyzeRoute(route, { fetchImpl = fetch, sleep } = {}) {
+const REFERENCE_DNA_CACHE_VERSION = 1;
+
+async function screenshotDigest(screenshot, filePath) {
+  if (typeof screenshot?.sha256 === "string" && screenshot.sha256.trim())
+    return screenshot.sha256.trim();
+  if (!filePath) return "";
+  const bytes = await fs.readFile(filePath);
+  return crypto.createHash("sha256").update(bytes).digest("hex");
+}
+
+function computeReferenceDnaCacheKey(payload) {
+  return crypto
+    .createHash("sha256")
+    .update(JSON.stringify(payload))
+    .digest("hex");
+}
+
+async function readCachedReferenceAnalysis(cacheDir, cacheKey) {
+  if (!cacheDir) return null;
+  const cachePath = path.join(cacheDir, `${cacheKey}.json`);
+  try {
+    const raw = await fs.readFile(cachePath, "utf8");
+    const parsed = JSON.parse(raw);
+    if (
+      parsed?.version !== REFERENCE_DNA_CACHE_VERSION ||
+      parsed?.cacheKey !== cacheKey ||
+      !parsed?.analysis
+    )
+      return null;
+    return assertAnalyzerAnalysis(parsed.analysis);
+  } catch {
+    return null;
+  }
+}
+
+async function writeCachedReferenceAnalysis(cacheDir, cacheKey, analysis) {
+  if (!cacheDir) return false;
+  try {
+    await fs.mkdir(cacheDir, { recursive: true });
+    const cachePath = path.join(cacheDir, `${cacheKey}.json`);
+    const tmpPath = `${cachePath}.tmp.${process.pid}.${crypto.randomBytes(4).toString("hex")}`;
+    await fs.writeFile(
+      tmpPath,
+      `${JSON.stringify({ version: REFERENCE_DNA_CACHE_VERSION, cacheKey, analysis }, null, 2)}\n`,
+    );
+    await fs.rename(tmpPath, cachePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function analyzeRoute(
+  route,
+  { fetchImpl = fetch, sleep, cacheDir = "", cacheStats = null } = {},
+) {
   const dna = route.referenceDna || {};
   const desktop = dna.evidence?.desktopScreenshot?.path;
   const mobile = dna.evidence?.mobileScreenshot?.available
@@ -351,14 +407,7 @@ async function analyzeRoute(route, { fetchImpl = fetch, sleep } = {}) {
       captureDimensions,
     };
   }
-  const buildContent = async ({ mobileDetail = "high" } = {}) => [
-    {
-      type: "text",
-      text: `Analyze this design reference as implementation mechanics, not as brand identity. Measure Reference DNA from the screenshots for an independent implementation.
-
-ROUTE HINTS
-${JSON.stringify(
-  {
+  const routeHints = {
     familyId: dna.familyId,
     referenceName: dna.referenceName,
     heroGeometry: route.heroGeometry,
@@ -368,17 +417,11 @@ ${JSON.stringify(
     typographyCategory: route.typographyCategory,
     imageStrategy: route.imageStrategy,
     motionOpportunity: route.motionOpportunity,
-  },
-  null,
-  2,
-)}
-
-CURATED REFERENCE DOSSIER
-${referenceDossierPromptBlock(route.referenceDossier) || "No dossier was attached. Do not infer missing evidence from prose."}
-
-IMMUTABLE CURATED DESIGN CONTRACT
-${JSON.stringify(
-  {
+  };
+  const dossierPromptBlock =
+    referenceDossierPromptBlock(route.referenceDossier) ||
+    "No dossier was attached. Do not infer missing evidence from prose.";
+  const curatedDesignContract = {
     heroGeometry: dna.heroGeometry,
     navigationGeometry: dna.navigationGeometry,
     typography: dna.typography,
@@ -392,10 +435,55 @@ ${JSON.stringify(
     prohibitedPatterns: dna.prohibitedPatterns,
     requiredSignatureElements: dna.requiredSignatureElements,
     acceptanceChecks: dna.acceptanceChecks,
-  },
-  null,
-  2,
-)}
+  };
+  const effectiveCacheDir = String(cacheDir || "").trim();
+  const cacheKey = effectiveCacheDir
+    ? computeReferenceDnaCacheKey({
+        version: REFERENCE_DNA_CACHE_VERSION,
+        provider: creativeProvider,
+        model,
+        effort: analyzerEffort,
+        routeHints,
+        dossierDigest: route.referenceDossier?.digest || "",
+        dossierPromptBlock,
+        curatedDesignContract,
+        captureDimensions,
+        desktopSha256: await screenshotDigest(
+          dna.evidence?.desktopScreenshot,
+          desktop,
+        ),
+        mobileSha256: mobile
+          ? await screenshotDigest(dna.evidence?.mobileScreenshot, mobile)
+          : "",
+        schema,
+      })
+    : "";
+  if (effectiveCacheDir && cacheKey) {
+    const cached = await readCachedReferenceAnalysis(
+      effectiveCacheDir,
+      cacheKey,
+    );
+    if (cached) {
+      if (cacheStats) cacheStats.hits += 1;
+      console.warn(
+        `reference_dna_cache route=${route.id} status=hit key=${cacheKey.slice(0, 12)}`,
+      );
+      return { ...cached, captureDimensions };
+    }
+  }
+  const buildContent = async ({ mobileDetail = "high" } = {}) => [
+    {
+      type: "text",
+      text: `Analyze this design reference as implementation mechanics, not as brand identity. Measure Reference DNA from the screenshots for an independent implementation.
+
+ROUTE HINTS
+${JSON.stringify(routeHints, null, 2)}
+
+CURATED REFERENCE DOSSIER
+${dossierPromptBlock}
+
+IMMUTABLE CURATED DESIGN CONTRACT
+${JSON.stringify(curatedDesignContract, null, 2)}
 These curated qualitative mechanics were reviewed against the paired captures and dossier prompt. Repeat them exactly in your structured response. Do not replace or reorder the section sequence, service presentation, CTA position, motion concept, signatures, or mobile strategy. Use screenshots to measure visual ratios, crop and overlap behavior, section-height fractions, and desktop/mobile geometry only.
 
 SOURCE CAPTURE DIMENSIONS
@@ -568,15 +656,26 @@ Rules:
       parts.push(`missing=${error.missingFields.join("+")}`);
     return parts.join(" ");
   };
+  const finalize = async (analysis) => {
+    if (effectiveCacheDir && cacheKey) {
+      const wrote = await writeCachedReferenceAnalysis(
+        effectiveCacheDir,
+        cacheKey,
+        analysis,
+      );
+      if (wrote && cacheStats) cacheStats.writes += 1;
+    }
+    return { ...analysis, captureDimensions };
+  };
   try {
-    return { ...(await requestAnalysis(true)), captureDimensions };
+    return await finalize(await requestAnalysis(true));
   } catch (error) {
     if (error?.code !== "REFERENCE_ANALYZER_INVALID_JSON") throw error;
     console.warn(
       `reference_dna_retry route=${route.id} ${diagnostics(error)} cache=bypassed`,
     );
     try {
-      return { ...(await requestAnalysis(false)), captureDimensions };
+      return await finalize(await requestAnalysis(false));
     } catch (retryError) {
       if (retryError?.code !== "REFERENCE_ANALYZER_INVALID_JSON")
         throw retryError;
@@ -607,10 +706,9 @@ Rules:
           `reference_dna_fallback route=${route.id} model=${fallbackModel} evidence=full ${diagnostics(retryError)}`,
         );
         try {
-          return {
-            ...(await requestAnalysis(false, { model: fallbackModel })),
-            captureDimensions,
-          };
+          return await finalize(
+            await requestAnalysis(false, { model: fallbackModel }),
+          );
         } catch (fallbackError) {
           if (fallbackError?.code !== "REFERENCE_ANALYZER_INVALID_JSON")
             throw fallbackError;
@@ -619,13 +717,12 @@ Rules:
               `reference_dna_fallback route=${route.id} model=${fallbackModel} evidence=mobile-low ${diagnostics(fallbackError)}`,
             );
             try {
-              return {
-                ...(await requestAnalysis(false, {
+              return await finalize(
+                await requestAnalysis(false, {
                   model: fallbackModel,
                   content: await buildContent({ mobileDetail: "low" }),
-                })),
-                captureDimensions,
-              };
+                }),
+              );
             } catch (lowDetailError) {
               if (lowDetailError?.code !== "REFERENCE_ANALYZER_INVALID_JSON")
                 throw lowDetailError;
@@ -694,11 +791,21 @@ export function dossierAnalysisFallback(route, error) {
  *   fetchImpl?: typeof fetch,
  *   sleep?: (ms: number) => Promise<void>,
  *   fallbackOnly?: boolean,
+ *   concurrency?: number,
+ *   cacheDir?: string,
+ *   cacheStats?: { hits: number, writes: number },
  * }} [options]
  */
 export async function enrichInspirationPack(
   pack,
-  { fetchImpl = fetch, sleep, fallbackOnly = false } = {},
+  {
+    fetchImpl = fetch,
+    sleep,
+    fallbackOnly = false,
+    concurrency,
+    cacheDir = process.env.LL_REFERENCE_DNA_CACHE_DIR || "",
+    cacheStats = null,
+  } = {},
 ) {
   if (!Array.isArray(pack?.routes) || !pack.routes.length)
     throw new Error("Reference DNA analysis requires inspiration routes.");
@@ -720,32 +827,63 @@ export async function enrichInspirationPack(
       );
     }
   }
-  const routes = [];
-  for (const route of pack.routes) {
+  const requestedConcurrency =
+    Number(concurrency) ||
+    Number(process.env.CREATIVE_REFERENCE_ANALYZER_CONCURRENCY) ||
+    1;
+  const workerCount = Math.min(
+    pack.routes.length,
+    Math.max(1, Math.floor(requestedConcurrency)),
+  );
+  const routes = new Array(pack.routes.length);
+  const processRoute = async (route) => {
     if (fallbackOnly) {
       const fallback = dossierAnalysisFallback(
         route,
-        new Error("Fast lane: no content analysis requested; use the reviewed dossier."),
+        new Error(
+          "Fast lane: no content analysis requested; use the reviewed dossier.",
+        ),
       );
-      if (!fallback) throw new Error("No reviewed dossier fallback is available.");
+      if (!fallback)
+        throw new Error("No reviewed dossier fallback is available.");
       console.warn(
         `reference_dna_fallback route=${route.id} source=dossier reason=fast-lane`,
       );
-      routes.push(fallback);
-      continue;
+      return fallback;
     }
     try {
-      const analyzed = await analyzeRoute(route, { fetchImpl, sleep });
-      routes.push(applyMeasuredReferenceAnalysis(route, analyzed));
+      const analyzed = await analyzeRoute(route, {
+        fetchImpl,
+        sleep,
+        cacheDir,
+        cacheStats,
+      });
+      return applyMeasuredReferenceAnalysis(route, analyzed);
     } catch (error) {
       const fallback = dossierAnalysisFallback(route, error);
       if (!fallback) throw error;
       console.warn(
         `reference_dna_fallback route=${route.id} source=dossier reason=${String(error?.message || error).slice(0, 200)}`,
       );
-      routes.push(fallback);
+      return fallback;
     }
-  }
+  };
+  let nextIndex = 0;
+  let fatalError = null;
+  const runWorker = async () => {
+    while (!fatalError) {
+      const index = nextIndex++;
+      if (index >= pack.routes.length) return;
+      try {
+        routes[index] = await processRoute(pack.routes[index]);
+      } catch (error) {
+        if (!fatalError) fatalError = error;
+        return;
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: workerCount }, () => runWorker()));
+  if (fatalError) throw fatalError;
   const usedDossierFallback = routes.some(
     (route) => route.referenceDna?.analyzerModel === "dossier-fallback",
   );
@@ -828,8 +966,16 @@ async function main() {
   const input = path.resolve(args.inspiration);
   const output = path.resolve(args.out || args.inspiration);
   const pack = JSON.parse(await fs.readFile(input, "utf8"));
+  const cacheStats = { hits: 0, writes: 0 };
+  const concurrency =
+    Number(args.concurrency) ||
+    Number(process.env.CREATIVE_REFERENCE_ANALYZER_CONCURRENCY) ||
+    3;
   const enriched = await enrichInspirationPack(pack, {
     fallbackOnly: args["fallback-only"] === "true",
+    concurrency,
+    cacheDir: args["cache-dir"] ?? process.env.LL_REFERENCE_DNA_CACHE_DIR ?? "",
+    cacheStats,
   });
   await fs.writeFile(output, `${JSON.stringify(enriched, null, 2)}\n`);
   if (args["usage-out"])
@@ -838,7 +984,14 @@ async function main() {
       `${JSON.stringify({ version: 1, records: getReferenceDnaUsageRecords() }, null, 2)}\n`,
     );
   console.log(
-    JSON.stringify({ routes: enriched.routes.length, model, output }),
+    JSON.stringify({
+      routes: enriched.routes.length,
+      model,
+      output,
+      concurrency,
+      cacheHits: cacheStats.hits,
+      cacheWrites: cacheStats.writes,
+    }),
   );
 }
 
