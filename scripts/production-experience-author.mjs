@@ -3990,15 +3990,15 @@ export async function authorExperienceCandidates({
     0,
     requestedCandidates,
   );
-  // OpenRouter's in-flight budget is shared across the account. Keep the
-  // independent candidates, but never put more than two model stages in
-  // flight at once. This protects the creative lane without falling back to a
-  // deterministic renderer.
+  // Bound concurrent model stages to protect the provider in-flight budget
+  // without stalling independent candidates. Default remains 2 unless the
+  // workflow or caller explicitly raises CREATIVE_EXPERIENCE_MAX_IN_FLIGHT
+  // (up to 6 for OpenCode Go multi-candidate authoring).
   const configuredConcurrency = Number(
     process.env.CREATIVE_EXPERIENCE_MAX_IN_FLIGHT || 2,
   );
   const maxConcurrency = Number.isInteger(configuredConcurrency)
-    ? Math.min(2, Math.max(1, configuredConcurrency))
+    ? Math.min(6, Math.max(1, configuredConcurrency))
     : 2;
   const limitedGenerate = createGenerationLimiter(generate, maxConcurrency);
   const authoredResults = await Promise.allSettled(
@@ -4160,6 +4160,21 @@ export async function authorExperienceCandidates({
           );
         referenceFidelity = fidelity;
       }
+      // Motion only depends on designContract and experienceSource, so start it
+      // concurrently with the secondary pages (service -> location ->
+      // service-index) and styles instead of waiting until styles begins.
+      const motionPromise = generateMotionSource({
+        generate: limitedGenerate,
+        request: {
+          ...base,
+          stage: "motion",
+          designContract,
+          experienceSource: experience,
+        },
+        validate: validateMotion,
+      });
+      // Prevent unhandledRejection if an earlier secondary-page stage throws.
+      motionPromise.catch(() => {});
       const servicePageOutput = await generateValidatedSource({
         generate: limitedGenerate,
         request: {
@@ -4226,16 +4241,7 @@ export async function authorExperienceCandidates({
           stage: "styles",
           validate: validateStyles,
         }),
-        generateMotionSource({
-          generate: limitedGenerate,
-          request: {
-            ...base,
-            stage: "motion",
-            designContract,
-            experienceSource: experience,
-          },
-          validate: validateMotion,
-        }),
+        motionPromise,
       ]);
       const styles = stylesOutput.source;
       const motion = motionOutput.source;
