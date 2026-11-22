@@ -100,7 +100,9 @@ jobs:
       - name: Install browser runtime
         uses: ./.github/actions/install-playwright-chromium
       - name: Run application tests (shard 1/2)
-        run: npx vitest run --dir tests --shard=1/2
+        run: |
+          mkdir -p /tmp/opencode
+          npx vitest run --dir tests --shard=1/2
 
   validate-shard-2:
     needs: classify
@@ -119,7 +121,9 @@ jobs:
       - name: Install browser runtime
         uses: ./.github/actions/install-playwright-chromium
       - name: Run application tests (shard 2/2)
-        run: npx vitest run --dir tests --shard=2/2
+        run: |
+          mkdir -p /tmp/opencode
+          npx vitest run --dir tests --shard=2/2
 
   worker-and-checks:
     needs: classify

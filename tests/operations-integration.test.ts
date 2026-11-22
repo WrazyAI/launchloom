@@ -67,6 +67,7 @@ function run(
 it.each(["postgres", "legacy"])(
   "propagates the %s intake identity into initial config and research",
   async (mode) => {
+    await mkdir("/tmp/opencode", { recursive: true });
     const directory = await mkdtemp("/tmp/opencode/task7-intake-shell-");
     try {
       await mkdir(path.join(directory, "bin"));
