@@ -99,6 +99,11 @@ jobs:
       - run: npm ci
       - name: Install browser runtime
         uses: ./.github/actions/install-playwright-chromium
+      - name: Hydrate reference dossier PNGs from R2
+        uses: ./.github/actions/hydrate-reference-assets
+        with:
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       - name: Run application tests (shard 1/2)
         run: |
           mkdir -p /tmp/opencode
@@ -120,6 +125,11 @@ jobs:
       - run: npm ci
       - name: Install browser runtime
         uses: ./.github/actions/install-playwright-chromium
+      - name: Hydrate reference dossier PNGs from R2
+        uses: ./.github/actions/hydrate-reference-assets
+        with:
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       - name: Run application tests (shard 2/2)
         run: |
           mkdir -p /tmp/opencode

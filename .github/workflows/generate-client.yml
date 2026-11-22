@@ -606,6 +606,12 @@ jobs:
           GUARD_PROFILE=full
           if [ "$PREVIEW_ONLY" = "true" ]; then GUARD_PROFILE=full-preview; fi
           node scripts/assert-client-generation-mode.mjs --config /tmp/site.config.json --profile "$GUARD_PROFILE"
+      - name: Hydrate reference dossier PNGs from R2
+        if: env.GENERATION_RENDERER == 'creative'
+        uses: ./.github/actions/hydrate-reference-assets
+        with:
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       # Reserve visual routes against the latest main history before expensive
       # authoring. The resulting pack is also the renderer policy input.
       - name: Reserve inspiration routes

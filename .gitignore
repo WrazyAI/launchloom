@@ -55,3 +55,9 @@ worker/admin-dist/
 
 # Local design companion (includes session access keys)
 .superpowers/brainstorm/
+
+# Reference library screenshot PNGs are stored in Cloudflare R2
+# (launchloom-reference-library) and hydrated via `npm run sync:reference-assets`
+# using the SHA-256 verified manifest at data/reference-library/r2-asset-manifest.json.
+data/reference-library/dossiers/*/screenshots/*.png
+data/reference-library/core-collection-hero-contact-sheet.png
