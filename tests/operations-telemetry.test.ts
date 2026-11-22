@@ -18,6 +18,7 @@ import {
 const attempt = "11111111-1111-4111-8111-111111111111";
 const sha = "a".repeat(40);
 async function fixture() {
+  await mkdir("/tmp/opencode", { recursive: true });
   const dir = await mkdtemp("/tmp/opencode/task5-telemetry-");
   return {
     dir,

@@ -21,7 +21,7 @@ const scenarios = process.argv.slice(2).length
   : allowedScenarios;
 if (scenarios.some((value) => !allowedScenarios.includes(value)))
   throw new Error("Unknown synthetic route-verification scenario.");
-for (const scenario of scenarios) {
+async function runScenario(scenario) {
   const dir = path.join(root, "artifacts/stage4", scenario),
     template = path.join(root, "templates/client-site");
   await fs.rm(dir, { recursive: true, force: true });
@@ -161,3 +161,4 @@ for (const scenario of scenarios) {
     }),
   );
 }
+await Promise.all(scenarios.map(runScenario));
