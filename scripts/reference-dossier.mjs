@@ -109,8 +109,11 @@ function within(parent, child, label) {
     throw new Error(`Reference dossier ${label} must stay inside its dossier folder.`);
 }
 
-function pngDimensions(filePath, label) {
-  const bytes = fs.readFileSync(filePath);
+// In-process cache for immutable PNGs (>2s old) keyed by stat identity.
+// Freshly written test/temp files always read and hash directly from disk.
+const PNG_METADATA_CACHE = new Map();
+
+function pngDimensionsFromBytes(bytes, label) {
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
   if (
     bytes.length < 24 ||
@@ -119,6 +122,22 @@ function pngDimensions(filePath, label) {
   )
     throw new Error(`Reference dossier ${label} must be a readable PNG screenshot.`);
   return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+}
+
+function readVerifiedPngInfo(realFilePath, label) {
+  const stat = fs.statSync(realFilePath);
+  const immutable = Date.now() - stat.mtimeMs > 2_000;
+  const cacheKey = `${realFilePath}\0${stat.dev}:${stat.ino}:${stat.size}:${stat.mtimeMs}:${stat.ctimeMs}`;
+  if (immutable) {
+    const cached = PNG_METADATA_CACHE.get(cacheKey);
+    if (cached) return cached;
+  }
+  const bytes = fs.readFileSync(realFilePath);
+  const sha256 = crypto.createHash("sha256").update(bytes).digest("hex");
+  const dimensions = pngDimensionsFromBytes(bytes, label);
+  const info = { sha256, dimensions };
+  if (immutable) PNG_METADATA_CACHE.set(cacheKey, info);
+  return info;
 }
 
 function resolveScreenshot(directory, screenshot, label, viewportKind, requireSha256 = false) {
@@ -136,8 +155,10 @@ function resolveScreenshot(directory, screenshot, label, viewportKind, requireSh
   const realDirectory = fs.realpathSync(directory);
   const realFilePath = fs.realpathSync(filePath);
   within(realDirectory, realFilePath, `${label} screenshot path`);
-  const screenshotBytes = fs.readFileSync(filePath);
-  const sha256 = crypto.createHash("sha256").update(screenshotBytes).digest("hex");
+  const { sha256, dimensions } = readVerifiedPngInfo(
+    realFilePath,
+    `${label} full-page capture`,
+  );
   const declaredSha256 = String(screenshot.sha256 || "").toLowerCase();
   if (requireSha256 && !declaredSha256)
     throw new Error(`Reference dossier ${label} screenshot must declare a SHA-256 digest.`);
@@ -145,7 +166,6 @@ function resolveScreenshot(directory, screenshot, label, viewportKind, requireSh
     throw new Error(`Reference dossier ${label} screenshot SHA-256 digest is invalid.`);
   if (declaredSha256 && declaredSha256 !== sha256)
     throw new Error(`Reference dossier ${label} screenshot SHA-256 digest does not match the retained image.`);
-  const dimensions = pngDimensions(filePath, `${label} full-page capture`);
   const viewport = screenshot.viewport;
   const widthMin = viewportKind === "desktop" ? 1024 : 320;
   const widthMax = viewportKind === "desktop" ? 7680 : 767;
@@ -380,8 +400,8 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
     designPrompt,
     review: manifest.review && typeof manifest.review === "object" ? manifest.review : { status: "unreviewed" },
     evidenceDigests: {
-      desktop: crypto.createHash("sha256").update(fs.readFileSync(desktop.absolutePath)).digest("hex"),
-      mobile: crypto.createHash("sha256").update(fs.readFileSync(mobile.absolutePath)).digest("hex"),
+      desktop: desktop.sha256,
+      mobile: mobile.sha256,
       rightsEvidence: rightsEvidenceDigest,
       assets: assetEvidenceDigests,
       provenance: provenanceEvidenceDigests,
@@ -389,8 +409,8 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
     digest: crypto.createHash("sha256").update(JSON.stringify({
       manifest,
       designPrompt,
-      desktopDigest: crypto.createHash("sha256").update(fs.readFileSync(desktop.absolutePath)).digest("hex"),
-      mobileDigest: crypto.createHash("sha256").update(fs.readFileSync(mobile.absolutePath)).digest("hex"),
+      desktopDigest: desktop.sha256,
+      mobileDigest: mobile.sha256,
       rightsEvidenceDigest,
       assetEvidenceDigests,
       provenanceEvidenceDigests,
@@ -453,10 +473,17 @@ export function assertReferenceDossierMatchesRecord(dossier, record, { repositor
     const dossierAbsolutePath = dossier.evidence[kind].absolutePath;
     if (!fs.existsSync(registeredAbsolutePath))
       throw new Error(`Inspiration record '${record.id}' registered ${kind} screenshot is missing: ${registeredPath}.`);
-    const registeredDigest = crypto.createHash("sha256").update(fs.readFileSync(registeredAbsolutePath)).digest("hex");
-    const dossierDigest = crypto.createHash("sha256").update(fs.readFileSync(dossierAbsolutePath)).digest("hex");
-    if (registeredDigest !== dossierDigest)
-      throw new Error(`Reference dossier '${dossier.id}' ${kind} screenshot does not match its registry evidence.`);
+    const dossierDigest =
+      dossier.evidence[kind].sha256 ||
+      crypto.createHash("sha256").update(fs.readFileSync(dossierAbsolutePath)).digest("hex");
+    if (fs.realpathSync(registeredAbsolutePath) !== fs.realpathSync(dossierAbsolutePath)) {
+      const registeredDigest = crypto
+        .createHash("sha256")
+        .update(fs.readFileSync(registeredAbsolutePath))
+        .digest("hex");
+      if (registeredDigest !== dossierDigest)
+        throw new Error(`Reference dossier '${dossier.id}' ${kind} screenshot does not match its registry evidence.`);
+    }
   }
 }
 
