@@ -381,6 +381,7 @@ jobs:
       # a variable back is the manual rollback (see
       # docs/creative-generation-performance.md).
       CREATIVE_EVIDENCE_REUSE: ${{ vars.CREATIVE_EVIDENCE_REUSE || 'true' }}
+      CREATIVE_EXPERIENCE_MAX_IN_FLIGHT: ${{ vars.CREATIVE_EXPERIENCE_MAX_IN_FLIGHT || '4' }}
       CREATIVE_JUDGE_CONCURRENCY: ${{ vars.CREATIVE_JUDGE_CONCURRENCY || '2' }}
       CREATIVE_REPAIR_STAGNATION: ${{ vars.CREATIVE_REPAIR_STAGNATION || 'true' }}
       CREATIVE_NEAR_MISS_PREVIEW: ${{ vars.CREATIVE_NEAR_MISS_PREVIEW || 'true' }}
