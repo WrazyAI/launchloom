@@ -373,7 +373,7 @@ async function activateFormSubmit(form, timeout) {
 }
 
 /** Approved route browser evidence. Mutating requests are always intercepted.
- * @param {{config: any, origin: string, formMode?: string, mode?: string, viewports?: Array<{name:string,width:number,height:number}>, representativeViewports?: Array<{name:string,width:number,height:number}>, screenshotsDir?: string, timeout?: number, browser?: import("playwright").Browser}} options
+ * @param {{config: any, origin: string, formMode?: string, mode?: string, viewports?: Array<{name:string,width:number,height:number}>, representativeViewports?: Array<{name:string,width:number,height:number}>, screenshotsDir?: string, timeout?: number, browser?: import("playwright").Browser, concurrency?: number}} options
  */
 export async function verifyApprovedRoutes({
   config,
@@ -385,6 +385,7 @@ export async function verifyApprovedRoutes({
   screenshotsDir,
   timeout = 5000,
   browser: existingBrowser,
+  concurrency,
 }) {
   if (
     formMode === "test-preview" &&
@@ -402,6 +403,9 @@ export async function verifyApprovedRoutes({
     target.hash
   )
     throw new Error("Use a credential-free HTTP(S) origin.");
+  const isLocalStatic =
+    target.hostname === "127.0.0.1" || target.hostname === "localhost";
+  const waitUntil = isLocalStatic ? "load" : "networkidle";
   const inventory = compileRouteInventory(config);
   const records = approvedRoutes(inventory, {
     production: mode === "production",
@@ -417,31 +421,56 @@ export async function verifyApprovedRoutes({
   const api = config.lead?.apiUrl
     ? config.lead.apiUrl.replace(/\/$/u, "") + "/api/lead"
     : null;
-  try {
-    for (const record of records) {
-      const firstType = !seenTypes.has(record.pageType);
-      seenTypes.add(record.pageType);
-      const selected = viewports || [
-        ...profiles,
-        ...(firstType ? representativeViewports : []),
-      ];
-      const route = {
+  const routePlan = records.map((record) => {
+    const firstType = !seenTypes.has(record.pageType);
+    seenTypes.add(record.pageType);
+    const selected = viewports || [
+      ...profiles,
+      ...(firstType ? representativeViewports : []),
+    ];
+    return {
+      record,
+      selected,
+      route: {
         routeId: record.id,
         path: record.path,
         pageType: record.pageType,
         status: "pass",
-        profiles: [],
-      };
-      for (const viewport of selected) {
+        profiles: new Array(selected.length),
+      },
+    };
+  });
+  const tasks = routePlan.flatMap((entry, routeIndex) =>
+    entry.selected.map((viewport, profileIndex) => ({
+      routeIndex,
+      profileIndex,
+      record: entry.record,
+      viewport,
+    })),
+  );
+  const requestedConcurrency =
+    Number(concurrency) || Number(process.env.LL_ROUTE_VERIFY_CONCURRENCY) || 4;
+  const workerCount = Math.min(
+    Math.max(1, tasks.length),
+    Math.max(1, Math.floor(requestedConcurrency)),
+  );
+  try {
+    let nextIndex = 0;
+    const runWorker = async () => {
+      while (true) {
+        const index = nextIndex++;
+        if (index >= tasks.length) return;
+        const { routeIndex, profileIndex, record, viewport } = tasks[index];
+        const route = routePlan[routeIndex].route;
         const context = await browser.newContext({
           viewport: { width: viewport.width, height: viewport.height },
         });
         const page = await context.newPage();
         page.setDefaultTimeout(timeout);
-        // A networkidle navigation on an image-heavy page can exceed the short
-        // assertion timeout on a loaded runner. The refresh and navigation
-        // checks are about what the page does, not how fast it settles, so give
-        // them their own budget instead of failing a deliverable on a 5s miss.
+        // A navigation on an image-heavy page can exceed the short assertion
+        // timeout on a loaded runner. The refresh and navigation checks are
+        // about what the page does, not how fast it settles, so give them
+        // their own budget instead of failing a deliverable on a 5s miss.
         const navigationTimeout = Math.max(Number(timeout) || 0, 30_000);
         const phase = { value: "observe" };
         const requests = [];
@@ -456,7 +485,7 @@ export async function verifyApprovedRoutes({
         await context.route("**/*", async (intercepted) => {
           const req = intercepted.request();
           // The disabled form must not initiate any network activity. The page
-          // is already network-idle before submit; guard every resource type,
+          // is already settled before submit; guard every resource type,
           // including image/ping GET beacons, throughout this bounded phase.
           if (formMode === "test-preview" && phase.value === "preview-submit") {
             network.push("Diagnostic submission attempted a network request.");
@@ -544,10 +573,8 @@ export async function verifyApprovedRoutes({
         });
         try {
           const response = await page.goto(new URL(record.path, origin).href, {
-            waitUntil: "networkidle",
-            // Navigating a real page is not an assertion; a 5s element timeout
-            // is too tight for a networkidle load on a loaded runner.
-            timeout: Math.max(Number(timeout) || 0, 30_000),
+            waitUntil,
+            timeout: navigationTimeout,
           });
           add(
             "direct-http",
@@ -702,7 +729,7 @@ export async function verifyApprovedRoutes({
                 " Close the page before navigation can replay a submission target.",
             );
           const reload = await page.reload({
-            waitUntil: "networkidle",
+            waitUntil,
             timeout: navigationTimeout,
           });
           add(
@@ -738,13 +765,13 @@ export async function verifyApprovedRoutes({
               continue;
             await link.click();
             await page.waitForURL(url.href, { timeout });
-            await page.goBack({ waitUntil: "networkidle" });
+            await page.goBack({ waitUntil });
             add(
               "back",
               new URL(page.url()).pathname === record.path,
               "Back restores the tested page.",
             );
-            await page.goForward({ waitUntil: "networkidle" });
+            await page.goForward({ waitUntil });
             add(
               "forward",
               new URL(page.url()).pathname === url.pathname,
@@ -759,12 +786,12 @@ export async function verifyApprovedRoutes({
             "At least one visible contextual route link navigates.",
           );
           await page.goto(new URL(record.path, origin).href, {
-            waitUntil: "networkidle",
+            waitUntil,
             timeout: navigationTimeout,
           });
           await page.emulateMedia({ reducedMotion: "reduce" });
           await page.reload({
-            waitUntil: "networkidle",
+            waitUntil,
             timeout: navigationTimeout,
           });
           await sleep(page);
@@ -812,7 +839,7 @@ export async function verifyApprovedRoutes({
             network.length === 0,
             "No unexpected failed assets/network requests.",
           );
-          route.profiles.push({
+          route.profiles[profileIndex] = {
             viewport,
             checks,
             forms,
@@ -820,10 +847,10 @@ export async function verifyApprovedRoutes({
             runtimeErrors: runtime,
             consoleErrors,
             networkErrors: network,
-          });
+          };
         } catch (error) {
           add("browser", false, message(error));
-          route.profiles.push({
+          route.profiles[profileIndex] = {
             viewport,
             checks,
             forms,
@@ -831,11 +858,16 @@ export async function verifyApprovedRoutes({
             runtimeErrors: runtime,
             consoleErrors,
             networkErrors: network,
-          });
+          };
         } finally {
           await context.close();
         }
       }
+    };
+    if (tasks.length) {
+      await Promise.all(Array.from({ length: workerCount }, () => runWorker()));
+    }
+    for (const { record, route } of routePlan) {
       route.status = route.profiles.every((profile) =>
         profile.checks.every((check) => check.status === "pass"),
       )
@@ -859,16 +891,21 @@ export async function verifyApprovedRoutes({
     }
     const context = await browser.newContext();
     try {
-      for (const pathname of [
+      const negativePaths = [
         "/launchloom-nonexistent/",
         "/services/launchloom-nonexistent/",
         "/locations/launchloom-nonexistent/",
         "/services/__invalid_slug__/",
-      ]) {
-        const response = await context.request.get(
-          new URL(pathname, origin).href,
-        );
-        const status = response.status();
+      ];
+      const negativeResponses = await Promise.all(
+        negativePaths.map(async (pathname) => {
+          const response = await context.request.get(
+            new URL(pathname, origin).href,
+          );
+          return { pathname, status: response.status() };
+        }),
+      );
+      for (const { pathname, status } of negativeResponses) {
         negativeRoutes.push({
           path: pathname,
           http: status,
