@@ -63,11 +63,12 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Install LaunchLoom tools and rendered browser
+      - name: Install LaunchLoom dependencies
         if: steps.claim.outputs.run == 'true'
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium || npx playwright install chromium
+        run: npm ci
+      - name: Install rendered browser
+        if: steps.claim.outputs.run == 'true'
+        uses: ./.github/actions/install-playwright-chromium
 
       - name: Fetch the exact private review commit
         id: client
@@ -126,7 +127,11 @@ jobs:
           CLIENT_DIR: ${{ steps.client.outputs.dir }}
         run: |
           test -s "$CLIENT_DIR/package-lock.json" || { echo "Generated client package lock is missing" >&2; exit 1; }
-          npm ci --prefix "$CLIENT_DIR"
+          LOCK_SHA=$(sha256sum "$CLIENT_DIR/package-lock.json" | cut -d' ' -f1)
+          if [ ! -d "$CLIENT_DIR/node_modules" ] || [ "$(cat "$CLIENT_DIR/node_modules/.ll-lock-sha" 2>/dev/null || true)" != "$LOCK_SHA" ]; then
+            npm ci --prefix "$CLIENT_DIR"
+            printf '%s\n' "$LOCK_SHA" > "$CLIENT_DIR/node_modules/.ll-lock-sha"
+          fi
 
       - name: Run exactly one rendered repair against captured findings
         id: repair
@@ -225,7 +230,11 @@ jobs:
           LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
         run: |
           cd "$CLIENT_DIR"
-          npm ci
+          LOCK_SHA=$(sha256sum package-lock.json | cut -d' ' -f1)
+          if [ ! -d node_modules ] || [ "$(cat node_modules/.ll-lock-sha 2>/dev/null || true)" != "$LOCK_SHA" ]; then
+            npm ci
+            printf '%s\n' "$LOCK_SHA" > node_modules/.ll-lock-sha
+          fi
           PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
           grep -I -F -q 'data-creative-host="true"' dist/index.html || { echo "Creative host marker missing from final build" >&2; exit 1; }
           grep -I -F -q "data-creative-candidate=\"$CANDIDATE\"" dist/index.html || { echo "Repaired candidate missing from final build" >&2; exit 1; }

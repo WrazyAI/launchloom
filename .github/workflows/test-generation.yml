@@ -110,7 +110,7 @@ jobs:
         run: |
           test -n "$OPENCODE_GO_API_KEY" || { echo "Missing: OPENCODE_GO_API_KEY" >&2; exit 1; }
       - name: Install rendered acceptance browser
-        run: npx playwright install --with-deps chromium || npx playwright install chromium
+        uses: ./.github/actions/install-playwright-chromium
       - name: Configure private QA repository authentication
         run: gh auth setup-git
       - name: Run focused profile
