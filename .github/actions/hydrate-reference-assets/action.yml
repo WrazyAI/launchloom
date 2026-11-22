@@ -1,0 +1,32 @@
+name: Hydrate reference dossier PNGs from R2
+description: Restores cached reference library PNGs and hydrates any missing SHA-256 verified files from Cloudflare R2.
+inputs:
+  cloudflare-account-id:
+    description: Cloudflare account ID for authenticated R2 API downloads
+    required: false
+    default: ""
+  cloudflare-api-token:
+    description: Cloudflare API token with R2 read access
+    required: false
+    default: ""
+  reference-assets-base-url:
+    description: Optional read-only HTTP base URL override
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Restore reference PNG cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/launchloom-reference-pngs
+        key: ref-pngs-v1-${{ hashFiles('data/reference-library/r2-asset-manifest.json') }}
+        restore-keys: |
+          ref-pngs-v1-
+    - name: Hydrate reference PNGs into workspace
+      shell: bash
+      env:
+        CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare-account-id }}
+        CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare-api-token }}
+        REFERENCE_ASSETS_BASE_URL: ${{ inputs.reference-assets-base-url }}
+      run: node scripts/sync-reference-assets.mjs pull --cache-dir "$HOME/.cache/launchloom-reference-pngs"

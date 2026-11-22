@@ -1,0 +1,2114 @@
+{
+  "version": 1,
+  "bucket": "launchloom-reference-library",
+  "keyPrefix": "v1/sha256",
+  "assets": [
+    {
+      "path": "data/reference-library/core-collection-hero-contact-sheet.png",
+      "sha256": "e7e9b4470157261b1840ce958684a6fa364c0716cca33075809bfce08024283c",
+      "bytes": 6466845,
+      "key": "v1/sha256/e7e9b4470157261b1840ce958684a6fa364c0716cca33075809bfce08024283c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/a1-craft-collage-field/screenshots/desktop.png",
+      "sha256": "ab701b96bd6f7578ca1bd03f6638faaa57a32eb530e92ec5f6ceae6cb4fa18bb",
+      "bytes": 5315649,
+      "key": "v1/sha256/ab701b96bd6f7578ca1bd03f6638faaa57a32eb530e92ec5f6ceae6cb4fa18bb.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/a1-craft-collage-field/screenshots/mobile.png",
+      "sha256": "b11743a05b39ca841e12f5fc6a22386a0e1222ac246a31028c94cefb1d79f84e",
+      "bytes": 2620570,
+      "key": "v1/sha256/b11743a05b39ca841e12f5fc6a22386a0e1222ac246a31028c94cefb1d79f84e.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/a1-ethan-cinematic-3d/screenshots/desktop.png",
+      "sha256": "d6187f44aa096f16fd26509a4727b918dab4a40411dd8faff57f3072b36b7347",
+      "bytes": 2176237,
+      "key": "v1/sha256/d6187f44aa096f16fd26509a4727b918dab4a40411dd8faff57f3072b36b7347.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/a1-ethan-cinematic-3d/screenshots/mobile.png",
+      "sha256": "f28833f7ad0730e22c709fba92b35efe5b47a0405cfd9f5610e46d2dff840200",
+      "bytes": 756507,
+      "key": "v1/sha256/f28833f7ad0730e22c709fba92b35efe5b47a0405cfd9f5610e46d2dff840200.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/a1-mckp-object-stage/screenshots/desktop.png",
+      "sha256": "1c33287fffc936c1c3888e7d895262d1914b3fdc79cfa9134d8a70c806a1497d",
+      "bytes": 3276017,
+      "key": "v1/sha256/1c33287fffc936c1c3888e7d895262d1914b3fdc79cfa9134d8a70c806a1497d.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/a1-mckp-object-stage/screenshots/mobile.png",
+      "sha256": "c247fbf0cf1a50eb4b995020b8f27e90a0089a1f7f9e344559c598fe4aed6be3",
+      "bytes": 1000073,
+      "key": "v1/sha256/c247fbf0cf1a50eb4b995020b8f27e90a0089a1f7f9e344559c598fe4aed6be3.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/a1-scs-kinetic-command/screenshots/desktop.png",
+      "sha256": "ff6672a931684ccfef776ebec30f6adacf7eab0db7b26ab1c7190932f9aa8067",
+      "bytes": 1782921,
+      "key": "v1/sha256/ff6672a931684ccfef776ebec30f6adacf7eab0db7b26ab1c7190932f9aa8067.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/a1-scs-kinetic-command/screenshots/mobile.png",
+      "sha256": "c02ab738cb806ea59cd717cfb1e1c157424916d60586ccd69f2102885a59ca4c",
+      "bytes": 3947494,
+      "key": "v1/sha256/c02ab738cb806ea59cd717cfb1e1c157424916d60586ccd69f2102885a59ca4c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/a1-uncommon-founder-atlas/screenshots/desktop.png",
+      "sha256": "4514308c7233b055a9a3c5f49de06b0d23ed099791abbbce381937225dc4318a",
+      "bytes": 1278385,
+      "key": "v1/sha256/4514308c7233b055a9a3c5f49de06b0d23ed099791abbbce381937225dc4318a.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/a1-uncommon-founder-atlas/screenshots/mobile.png",
+      "sha256": "16d7f78dab5d1e95735d45450845b2de0a817f2c4ba28f37be576cae7b024809",
+      "bytes": 529476,
+      "key": "v1/sha256/16d7f78dab5d1e95735d45450845b2de0a817f2c4ba28f37be576cae7b024809.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/attested-angels-on-call-homecare/screenshots/desktop.png",
+      "sha256": "909c52dc98a0b52c20ed271205236f8bf4b7b02c2bcb8e894f87f22f69b84ae0",
+      "bytes": 2835990,
+      "key": "v1/sha256/909c52dc98a0b52c20ed271205236f8bf4b7b02c2bcb8e894f87f22f69b84ae0.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/attested-angels-on-call-homecare/screenshots/mobile.png",
+      "sha256": "b94332255699ce22dd1af10fb676c1b6a85b89cbb27fc7ed49950db2ddafd398",
+      "bytes": 1580397,
+      "key": "v1/sha256/b94332255699ce22dd1af10fb676c1b6a85b89cbb27fc7ed49950db2ddafd398.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/attested-dapper-dental/screenshots/desktop.png",
+      "sha256": "85d1b2d17c3072debe23075f3f0e83fea2d6681973365153eec59484177d71b2",
+      "bytes": 2760869,
+      "key": "v1/sha256/85d1b2d17c3072debe23075f3f0e83fea2d6681973365153eec59484177d71b2.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/attested-dapper-dental/screenshots/mobile.png",
+      "sha256": "783d41829667063efff63064eff70b5bc8cbeeef7cd44c21708f399d504a2a61",
+      "bytes": 1143413,
+      "key": "v1/sha256/783d41829667063efff63064eff70b5bc8cbeeef7cd44c21708f399d504a2a61.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/attested-future-fitness/screenshots/desktop.png",
+      "sha256": "78ba842103a85d00e4fdc0ebf988b9423d32a2505bc65fd1eca162fa2fc9c93d",
+      "bytes": 3219526,
+      "key": "v1/sha256/78ba842103a85d00e4fdc0ebf988b9423d32a2505bc65fd1eca162fa2fc9c93d.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/attested-future-fitness/screenshots/mobile.png",
+      "sha256": "e3306287802db48e46fbf202bf5ada9719c69bbe9aa313d3f0dd7f8e33a5f86d",
+      "bytes": 1206975,
+      "key": "v1/sha256/e3306287802db48e46fbf202bf5ada9719c69bbe9aa313d3f0dd7f8e33a5f86d.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/attested-kingsway-care-home-care/screenshots/desktop.png",
+      "sha256": "c5d2207080923e7e060b9af4227448db73861b7d1975939e1234ebcdba66a92a",
+      "bytes": 2446641,
+      "key": "v1/sha256/c5d2207080923e7e060b9af4227448db73861b7d1975939e1234ebcdba66a92a.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/attested-kingsway-care-home-care/screenshots/mobile.png",
+      "sha256": "734201a365f723af8fb228ea649aa3bb776fff9fd5507542d4b8415a3868024c",
+      "bytes": 1397952,
+      "key": "v1/sha256/734201a365f723af8fb228ea649aa3bb776fff9fd5507542d4b8415a3868024c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/attested-one-manor-place-dental/screenshots/desktop.png",
+      "sha256": "c002cdf2522d17246fa7d65bf50cead4b0182b7070982323acbc4b27a6a7b1b8",
+      "bytes": 3560000,
+      "key": "v1/sha256/c002cdf2522d17246fa7d65bf50cead4b0182b7070982323acbc4b27a6a7b1b8.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/attested-one-manor-place-dental/screenshots/mobile.png",
+      "sha256": "86d11fb5d2f81eb81ef4d548ff46401afb4a74d55ae52a36cea7ca353e244e4d",
+      "bytes": 1356838,
+      "key": "v1/sha256/86d11fb5d2f81eb81ef4d548ff46401afb4a74d55ae52a36cea7ca353e244e4d.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/care-concierge-cinematic/screenshots/desktop.png",
+      "sha256": "9e62cded66e8517a397438850a0834fbde68acd6f052987e45b862a8013313ea",
+      "bytes": 2028313,
+      "key": "v1/sha256/9e62cded66e8517a397438850a0834fbde68acd6f052987e45b862a8013313ea.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/care-concierge-cinematic/screenshots/mobile.png",
+      "sha256": "34c4b8ff8cc5efcac9af7dfb4f139240a19a9786b369aee50dc8866f26a05194",
+      "bytes": 809193,
+      "key": "v1/sha256/34c4b8ff8cc5efcac9af7dfb4f139240a19a9786b369aee50dc8866f26a05194.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/care-image-mosaic/screenshots/desktop.png",
+      "sha256": "b0aa1e5087f17f6ab19b6501b7712d3a22e2ff12f3aa534c070fe13de60fa309",
+      "bytes": 1441324,
+      "key": "v1/sha256/b0aa1e5087f17f6ab19b6501b7712d3a22e2ff12f3aa534c070fe13de60fa309.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/care-image-mosaic/screenshots/mobile.png",
+      "sha256": "0d3e390b5bca2edc72103cde4a99e5e872b08ccb1ded0b111055243e38bdf208",
+      "bytes": 786035,
+      "key": "v1/sha256/0d3e390b5bca2edc72103cde4a99e5e872b08ccb1ded0b111055243e38bdf208.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/care-wellness-journal/screenshots/desktop.png",
+      "sha256": "484024e4a116e939005190986aa94605478ab4370458d9a6ca4b17a3e20b82a4",
+      "bytes": 1752314,
+      "key": "v1/sha256/484024e4a116e939005190986aa94605478ab4370458d9a6ca4b17a3e20b82a4.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/care-wellness-journal/screenshots/mobile.png",
+      "sha256": "396409e847deb87afc9652fc1cae29b6d460996d094f31c3d70c3570aa318e9b",
+      "bytes": 948877,
+      "key": "v1/sha256/396409e847deb87afc9652fc1cae29b6d460996d094f31c3d70c3570aa318e9b.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/clear-counsel-ledger/screenshots/desktop.png",
+      "sha256": "3eddfe20f345c53eb4c4cd016bffe77e9ca0ba3fb4a22cb5ea0cbb3a012a3d24",
+      "bytes": 305415,
+      "key": "v1/sha256/3eddfe20f345c53eb4c4cd016bffe77e9ca0ba3fb4a22cb5ea0cbb3a012a3d24.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/clear-counsel-ledger/screenshots/mobile.png",
+      "sha256": "2f9759e478850dfe3327bd1e4083afc22eadbb75d140aec07f27ea5ea7b2c243",
+      "bytes": 224563,
+      "key": "v1/sha256/2f9759e478850dfe3327bd1e4083afc22eadbb75d140aec07f27ea5ea7b2c243.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-bedrock-industrial-contractor/screenshots/desktop.png",
+      "sha256": "d4726106890b7082ec2b7abe4062a81cc52e6b9d0441ff3cefe13e47fdf3519e",
+      "bytes": 1611239,
+      "key": "v1/sha256/d4726106890b7082ec2b7abe4062a81cc52e6b9d0441ff3cefe13e47fdf3519e.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-bedrock-industrial-contractor/screenshots/mobile.png",
+      "sha256": "53355bcee19c82e6c0d53e7873c3ae759ffe46695ed41fb45ec0deee38ffae20",
+      "bytes": 1030895,
+      "key": "v1/sha256/53355bcee19c82e6c0d53e7873c3ae759ffe46695ed41fb45ec0deee38ffae20.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-caseworth-legal-ledger/screenshots/desktop.png",
+      "sha256": "194e9a04b4925806949cf9c2c23d503e7127011f4dbdfaa68e8445df08d33767",
+      "bytes": 1217174,
+      "key": "v1/sha256/194e9a04b4925806949cf9c2c23d503e7127011f4dbdfaa68e8445df08d33767.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-caseworth-legal-ledger/screenshots/mobile.png",
+      "sha256": "ec59615e73a415d18a9037e847d892d0107b6e96384ac96f824502bae7930446",
+      "bytes": 1441851,
+      "key": "v1/sha256/ec59615e73a415d18a9037e847d892d0107b6e96384ac96f824502bae7930446.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-drafthouse-atlas/screenshots/desktop.png",
+      "sha256": "2ad25dcc2f7ffe8fc19da0a39dabd7d5caa80ee11355b6d617e5e28a6ffca9f8",
+      "bytes": 4196948,
+      "key": "v1/sha256/2ad25dcc2f7ffe8fc19da0a39dabd7d5caa80ee11355b6d617e5e28a6ffca9f8.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-drafthouse-atlas/screenshots/mobile.png",
+      "sha256": "776d5fa3a8225c7a536e766d3422fd7bba5edfba25c533527fb9688821ec5bca",
+      "bytes": 2259315,
+      "key": "v1/sha256/776d5fa3a8225c7a536e766d3422fd7bba5edfba25c533527fb9688821ec5bca.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-fixwell-quote-desk/screenshots/desktop.png",
+      "sha256": "0dcf7182b45a4cc62dc971f24eb3617705ef04bb26476f38021dfcdb0534833b",
+      "bytes": 1024406,
+      "key": "v1/sha256/0dcf7182b45a4cc62dc971f24eb3617705ef04bb26476f38021dfcdb0534833b.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-fixwell-quote-desk/screenshots/mobile.png",
+      "sha256": "d425c585aa4bcda5d7cdfe457750bcdbb74301fa28fb77baf4664dd40edf892b",
+      "bytes": 699227,
+      "key": "v1/sha256/d425c585aa4bcda5d7cdfe457750bcdbb74301fa28fb77baf4664dd40edf892b.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-forecourt-showroom/screenshots/desktop.png",
+      "sha256": "3a725171b74b3373ef0ea5d3cf4d09bf8250350de565af639cff9d15e748bce6",
+      "bytes": 2000946,
+      "key": "v1/sha256/3a725171b74b3373ef0ea5d3cf4d09bf8250350de565af639cff9d15e748bce6.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-forecourt-showroom/screenshots/mobile.png",
+      "sha256": "806e39ac28db5f53babf602bcfc581f9d2caaf40c2097a099cd8c0402eea9d87",
+      "bytes": 1375547,
+      "key": "v1/sha256/806e39ac28db5f53babf602bcfc581f9d2caaf40c2097a099cd8c0402eea9d87.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-ironworks-strength-club/screenshots/desktop.png",
+      "sha256": "f38bfdc93f1627460cd02a9b2f2c0626be59fa2e8af3eb1115ca2806a61fa28b",
+      "bytes": 1296418,
+      "key": "v1/sha256/f38bfdc93f1627460cd02a9b2f2c0626be59fa2e8af3eb1115ca2806a61fa28b.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-ironworks-strength-club/screenshots/mobile.png",
+      "sha256": "3041f9229731b39017a8755ceab224bd6dae3bd539fcd9da9aa90ce96d4938f5",
+      "bytes": 680632,
+      "key": "v1/sha256/3041f9229731b39017a8755ceab224bd6dae3bd539fcd9da9aa90ce96d4938f5.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-marigold-event-venue/screenshots/desktop.png",
+      "sha256": "0a19a0a23be8c8c44eb6bb11900e8e0cacb1d65fdd8618f215254cc94665b2c0",
+      "bytes": 4328397,
+      "key": "v1/sha256/0a19a0a23be8c8c44eb6bb11900e8e0cacb1d65fdd8618f215254cc94665b2c0.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-marigold-event-venue/screenshots/mobile.png",
+      "sha256": "cd2fca9d3950c88048185b0f7ccb78176e1ba8b26060f86e609e767e566a481c",
+      "bytes": 1404774,
+      "key": "v1/sha256/cd2fca9d3950c88048185b0f7ccb78176e1ba8b26060f86e609e767e566a481c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-meridian-clinic/screenshots/desktop.png",
+      "sha256": "49a93e56b643354096b6d8d9055d87ac4198204e24570af1b4977bbd7a131594",
+      "bytes": 1098367,
+      "key": "v1/sha256/49a93e56b643354096b6d8d9055d87ac4198204e24570af1b4977bbd7a131594.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-meridian-clinic/screenshots/mobile.png",
+      "sha256": "e473ff9d38348dfa3d8f31401b4f6c8194a729b1e6e579af16af5c669a599c49",
+      "bytes": 616960,
+      "key": "v1/sha256/e473ff9d38348dfa3d8f31401b4f6c8194a729b1e6e579af16af5c669a599c49.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-tavola-restaurant/screenshots/desktop.png",
+      "sha256": "7965f8c75bb44db0df6dd29782b2a475e9f52fc5412e2e3f42c50445f542be09",
+      "bytes": 3642672,
+      "key": "v1/sha256/7965f8c75bb44db0df6dd29782b2a475e9f52fc5412e2e3f42c50445f542be09.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/colorlib-tavola-restaurant/screenshots/mobile.png",
+      "sha256": "a0c81a00f17fcd3e44ae7f1c026f815ebdba2442aab2cc067b6662ae19645474",
+      "bytes": 1172283,
+      "key": "v1/sha256/a0c81a00f17fcd3e44ae7f1c026f815ebdba2442aab2cc067b6662ae19645474.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-alex-co-accountants-practice/screenshots/desktop.png",
+      "sha256": "27ec041e90d90c13041d64bc7f39ba8866df5d2e000567cb898adbe7c36cfb0e",
+      "bytes": 2823083,
+      "key": "v1/sha256/27ec041e90d90c13041d64bc7f39ba8866df5d2e000567cb898adbe7c36cfb0e.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-alex-co-accountants-practice/screenshots/mobile.png",
+      "sha256": "2d5e0603facdb93c8a48a8bf35711ac076822f77460142edba520abdd1e2959d",
+      "bytes": 1437613,
+      "key": "v1/sha256/2d5e0603facdb93c8a48a8bf35711ac076822f77460142edba520abdd1e2959d.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-amrit-palace-restaurant/screenshots/desktop.png",
+      "sha256": "13a319bbdae9b0305b9d9dfdaa2bd4a7a0e1299ed40288d6ca2149a86b88b3f4",
+      "bytes": 7589611,
+      "key": "v1/sha256/13a319bbdae9b0305b9d9dfdaa2bd4a7a0e1299ed40288d6ca2149a86b88b3f4.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-amrit-palace-restaurant/screenshots/mobile.png",
+      "sha256": "b42297d59b2e4daf798bcbb718acc8ba8479ed7b598a8c4ca3b1e462d95666cd",
+      "bytes": 2217231,
+      "key": "v1/sha256/b42297d59b2e4daf798bcbb718acc8ba8479ed7b598a8c4ca3b1e462d95666cd.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-brixton-cycles-community-workshop/screenshots/desktop.png",
+      "sha256": "d4686e066f8bff1ec8bb5aca5d6d773dc487a238bc5a850811bb9794997f6313",
+      "bytes": 8590811,
+      "key": "v1/sha256/d4686e066f8bff1ec8bb5aca5d6d773dc487a238bc5a850811bb9794997f6313.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-brixton-cycles-community-workshop/screenshots/mobile.png",
+      "sha256": "2a86340f43e02fce53458dc4c763c81d192dfe3df6341b60894b31761bc51abf",
+      "bytes": 3422978,
+      "key": "v1/sha256/2a86340f43e02fce53458dc4c763c81d192dfe3df6341b60894b31761bc51abf.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-casa-cedo-boutique-hotel/screenshots/desktop.png",
+      "sha256": "4aabde2aa2626ea27923c3a4b83d6ecc4bb9ab814c9e8204707e304cb153508b",
+      "bytes": 9193364,
+      "key": "v1/sha256/4aabde2aa2626ea27923c3a4b83d6ecc4bb9ab814c9e8204707e304cb153508b.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-casa-cedo-boutique-hotel/screenshots/mobile.png",
+      "sha256": "5964b04d86bc7b4a8a2aa435c898f9dc174a0ab57088688e6f7c68900ebc6560",
+      "bytes": 2282443,
+      "key": "v1/sha256/5964b04d86bc7b4a8a2aa435c898f9dc174a0ab57088688e6f7c68900ebc6560.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-change-accountants-york/screenshots/desktop.png",
+      "sha256": "827237b36bfc3d48864c5ab46b8ee1083c610a8d69140a89169cf0619f98482c",
+      "bytes": 2604694,
+      "key": "v1/sha256/827237b36bfc3d48864c5ab46b8ee1083c610a8d69140a89169cf0619f98482c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-change-accountants-york/screenshots/mobile.png",
+      "sha256": "79e5f38e2a82d97e02f0c4b09ce64572a6fcb1fdd290f044ac326459c900edfc",
+      "bytes": 1155448,
+      "key": "v1/sha256/79e5f38e2a82d97e02f0c4b09ce64572a6fcb1fdd290f044ac326459c900edfc.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-ethos-greek-bistro/screenshots/desktop.png",
+      "sha256": "c6f83d249e88252da71d40b5ee9e05f431f0c52bb02c2ba3a912fabb9682dc01",
+      "bytes": 7766251,
+      "key": "v1/sha256/c6f83d249e88252da71d40b5ee9e05f431f0c52bb02c2ba3a912fabb9682dc01.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-ethos-greek-bistro/screenshots/mobile.png",
+      "sha256": "d66bc76771dec7266f0354c55655aeed86a539768ed9378f97a0f995a2f14256",
+      "bytes": 4550608,
+      "key": "v1/sha256/d66bc76771dec7266f0354c55655aeed86a539768ed9378f97a0f995a2f14256.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-fogo-island-inn-hospitality/screenshots/desktop.png",
+      "sha256": "3910c740989f06e12ddb7520fc2bba8c2b8e07fe1cc54d3037c6e412cd3ee300",
+      "bytes": 9591396,
+      "key": "v1/sha256/3910c740989f06e12ddb7520fc2bba8c2b8e07fe1cc54d3037c6e412cd3ee300.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-fogo-island-inn-hospitality/screenshots/mobile.png",
+      "sha256": "c9208ef3e98623c6c97ad376d296f3d6af20168d63354aa98b2f4ac4df87d5db",
+      "bytes": 4441422,
+      "key": "v1/sha256/c9208ef3e98623c6c97ad376d296f3d6af20168d63354aa98b2f4ac4df87d5db.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-grlica-law/screenshots/desktop.png",
+      "sha256": "5d2d70af2260124a4679ee75bb8998431a511b0d2be7cd592b26595118b9a247",
+      "bytes": 853884,
+      "key": "v1/sha256/5d2d70af2260124a4679ee75bb8998431a511b0d2be7cd592b26595118b9a247.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-grlica-law/screenshots/mobile.png",
+      "sha256": "c8845eb92e321dabc276a8cffedd9d0380dc03564ed1599a9c9a806c2d3369ce",
+      "bytes": 393083,
+      "key": "v1/sha256/c8845eb92e321dabc276a8cffedd9d0380dc03564ed1599a9c9a806c2d3369ce.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-khufus-giza-restaurant/screenshots/desktop.png",
+      "sha256": "131552148b128df63c16db0b0d857432b7a9d1bee62966c9bc2374b20866d738",
+      "bytes": 3852458,
+      "key": "v1/sha256/131552148b128df63c16db0b0d857432b7a9d1bee62966c9bc2374b20866d738.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-khufus-giza-restaurant/screenshots/mobile.png",
+      "sha256": "10bc8f77335714180dff8689eaf19bbe92763109b638730c58db8123bbd8a7d5",
+      "bytes": 1342868,
+      "key": "v1/sha256/10bc8f77335714180dff8689eaf19bbe92763109b638730c58db8123bbd8a7d5.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-mahala-desert-boutique-hotel/screenshots/desktop.png",
+      "sha256": "508ea903274cdd79717f3338e4cb0659a3b8214913da8e4bb7cc7ce058a8433c",
+      "bytes": 14661620,
+      "key": "v1/sha256/508ea903274cdd79717f3338e4cb0659a3b8214913da8e4bb7cc7ce058a8433c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-mahala-desert-boutique-hotel/screenshots/mobile.png",
+      "sha256": "1c3aec7b242b7f654373e49c1ca96a9be95517b66df962c249e0603b23836ce4",
+      "bytes": 6958436,
+      "key": "v1/sha256/1c3aec7b242b7f654373e49c1ca96a9be95517b66df962c249e0603b23836ce4.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-robins-kaplan-law/screenshots/desktop.png",
+      "sha256": "42a823822f054c61c790360ca2ab9b571a9113b6756ea1453458c078abda76f3",
+      "bytes": 1198846,
+      "key": "v1/sha256/42a823822f054c61c790360ca2ab9b571a9113b6756ea1453458c078abda76f3.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/direct-robins-kaplan-law/screenshots/mobile.png",
+      "sha256": "61df43fdb6043ee9096a62c8b895c2cbf47a1b9bd218ba08030ec550a3e6ad30",
+      "bytes": 513967,
+      "key": "v1/sha256/61df43fdb6043ee9096a62c8b895c2cbf47a1b9bd218ba08030ec550a3e6ad30.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/html5up-dental-dimension/screenshots/desktop.png",
+      "sha256": "4c95810d57d43040fd315921430f080327fe74d24f5765e18ec4034529b0d75a",
+      "bytes": 911292,
+      "key": "v1/sha256/4c95810d57d43040fd315921430f080327fe74d24f5765e18ec4034529b0d75a.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/html5up-dental-dimension/screenshots/mobile.png",
+      "sha256": "cb5b21c81a4ddbe3f65a48757c578052e97d41b762fb0cdd9187c5bfe69abe1e",
+      "bytes": 248847,
+      "key": "v1/sha256/cb5b21c81a4ddbe3f65a48757c578052e97d41b762fb0cdd9187c5bfe69abe1e.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/html5up-editorial/screenshots/desktop.png",
+      "sha256": "15e9636082440255f13a1ebe2f8b3d124a814f41da7e15aef6c41de6798f14e4",
+      "bytes": 1703778,
+      "key": "v1/sha256/15e9636082440255f13a1ebe2f8b3d124a814f41da7e15aef6c41de6798f14e4.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/html5up-editorial/screenshots/mobile.png",
+      "sha256": "d3a9bf71999fcaf44c0728c5a2a71ebd771d8688a3f672e589ef27c12a8aeea7",
+      "bytes": 899671,
+      "key": "v1/sha256/d3a9bf71999fcaf44c0728c5a2a71ebd771d8688a3f672e589ef27c12a8aeea7.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/html5up-fitness-big-picture/screenshots/desktop.png",
+      "sha256": "0612506727800a119e93e8d251acebc3a7e1dc8f499d130e6c0b126948838896",
+      "bytes": 2281722,
+      "key": "v1/sha256/0612506727800a119e93e8d251acebc3a7e1dc8f499d130e6c0b126948838896.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/html5up-fitness-big-picture/screenshots/mobile.png",
+      "sha256": "f4c11281300e77574879fca5bd051c7c42c3629d8ccdb46f224d3f17dc3e36ab",
+      "bytes": 1231881,
+      "key": "v1/sha256/f4c11281300e77574879fca5bd051c7c42c3629d8ccdb46f224d3f17dc3e36ab.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/html5up-home-care-story/screenshots/desktop.png",
+      "sha256": "d702019ebfc11452a5434bb076eed3ff28f87bc65f78fab646f1dd9dbd3e7810",
+      "bytes": 3458405,
+      "key": "v1/sha256/d702019ebfc11452a5434bb076eed3ff28f87bc65f78fab646f1dd9dbd3e7810.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/html5up-home-care-story/screenshots/mobile.png",
+      "sha256": "f1a8f120a7b6b2672dccb83d74978f43e2c8f6e59afdec6fd00fbed19658e2ca",
+      "bytes": 1244171,
+      "key": "v1/sha256/f1a8f120a7b6b2672dccb83d74978f43e2c8f6e59afdec6fd00fbed19658e2ca.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/html5up-paradigm-shift/screenshots/desktop.png",
+      "sha256": "cb3232daa0f575188215330e56671d384c5af4aaff339eb12cce9566b2672ea2",
+      "bytes": 2797249,
+      "key": "v1/sha256/cb3232daa0f575188215330e56671d384c5af4aaff339eb12cce9566b2672ea2.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/html5up-paradigm-shift/screenshots/mobile.png",
+      "sha256": "7cb40372dbcbe7be94beb07e7d63c5bbd4a42d6e459bc0a32805f01773a53e36",
+      "bytes": 1101882,
+      "key": "v1/sha256/7cb40372dbcbe7be94beb07e7d63c5bbd4a42d6e459bc0a32805f01773a53e36.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/html5up-prologue/screenshots/desktop.png",
+      "sha256": "6c0fa7d4896869f42e9a592183da94611e29c40736a3e6d400a28843425fff71",
+      "bytes": 2790119,
+      "key": "v1/sha256/6c0fa7d4896869f42e9a592183da94611e29c40736a3e6d400a28843425fff71.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/html5up-prologue/screenshots/mobile.png",
+      "sha256": "94e52701d78a498f5e5a1222fd88d4ff0d3b655f5ec36afbbe7f1793bd82012c",
+      "bytes": 1901961,
+      "key": "v1/sha256/94e52701d78a498f5e5a1222fd88d4ff0d3b655f5ec36afbbe7f1793bd82012c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/html5up-read-only/screenshots/desktop.png",
+      "sha256": "7593d5194ce2bcfe32457763e91aaf216208bb5f0e8e2a1a94898c2790dea93e",
+      "bytes": 1008470,
+      "key": "v1/sha256/7593d5194ce2bcfe32457763e91aaf216208bb5f0e8e2a1a94898c2790dea93e.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/html5up-read-only/screenshots/mobile.png",
+      "sha256": "bfd5e08d776216f3a875ac26c8bfd3402d9126c90e0a640b47bcaab192cce762",
+      "bytes": 521116,
+      "key": "v1/sha256/bfd5e08d776216f3a875ac26c8bfd3402d9126c90e0a640b47bcaab192cce762.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/html5up-tessellate/screenshots/desktop.png",
+      "sha256": "45dfd3cd36a414b89b888921cb6858ee55ead902bb95b50457620bd8907e2eaa",
+      "bytes": 9411443,
+      "key": "v1/sha256/45dfd3cd36a414b89b888921cb6858ee55ead902bb95b50457620bd8907e2eaa.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/html5up-tessellate/screenshots/mobile.png",
+      "sha256": "584d2498e4674395c1be80f79f5129cc568d06d3e2773cbd5dc63b36fb8d89a5",
+      "bytes": 2769997,
+      "key": "v1/sha256/584d2498e4674395c1be80f79f5129cc568d06d3e2773cbd5dc63b36fb8d89a5.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/htmlcodex-gardener-garden-services/screenshots/desktop.png",
+      "sha256": "9d998ac9ba53cdc26ac77b70d40e404213a3e297401e9e68088fb5fb93f4a9fd",
+      "bytes": 1265845,
+      "key": "v1/sha256/9d998ac9ba53cdc26ac77b70d40e404213a3e297401e9e68088fb5fb93f4a9fd.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/htmlcodex-gardener-garden-services/screenshots/mobile.png",
+      "sha256": "839dba36052b15b0c429fbbfdcda4b56ebea8967701670bc55f6c04d03689a9b",
+      "bytes": 315449,
+      "key": "v1/sha256/839dba36052b15b0c429fbbfdcda4b56ebea8967701670bc55f6c04d03689a9b.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/independent-retail-beepy-bella-art-world/screenshots/desktop.png",
+      "sha256": "c28baaf165fc1008140b3a30fb8cb1f0ef434c185dfc810410c098e6ea6ec179",
+      "bytes": 1138034,
+      "key": "v1/sha256/c28baaf165fc1008140b3a30fb8cb1f0ef434c185dfc810410c098e6ea6ec179.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/independent-retail-beepy-bella-art-world/screenshots/mobile.png",
+      "sha256": "be7c2839c807bd7630e6460adb6b99f9b4190bcbf7222cbcd37c0d35f0953e32",
+      "bytes": 790652,
+      "key": "v1/sha256/be7c2839c807bd7630e6460adb6b99f9b4190bcbf7222cbcd37c0d35f0953e32.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/jewelry-panconesi-sculptural-luxury/screenshots/desktop.png",
+      "sha256": "e6978437ffbd58581d576fd75faac2ca37b02ec037d87cb27561bb3e0f19bf70",
+      "bytes": 6640243,
+      "key": "v1/sha256/e6978437ffbd58581d576fd75faac2ca37b02ec037d87cb27561bb3e0f19bf70.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/jewelry-panconesi-sculptural-luxury/screenshots/mobile.png",
+      "sha256": "4af6d02dce3e4ab164af38636361cf03671a3df84f9a3f6e5a37749b1fcc7bf9",
+      "bytes": 1203675,
+      "key": "v1/sha256/4af6d02dce3e4ab164af38636361cf03671a3df84f9a3f6e5a37749b1fcc7bf9.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/jewelry-taya-memory-wearable/screenshots/desktop.png",
+      "sha256": "660005398573f97aa130414df5c920900936e42fd9c045de579c10c25303f7ca",
+      "bytes": 2408958,
+      "key": "v1/sha256/660005398573f97aa130414df5c920900936e42fd9c045de579c10c25303f7ca.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/jewelry-taya-memory-wearable/screenshots/mobile.png",
+      "sha256": "941bdb41e4228ef8fd628fbb38d19abc2bdec33d4c16603fa1bb03f279d2ab1d",
+      "bytes": 1029826,
+      "key": "v1/sha256/941bdb41e4228ef8fd628fbb38d19abc2bdec33d4c16603fa1bb03f279d2ab1d.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/kinetic-club-program-bands/screenshots/desktop.png",
+      "sha256": "a8f6904a0b35b69143320392f11e89667c8fa49d59e1baed4a8291e82da10bea",
+      "bytes": 546499,
+      "key": "v1/sha256/a8f6904a0b35b69143320392f11e89667c8fa49d59e1baed4a8291e82da10bea.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/kinetic-club-program-bands/screenshots/mobile.png",
+      "sha256": "2f555faed9a25f25f5173ceb16b634884e555bbf4b5bee0d499c7cb096ae2953",
+      "bytes": 202407,
+      "key": "v1/sha256/2f555faed9a25f25f5173ceb16b634884e555bbf4b5bee0d499c7cb096ae2953.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/kokoro-spatial-editorial/screenshots/desktop.png",
+      "sha256": "ce2fcff311123d7d951b5b2b314dd385f5493da8a9b509451775a6ebdcd473e7",
+      "bytes": 4083631,
+      "key": "v1/sha256/ce2fcff311123d7d951b5b2b314dd385f5493da8a9b509451775a6ebdcd473e7.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/kokoro-spatial-editorial/screenshots/mobile.png",
+      "sha256": "7f8ae7a48f610088a3dabe4aea76c801f5984d4b8f19d5a203537037897dd9af",
+      "bytes": 1901984,
+      "key": "v1/sha256/7f8ae7a48f610088a3dabe4aea76c801f5984d4b8f19d5a203537037897dd9af.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/lapa-groth-hospitality-studio/screenshots/desktop.png",
+      "sha256": "23b232be189999c0ae454dc2870b68fccf6ebd516210e44bf92d9b5d2ca29944",
+      "bytes": 4575470,
+      "key": "v1/sha256/23b232be189999c0ae454dc2870b68fccf6ebd516210e44bf92d9b5d2ca29944.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/lapa-groth-hospitality-studio/screenshots/mobile.png",
+      "sha256": "903c4246c919728ac50f7ad3ecba4b70a47e9784770c660aaf200ceab80265e3",
+      "bytes": 2065211,
+      "key": "v1/sha256/903c4246c919728ac50f7ad3ecba4b70a47e9784770c660aaf200ceab80265e3.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/lapa-mcalpine-sanctuary/screenshots/desktop.png",
+      "sha256": "c04533dab4f2044104dbe76aaf9522b1455b7d2aeed6d3319b3f1bd0a0345d3a",
+      "bytes": 1630817,
+      "key": "v1/sha256/c04533dab4f2044104dbe76aaf9522b1455b7d2aeed6d3319b3f1bd0a0345d3a.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/lapa-mcalpine-sanctuary/screenshots/mobile.png",
+      "sha256": "226c26e05cfd0380127dbb27f3ad6c4b8a671aa8d68edd3a66772e211bb0ee6b",
+      "bytes": 502235,
+      "key": "v1/sha256/226c26e05cfd0380127dbb27f3ad6c4b8a671aa8d68edd3a66772e211bb0ee6b.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/lapa-mesh-architects-editorial/screenshots/desktop.png",
+      "sha256": "3a308a925e79416ee140c64d4a5b55e80ad741acc79833634097cc4a64ba6a0d",
+      "bytes": 5939270,
+      "key": "v1/sha256/3a308a925e79416ee140c64d4a5b55e80ad741acc79833634097cc4a64ba6a0d.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/lapa-mesh-architects-editorial/screenshots/mobile.png",
+      "sha256": "35c3c6a90349b390aa1df4804cf854d29a861eac502102262b065e99c28d8cb4",
+      "bytes": 1489823,
+      "key": "v1/sha256/35c3c6a90349b390aa1df4804cf854d29a861eac502102262b065e99c28d8cb4.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/neighborhood-table-collage/screenshots/desktop.png",
+      "sha256": "5ef11c46c9c770c48f47b001d11c98940acfa1516f401195cee035c59b6faf09",
+      "bytes": 281356,
+      "key": "v1/sha256/5ef11c46c9c770c48f47b001d11c98940acfa1516f401195cee035c59b6faf09.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/neighborhood-table-collage/screenshots/mobile.png",
+      "sha256": "a8015a458d4c3e90e7e21478ab16d48e83440cb6353e5bba251b404802232b66",
+      "bytes": 192793,
+      "key": "v1/sha256/a8015a458d4c3e90e7e21478ab16d48e83440cb6353e5bba251b404802232b66.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/nightjar-cinematic-salon/screenshots/desktop.png",
+      "sha256": "512e8dd79c88b3d0e840b32cb03718ab72ad3538c6f19b9c09421ea1a63c02de",
+      "bytes": 4103639,
+      "key": "v1/sha256/512e8dd79c88b3d0e840b32cb03718ab72ad3538c6f19b9c09421ea1a63c02de.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/nightjar-cinematic-salon/screenshots/mobile.png",
+      "sha256": "a59ae582de4d4482c44c03b1e704facd80af0320954900de15abd4aa8e0c86ba",
+      "bytes": 1011780,
+      "key": "v1/sha256/a59ae582de4d4482c44c03b1e704facd80af0320954900de15abd4aa8e0c86ba.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/orgarden-gardening-services/screenshots/desktop.png",
+      "sha256": "2618e9f761ea8bfaf3d37116430f3da741fc4eb984d0d06d3a0ae78827226463",
+      "bytes": 4399865,
+      "key": "v1/sha256/2618e9f761ea8bfaf3d37116430f3da741fc4eb984d0d06d3a0ae78827226463.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/orgarden-gardening-services/screenshots/mobile.png",
+      "sha256": "ba86c02c2c094e1d2badfa5018ba2432b9c69425c3879a2f9d3ce32f7eb50aea",
+      "bytes": 2228734,
+      "key": "v1/sha256/ba86c02c2c094e1d2badfa5018ba2432b9c69425c3879a2f9d3ce32f7eb50aea.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/quiet-care-consultation/screenshots/desktop.png",
+      "sha256": "8fe3586e10189cdaa9977b36356a9b2364f3d2821b1b60fedf328f8f0a82f816",
+      "bytes": 359150,
+      "key": "v1/sha256/8fe3586e10189cdaa9977b36356a9b2364f3d2821b1b60fedf328f8f0a82f816.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/quiet-care-consultation/screenshots/mobile.png",
+      "sha256": "40e5f0cbe7bbbbbcdf20982b0e3f315fad0e667df5f2589d5f89ac71cdc682e6",
+      "bytes": 220226,
+      "key": "v1/sha256/40e5f0cbe7bbbbbcdf20982b0e3f315fad0e667df5f2589d5f89ac71cdc682e6.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-accountant-deadline-calendar/screenshots/desktop.png",
+      "sha256": "6657cbe4c80f8a165aa34a5cac352d232c93f1102acae13d02d920d657631b24",
+      "bytes": 1086557,
+      "key": "v1/sha256/6657cbe4c80f8a165aa34a5cac352d232c93f1102acae13d02d920d657631b24.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-accountant-deadline-calendar/screenshots/mobile.png",
+      "sha256": "ca03419c94a51a5b8231d48d57e8597c1c11537b78a654b6bc88b61d113f45e5",
+      "bytes": 686903,
+      "key": "v1/sha256/ca03419c94a51a5b8231d48d57e8597c1c11537b78a654b6bc88b61d113f45e5.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-auto-repair-digital-inspection/screenshots/desktop.png",
+      "sha256": "477ffcdece7da506e24962a6df33528ab0401155a3611a7ad38363fdd3a1fa0f",
+      "bytes": 872298,
+      "key": "v1/sha256/477ffcdece7da506e24962a6df33528ab0401155a3611a7ad38363fdd3a1fa0f.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-auto-repair-digital-inspection/screenshots/mobile.png",
+      "sha256": "811040ecfc237b9097d223a0a100adb73dd72d493df432834b0052b9ea10915f",
+      "bytes": 475139,
+      "key": "v1/sha256/811040ecfc237b9097d223a0a100adb73dd72d493df432834b0052b9ea10915f.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-barber-walk-in-queue/screenshots/desktop.png",
+      "sha256": "9b8251808d00b7153bdc54b3c7298701918cbd59ecfa054b962a8d75971a0554",
+      "bytes": 873243,
+      "key": "v1/sha256/9b8251808d00b7153bdc54b3c7298701918cbd59ecfa054b962a8d75971a0554.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-barber-walk-in-queue/screenshots/mobile.png",
+      "sha256": "1a9d632230101f048360e1909ed58718ad52d7b903c1f6583aa4e32660a46dcd",
+      "bytes": 490457,
+      "key": "v1/sha256/1a9d632230101f048360e1909ed58718ad52d7b903c1f6583aa4e32660a46dcd.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-gym-timetable-first/screenshots/desktop.png",
+      "sha256": "18f0ed2e9d18abf1a46f70a6ad36e37ab8556411373e679593697df98bad7b98",
+      "bytes": 1107396,
+      "key": "v1/sha256/18f0ed2e9d18abf1a46f70a6ad36e37ab8556411373e679593697df98bad7b98.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-gym-timetable-first/screenshots/mobile.png",
+      "sha256": "34763dacb37bbdcc02d78d8f258ab3e2217c281bbce8768b63c2aed189da3481",
+      "bytes": 568904,
+      "key": "v1/sha256/34763dacb37bbdcc02d78d8f258ab3e2217c281bbce8768b63c2aed189da3481.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-hair-salon-stylist-menu/screenshots/desktop.png",
+      "sha256": "778c3e81ff81183b3d3d26ea17fcc7f5d59deb87335b6e3f844a9776135b1753",
+      "bytes": 995810,
+      "key": "v1/sha256/778c3e81ff81183b3d3d26ea17fcc7f5d59deb87335b6e3f844a9776135b1753.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-hair-salon-stylist-menu/screenshots/mobile.png",
+      "sha256": "99d826714e4daa558b63cd18c3a01357acae45d273e02aea487a5a0f5bcfd860",
+      "bytes": 563251,
+      "key": "v1/sha256/99d826714e4daa558b63cd18c3a01357acae45d273e02aea487a5a0f5bcfd860.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-landscaping-season-wheel/screenshots/desktop.png",
+      "sha256": "2bffc16780d30457a89638a23f05ab4c18f952a7217754cb64ef44b78ff9ff4a",
+      "bytes": 1778211,
+      "key": "v1/sha256/2bffc16780d30457a89638a23f05ab4c18f952a7217754cb64ef44b78ff9ff4a.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-landscaping-season-wheel/screenshots/mobile.png",
+      "sha256": "a83deb51ebc49367e53bc925876ceaf0eddce1775380f39cce41e2c0824631cd",
+      "bytes": 984282,
+      "key": "v1/sha256/a83deb51ebc49367e53bc925876ceaf0eddce1775380f39cce41e2c0824631cd.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-law-firm-results-ledger/screenshots/desktop.png",
+      "sha256": "e07c2a0ce95e2d91d3c8d75eff79464363eeda53eaea74bfe3be60e7d1cb2517",
+      "bytes": 1594955,
+      "key": "v1/sha256/e07c2a0ce95e2d91d3c8d75eff79464363eeda53eaea74bfe3be60e7d1cb2517.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-law-firm-results-ledger/screenshots/mobile.png",
+      "sha256": "bdb90cbfc504d05d0f49f30fe0c7d45e238df5ff5610ebfba5c0eb7aeddb7efb",
+      "bytes": 1060649,
+      "key": "v1/sha256/bdb90cbfc504d05d0f49f30fe0c7d45e238df5ff5610ebfba5c0eb7aeddb7efb.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-med-spa-treatment-menu/screenshots/desktop.png",
+      "sha256": "7af47df4267f534da188e1f20abb12a73a5edb5d68a90447f690445a6b33da11",
+      "bytes": 1230711,
+      "key": "v1/sha256/7af47df4267f534da188e1f20abb12a73a5edb5d68a90447f690445a6b33da11.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-med-spa-treatment-menu/screenshots/mobile.png",
+      "sha256": "436d675b19bd246b28a357988423ccc9744b2523a6fbf0928e0eee2c14ca53c1",
+      "bytes": 650303,
+      "key": "v1/sha256/436d675b19bd246b28a357988423ccc9744b2523a6fbf0928e0eee2c14ca53c1.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-plumber-dispatch-console/screenshots/desktop.png",
+      "sha256": "c387b5104fa7f4ecf1b38014fd696a47519277cb6897f7c4e69972a7dae3cb84",
+      "bytes": 1535830,
+      "key": "v1/sha256/c387b5104fa7f4ecf1b38014fd696a47519277cb6897f7c4e69972a7dae3cb84.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-plumber-dispatch-console/screenshots/mobile.png",
+      "sha256": "9a153c8ebab8759888170a7ff245e6752eeb27f59a35869d55d474c5df5375d5",
+      "bytes": 961833,
+      "key": "v1/sha256/9a153c8ebab8759888170a7ff245e6752eeb27f59a35869d55d474c5df5375d5.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-roofing-storm-response/screenshots/desktop.png",
+      "sha256": "1a695de52f46f2763ea8af0f80b7f18f370955a9303037d92ff917d00f8eedb2",
+      "bytes": 1335291,
+      "key": "v1/sha256/1a695de52f46f2763ea8af0f80b7f18f370955a9303037d92ff917d00f8eedb2.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/spicer-roofing-storm-response/screenshots/mobile.png",
+      "sha256": "fb581040b25fc955805a6858974770f6839e612096145ac37d37109a66e243db",
+      "bytes": 894795,
+      "key": "v1/sha256/fb581040b25fc955805a6858974770f6839e612096145ac37d37109a66e243db.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/startbootstrap-agency/screenshots/desktop.png",
+      "sha256": "892afc6d9d78664679e9384f634cdb828e6f0432fce2648b66514e56f7326b54",
+      "bytes": 2191934,
+      "key": "v1/sha256/892afc6d9d78664679e9384f634cdb828e6f0432fce2648b66514e56f7326b54.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/startbootstrap-agency/screenshots/mobile.png",
+      "sha256": "f85455b083d0a914bfa10279cf9e09c490636c5dbfe84b5b6cf062aa0b1cb44a",
+      "bytes": 1029045,
+      "key": "v1/sha256/f85455b083d0a914bfa10279cf9e09c490636c5dbfe84b5b6cf062aa0b1cb44a.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/startbootstrap-business-casual/screenshots/desktop.png",
+      "sha256": "2fb0bb1ef3074977435db45c7992a158702bd55d76dbc971b17317c31b80e062",
+      "bytes": 1774860,
+      "key": "v1/sha256/2fb0bb1ef3074977435db45c7992a158702bd55d76dbc971b17317c31b80e062.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/startbootstrap-business-casual/screenshots/mobile.png",
+      "sha256": "786ccbc0730b9d7031d49d5bbe3128f4ebb7b0fa31699b48200981b78b089b7c",
+      "bytes": 279679,
+      "key": "v1/sha256/786ccbc0730b9d7031d49d5bbe3128f4ebb7b0fa31699b48200981b78b089b7c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/startbootstrap-clean-blog/screenshots/desktop.png",
+      "sha256": "a6813e0e57f996ebd6625d2c3dbf8418128e8bcf04de350cf812772b58a771e7",
+      "bytes": 730742,
+      "key": "v1/sha256/a6813e0e57f996ebd6625d2c3dbf8418128e8bcf04de350cf812772b58a771e7.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/startbootstrap-clean-blog/screenshots/mobile.png",
+      "sha256": "ad164c87a30138e638ad5d78f44cd3ebe1b48dd3df54f153b187abe12a68001c",
+      "bytes": 198350,
+      "key": "v1/sha256/ad164c87a30138e638ad5d78f44cd3ebe1b48dd3df54f153b187abe12a68001c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/startbootstrap-creative/screenshots/desktop.png",
+      "sha256": "59bd962b3e353a66eaa97e4dc3ce5943f501a881e590cf936cdc78990fef7592",
+      "bytes": 2184654,
+      "key": "v1/sha256/59bd962b3e353a66eaa97e4dc3ce5943f501a881e590cf936cdc78990fef7592.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/startbootstrap-creative/screenshots/mobile.png",
+      "sha256": "ce327bff15d5f468cfc1570406f1862a89b749d883054c5228478a7d70a32f31",
+      "bytes": 1090137,
+      "key": "v1/sha256/ce327bff15d5f468cfc1570406f1862a89b749d883054c5228478a7d70a32f31.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/startbootstrap-grayscale/screenshots/desktop.png",
+      "sha256": "1c171bf7b7a9e281b9730582f119d2e394ed82aa228638694917a59319893eaa",
+      "bytes": 1403082,
+      "key": "v1/sha256/1c171bf7b7a9e281b9730582f119d2e394ed82aa228638694917a59319893eaa.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/startbootstrap-grayscale/screenshots/mobile.png",
+      "sha256": "ddcc31b064b92549533a60e9055172e6534cf5377e0bcf9ac3318b972c0515e5",
+      "bytes": 398001,
+      "key": "v1/sha256/ddcc31b064b92549533a60e9055172e6534cf5377e0bcf9ac3318b972c0515e5.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/startbootstrap-landing-page/screenshots/desktop.png",
+      "sha256": "15786645b8367da4b90958a6c3318b34682873fedb398d750cd2f00f73a5e8d2",
+      "bytes": 2068267,
+      "key": "v1/sha256/15786645b8367da4b90958a6c3318b34682873fedb398d750cd2f00f73a5e8d2.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/startbootstrap-landing-page/screenshots/mobile.png",
+      "sha256": "293db560df7d99ce7baea1c6be82a7f2f5eb499676ad09283f9d771fcdde6f0a",
+      "bytes": 1036821,
+      "key": "v1/sha256/293db560df7d99ce7baea1c6be82a7f2f5eb499676ad09283f9d771fcdde6f0a.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/startbootstrap-small-business/screenshots/desktop.png",
+      "sha256": "f4af2816b0a849b14e898f6bb64d38e1af771cf3e42c2c5dd367ea0271fe22f4",
+      "bytes": 118186,
+      "key": "v1/sha256/f4af2816b0a849b14e898f6bb64d38e1af771cf3e42c2c5dd367ea0271fe22f4.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/startbootstrap-small-business/screenshots/mobile.png",
+      "sha256": "cf29e55cf18a34be7d463cb7e0fe9af77451a44443e10aaeac9163f4677ef057",
+      "bytes": 102629,
+      "key": "v1/sha256/cf29e55cf18a34be7d463cb7e0fe9af77451a44443e10aaeac9163f4677ef057.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/templatemo-finance-business/screenshots/desktop.png",
+      "sha256": "1bc5df04872ab44acf49acf77213e914b3c3912cf38a0725ea00b41993660c76",
+      "bytes": 1518268,
+      "key": "v1/sha256/1bc5df04872ab44acf49acf77213e914b3c3912cf38a0725ea00b41993660c76.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/templatemo-finance-business/screenshots/mobile.png",
+      "sha256": "7b7083d0997709fa72b6cb7fb9b8563703cefc3ee8b720ce67509e2e3f866ba6",
+      "bytes": 938128,
+      "key": "v1/sha256/7b7083d0997709fa72b6cb7fb9b8563703cefc3ee8b720ce67509e2e3f866ba6.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/templatemo-medic-care/screenshots/desktop.png",
+      "sha256": "922f9c85e1a4294e5806c6bae21a59392bada8b6dc0c4d709d92698d6f5349a4",
+      "bytes": 985628,
+      "key": "v1/sha256/922f9c85e1a4294e5806c6bae21a59392bada8b6dc0c4d709d92698d6f5349a4.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/templatemo-medic-care/screenshots/mobile.png",
+      "sha256": "8bf06a59c97fa8a919b568ded8be334bca2da419ad1726b4cb44308e2e7c01c0",
+      "bytes": 350358,
+      "key": "v1/sha256/8bf06a59c97fa8a919b568ded8be334bca2da419ad1726b4cb44308e2e7c01c0.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/templatemo-training-studio/screenshots/desktop.png",
+      "sha256": "f7a1a49957b04679edeee232897fe39828a8298d643315aadf4017bb0105b569",
+      "bytes": 1955182,
+      "key": "v1/sha256/f7a1a49957b04679edeee232897fe39828a8298d643315aadf4017bb0105b569.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/templatemo-training-studio/screenshots/mobile.png",
+      "sha256": "8b14e029e42ba205582f019a4ede141464ca542d8080881bb48851b84dcd193d",
+      "bytes": 913700,
+      "key": "v1/sha256/8b14e029e42ba205582f019a4ede141464ca542d8080881bb48851b84dcd193d.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/trade-project-showcase/screenshots/desktop.png",
+      "sha256": "96843c6496f41a8ffb854f4d10fd84b824bad5447d450e2cbae1f51b86a37cab",
+      "bytes": 1589215,
+      "key": "v1/sha256/96843c6496f41a8ffb854f4d10fd84b824bad5447d450e2cbae1f51b86a37cab.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/trade-project-showcase/screenshots/mobile.png",
+      "sha256": "48200f27596a16abc0249ef157f9758db8e7f1f810f8a4f8c019f4b16f48e0bc",
+      "bytes": 757784,
+      "key": "v1/sha256/48200f27596a16abc0249ef157f9758db8e7f1f810f8a4f8c019f4b16f48e0bc.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/trades-field-report/screenshots/desktop.png",
+      "sha256": "a443faeaa33f0109e3d999e3fd3602316bcaedf49ce0c924928b8b4910364979",
+      "bytes": 1443193,
+      "key": "v1/sha256/a443faeaa33f0109e3d999e3fd3602316bcaedf49ce0c924928b8b4910364979.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/trades-field-report/screenshots/mobile.png",
+      "sha256": "ea13ccf4e0b3450b986757935f3604df7e6fae2286d3be8cbff2baf6c412297d",
+      "bytes": 673160,
+      "key": "v1/sha256/ea13ccf4e0b3450b986757935f3604df7e6fae2286d3be8cbff2baf6c412297d.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/urgent-trade-service-poster/screenshots/desktop.png",
+      "sha256": "db1ee6d444a3071f4cf757d2045279f9a0dcbb67d7540bef877cb8fc9011aed8",
+      "bytes": 418857,
+      "key": "v1/sha256/db1ee6d444a3071f4cf757d2045279f9a0dcbb67d7540bef877cb8fc9011aed8.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/urgent-trade-service-poster/screenshots/mobile.png",
+      "sha256": "51e0f771c5e0599c2be68d867b0913ad7f3a5b25f1c23fdbc31a41ec5bd8263e",
+      "bytes": 192211,
+      "key": "v1/sha256/51e0f771c5e0599c2be68d867b0913ad7f3a5b25f1c23fdbc31a41ec5bd8263e.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-accounting-goodman-jones/screenshots/desktop.png",
+      "sha256": "1ff1bef82475315f3ef7a77b4df42c3b1f11b8f2f188ca2941ec160aa241b0c5",
+      "bytes": 2924519,
+      "key": "v1/sha256/1ff1bef82475315f3ef7a77b4df42c3b1f11b8f2f188ca2941ec160aa241b0c5.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-accounting-goodman-jones/screenshots/mobile.png",
+      "sha256": "98f63636b4f94ecf4dbefdba85a00322fd524bea4ed1ad9268d8ac1ee078ce34",
+      "bytes": 1037800,
+      "key": "v1/sha256/98f63636b4f94ecf4dbefdba85a00322fd524bea4ed1ad9268d8ac1ee078ce34.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-accounting-taxace/screenshots/desktop.png",
+      "sha256": "7b89e25a02ac9544a7132b132d9cb9418980b60793f3db141cc7b4109a365382",
+      "bytes": 4389971,
+      "key": "v1/sha256/7b89e25a02ac9544a7132b132d9cb9418980b60793f3db141cc7b4109a365382.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-accounting-taxace/screenshots/mobile.png",
+      "sha256": "ab64d85d95e0d2cd8f6966eb54ada4e3fefd4aa2f15fe186195edb4a19b8a2de",
+      "bytes": 2127861,
+      "key": "v1/sha256/ab64d85d95e0d2cd8f6966eb54ada4e3fefd4aa2f15fe186195edb4a19b8a2de.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-accounting-whitestone/screenshots/desktop.png",
+      "sha256": "8d93d5f823d9ed496f0cf9ebb6b8b78a873277446e5c70fe3fa9f34a9c6b0739",
+      "bytes": 1852636,
+      "key": "v1/sha256/8d93d5f823d9ed496f0cf9ebb6b8b78a873277446e5c70fe3fa9f34a9c6b0739.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-accounting-whitestone/screenshots/mobile.png",
+      "sha256": "24ed16ab0e132e14eb9ba50b0eb2ec257641c3f4a4ebdcdfc8867b33b62d9e1f",
+      "bytes": 799061,
+      "key": "v1/sha256/24ed16ab0e132e14eb9ba50b0eb2ec257641c3f4a4ebdcdfc8867b33b62d9e1f.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-architecture-indie-interiors/screenshots/desktop.png",
+      "sha256": "40c3439c425a95b2a8cdacd83cd6b9d3fc0de4ff2656e518b6165b58ca3f1007",
+      "bytes": 4702875,
+      "key": "v1/sha256/40c3439c425a95b2a8cdacd83cd6b9d3fc0de4ff2656e518b6165b58ca3f1007.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-architecture-indie-interiors/screenshots/mobile.png",
+      "sha256": "61bf019146648cb552549c14ef1e7d3e891405940177b87432fca33dfadf3dde",
+      "bytes": 1633621,
+      "key": "v1/sha256/61bf019146648cb552549c14ef1e7d3e891405940177b87432fca33dfadf3dde.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-architecture-simpson-studio/screenshots/desktop.png",
+      "sha256": "a1d0d306b7d049ab1affd4f99cf6ab019278c9974a9697cf775cdfe5dbfac0ba",
+      "bytes": 2742103,
+      "key": "v1/sha256/a1d0d306b7d049ab1affd4f99cf6ab019278c9974a9697cf775cdfe5dbfac0ba.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-architecture-simpson-studio/screenshots/mobile.png",
+      "sha256": "d10c0c598bfb5ad9a2f91b1bd5e41763956385a854ba1d3a4a611af06e35767e",
+      "bytes": 1422364,
+      "key": "v1/sha256/d10c0c598bfb5ad9a2f91b1bd5e41763956385a854ba1d3a4a611af06e35767e.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-architecture-studio-peake/screenshots/desktop.png",
+      "sha256": "6f97162f07a63c1c3372e1763c085df2cfbc2868a292a7c787428623763eb6b8",
+      "bytes": 8134908,
+      "key": "v1/sha256/6f97162f07a63c1c3372e1763c085df2cfbc2868a292a7c787428623763eb6b8.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-architecture-studio-peake/screenshots/mobile.png",
+      "sha256": "54a78bc7036e41c30a213cf0fa223df58847ef8080d69283d1418dd7edb5d5ab",
+      "bytes": 2410531,
+      "key": "v1/sha256/54a78bc7036e41c30a213cf0fa223df58847ef8080d69283d1418dd7edb5d5ab.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-auto-repair-abees-hi-tech/screenshots/desktop.png",
+      "sha256": "9e51065af58af4d642eeeba735264aea59a97c0f71cc488f0cff1aa32b3360ef",
+      "bytes": 632173,
+      "key": "v1/sha256/9e51065af58af4d642eeeba735264aea59a97c0f71cc488f0cff1aa32b3360ef.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-auto-repair-abees-hi-tech/screenshots/mobile.png",
+      "sha256": "711844c67b588080fc3108914e451ec1003e984bf986351a07fa7499cdf88a7b",
+      "bytes": 511545,
+      "key": "v1/sha256/711844c67b588080fc3108914e451ec1003e984bf986351a07fa7499cdf88a7b.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-auto-repair-ade-auto-repairs/screenshots/desktop.png",
+      "sha256": "826edaf6f85151e9d21eed9f577dba6fad98aa88f7821b045e1b82ab0cbc4e12",
+      "bytes": 2638303,
+      "key": "v1/sha256/826edaf6f85151e9d21eed9f577dba6fad98aa88f7821b045e1b82ab0cbc4e12.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-auto-repair-ade-auto-repairs/screenshots/mobile.png",
+      "sha256": "6148ffcf48a22867cca1071aeb1c4293f15f8d93c2704d56f0ac393bebe500d1",
+      "bytes": 1047938,
+      "key": "v1/sha256/6148ffcf48a22867cca1071aeb1c4293f15f8d93c2704d56f0ac393bebe500d1.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-auto-repair-fallsbrook-motors/screenshots/desktop.png",
+      "sha256": "17d30a2d59a83261aa600c151005920460e57b7504519c997849eac75d02f487",
+      "bytes": 2106787,
+      "key": "v1/sha256/17d30a2d59a83261aa600c151005920460e57b7504519c997849eac75d02f487.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-auto-repair-fallsbrook-motors/screenshots/mobile.png",
+      "sha256": "bf25a76d7e1fbda3ee0b2cb94b249a7e88ae82d4f9e85c184372638f5cde336c",
+      "bytes": 772408,
+      "key": "v1/sha256/bf25a76d7e1fbda3ee0b2cb94b249a7e88ae82d4f9e85c184372638f5cde336c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-auto-repair-michael-auto/screenshots/desktop.png",
+      "sha256": "0f7d3898a2b6a651497a3bfdda798109697c2121e974ff249c69bb1a705ba812",
+      "bytes": 835010,
+      "key": "v1/sha256/0f7d3898a2b6a651497a3bfdda798109697c2121e974ff249c69bb1a705ba812.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-auto-repair-michael-auto/screenshots/mobile.png",
+      "sha256": "e814135b68eefd9ef2d7e142aef2528ccc646cdb90a055e17553c80b3c5bc4da",
+      "bytes": 583959,
+      "key": "v1/sha256/e814135b68eefd9ef2d7e142aef2528ccc646cdb90a055e17553c80b3c5bc4da.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-auto-repair-reliance-autos/screenshots/desktop.png",
+      "sha256": "697e77fafdb645c7d19a09805b30bfaad6fbf626603d535261703064ed247943",
+      "bytes": 2646911,
+      "key": "v1/sha256/697e77fafdb645c7d19a09805b30bfaad6fbf626603d535261703064ed247943.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-auto-repair-reliance-autos/screenshots/mobile.png",
+      "sha256": "439a91781ba2f43461330be1fd960a2cd737d739839136ed667653c00b62c6c6",
+      "bytes": 1268068,
+      "key": "v1/sha256/439a91781ba2f43461330be1fd960a2cd737d739839136ed667653c00b62c6c6.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-auto-repair-urban-autocare/screenshots/desktop.png",
+      "sha256": "a72f8e55252baacbf3a9d426d064883ce49999f7351916de886808cc8109e9d9",
+      "bytes": 4064372,
+      "key": "v1/sha256/a72f8e55252baacbf3a9d426d064883ce49999f7351916de886808cc8109e9d9.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-auto-repair-urban-autocare/screenshots/mobile.png",
+      "sha256": "2d9d5ec87608aa5415cc992ac019fe93449e7cb17e67254a3878aacc068cfd17",
+      "bytes": 3450319,
+      "key": "v1/sha256/2d9d5ec87608aa5415cc992ac019fe93449e7cb17e67254a3878aacc068cfd17.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-beauty-baba-barbers/screenshots/desktop.png",
+      "sha256": "19ae94661992161fc98c490b4b9212dc3f3c67c21736c9c8f079e4767d28a7b1",
+      "bytes": 9801579,
+      "key": "v1/sha256/19ae94661992161fc98c490b4b9212dc3f3c67c21736c9c8f079e4767d28a7b1.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-beauty-baba-barbers/screenshots/mobile.png",
+      "sha256": "da76bcb605646eb1615ad5265f4024382d20aae76740c2d9709216b079088029",
+      "bytes": 4252533,
+      "key": "v1/sha256/da76bcb605646eb1615ad5265f4024382d20aae76740c2d9709216b079088029.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-beauty-fruittii-hair-art-lab/screenshots/desktop.png",
+      "sha256": "3a8775cc51afc84c8fb7e8e72e3030b38d92130be4634937b067bbe2b195e909",
+      "bytes": 3879801,
+      "key": "v1/sha256/3a8775cc51afc84c8fb7e8e72e3030b38d92130be4634937b067bbe2b195e909.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-beauty-fruittii-hair-art-lab/screenshots/mobile.png",
+      "sha256": "9a6fbde0337ab9add78b48df88ccb38edc716b9c8968915b13ee9d97fb2ebcf5",
+      "bytes": 1471969,
+      "key": "v1/sha256/9a6fbde0337ab9add78b48df88ccb38edc716b9c8968915b13ee9d97fb2ebcf5.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-beauty-salt-salon/screenshots/desktop.png",
+      "sha256": "6988ba8a81274264cc91d9f01ebbc88e0ba138911f5836b3723a7be581790c82",
+      "bytes": 965539,
+      "key": "v1/sha256/6988ba8a81274264cc91d9f01ebbc88e0ba138911f5836b3723a7be581790c82.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-beauty-salt-salon/screenshots/mobile.png",
+      "sha256": "6d5ceb4fa4fa309e3002f7f2032e9d9466d60b019b2eb6b8370509348336a899",
+      "bytes": 277726,
+      "key": "v1/sha256/6d5ceb4fa4fa309e3002f7f2032e9d9466d60b019b2eb6b8370509348336a899.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-beauty-true-man-barbers/screenshots/desktop.png",
+      "sha256": "177170288ef65e690c6396124d0660aca0b0bd408f7d5be3fc68eec87ba05ab3",
+      "bytes": 2790199,
+      "key": "v1/sha256/177170288ef65e690c6396124d0660aca0b0bd408f7d5be3fc68eec87ba05ab3.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-beauty-true-man-barbers/screenshots/mobile.png",
+      "sha256": "a5a7ae2822a08c167ba7a4c6c420eb47637a433198bc93b2bd6b3e4cf256b2c0",
+      "bytes": 1461796,
+      "key": "v1/sha256/a5a7ae2822a08c167ba7a4c6c420eb47637a433198bc93b2bd6b3e4cf256b2c0.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-coffee-ember-roast/screenshots/desktop.png",
+      "sha256": "fe6e7ad25bed46b8c7d9dd9d48bff9c1cf58456f7e69a01d03fd8f231a8e58b4",
+      "bytes": 1351628,
+      "key": "v1/sha256/fe6e7ad25bed46b8c7d9dd9d48bff9c1cf58456f7e69a01d03fd8f231a8e58b4.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-coffee-ember-roast/screenshots/mobile.png",
+      "sha256": "1233b69a27ec88790c51235e206e078fdb648834c6a1510e91383822867f4e8f",
+      "bytes": 918528,
+      "key": "v1/sha256/1233b69a27ec88790c51235e206e078fdb648834c6a1510e91383822867f4e8f.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-coffee-marigold/screenshots/desktop.png",
+      "sha256": "4387904d0a003ef3152830d388c332a74a96320ff1ac59a78679be7c44bfc619",
+      "bytes": 3917557,
+      "key": "v1/sha256/4387904d0a003ef3152830d388c332a74a96320ff1ac59a78679be7c44bfc619.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-coffee-marigold/screenshots/mobile.png",
+      "sha256": "4d82eb8098a64eee2a03268df9a7b560797b2448fa65b58afbdc37e3ddcf717b",
+      "bytes": 1052386,
+      "key": "v1/sha256/4d82eb8098a64eee2a03268df9a7b560797b2448fa65b58afbdc37e3ddcf717b.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-dental-dentologie/screenshots/desktop.png",
+      "sha256": "0c8c5aae4ef456911aaf892703a5ab9e2452cbb4d6e8987a445b2d60d306295c",
+      "bytes": 3617870,
+      "key": "v1/sha256/0c8c5aae4ef456911aaf892703a5ab9e2452cbb4d6e8987a445b2d60d306295c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-dental-dentologie/screenshots/mobile.png",
+      "sha256": "cc010e1599f6f1238176fba1a2c065c01ec95fa7184cdd659b1473b07d52cb95",
+      "bytes": 2027669,
+      "key": "v1/sha256/cc010e1599f6f1238176fba1a2c065c01ec95fa7184cdd659b1473b07d52cb95.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-dental-gartside-street/screenshots/desktop.png",
+      "sha256": "185076b70af52a48f543287adf9bf06792b000baf71940fd004ba7c33a98b511",
+      "bytes": 3495209,
+      "key": "v1/sha256/185076b70af52a48f543287adf9bf06792b000baf71940fd004ba7c33a98b511.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-dental-gartside-street/screenshots/mobile.png",
+      "sha256": "6450eeb7aded768eec7d74040f1db251b1ac969df87239a90389c1265f1c89dd",
+      "bytes": 1923018,
+      "key": "v1/sha256/6450eeb7aded768eec7d74040f1db251b1ac969df87239a90389c1265f1c89dd.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-dental-glint-austin/screenshots/desktop.png",
+      "sha256": "9dae5400c63fd9eb1c1b318c73f8912e3064ed0085f709fa995f34e822aa9794",
+      "bytes": 4446655,
+      "key": "v1/sha256/9dae5400c63fd9eb1c1b318c73f8912e3064ed0085f709fa995f34e822aa9794.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-dental-glint-austin/screenshots/mobile.png",
+      "sha256": "d925f5bf0fa02a8997c4c4b7d84bc1168c5bd331bc3219c6f58088ec057b9a44",
+      "bytes": 1724256,
+      "key": "v1/sha256/d925f5bf0fa02a8997c4c4b7d84bc1168c5bd331bc3219c6f58088ec057b9a44.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-dental-smile-san-francisco/screenshots/desktop.png",
+      "sha256": "133dd8180ae13882658842df7b7b082b7e1914fcc614653020cd91ddc394cffa",
+      "bytes": 3638982,
+      "key": "v1/sha256/133dd8180ae13882658842df7b7b082b7e1914fcc614653020cd91ddc394cffa.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-dental-smile-san-francisco/screenshots/mobile.png",
+      "sha256": "43cd363a35b97f920ba2c283f7bf4c10892f39d27e6e446562b2981356a0ccc3",
+      "bytes": 1339147,
+      "key": "v1/sha256/43cd363a35b97f920ba2c283f7bf4c10892f39d27e6e446562b2981356a0ccc3.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-dental-vivid-specialized/screenshots/desktop.png",
+      "sha256": "4d0672b444a1d6ce47dbac6c22dc421b0df1905ef0dff5d0b7a381b388c20b1a",
+      "bytes": 5301122,
+      "key": "v1/sha256/4d0672b444a1d6ce47dbac6c22dc421b0df1905ef0dff5d0b7a381b388c20b1a.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-dental-vivid-specialized/screenshots/mobile.png",
+      "sha256": "b281f572de6af0949632480b0cd5db4fa2f65af5d309b4240fab1b7797e9e4de",
+      "bytes": 2777808,
+      "key": "v1/sha256/b281f572de6af0949632480b0cd5db4fa2f65af5d309b4240fab1b7797e9e4de.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-fitness-evolve-athletic/screenshots/desktop.png",
+      "sha256": "33bce2046e04459c414716a0ff57308cd12ac40586edd8abdd6086b8ff8a67f5",
+      "bytes": 1901643,
+      "key": "v1/sha256/33bce2046e04459c414716a0ff57308cd12ac40586edd8abdd6086b8ff8a67f5.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-fitness-evolve-athletic/screenshots/mobile.png",
+      "sha256": "67ba8f2cdf390904b03a235bc74deef355495f38dbe3ab6eeb4077c8d8c111c8",
+      "bytes": 932786,
+      "key": "v1/sha256/67ba8f2cdf390904b03a235bc74deef355495f38dbe3ab6eeb4077c8d8c111c8.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-fitness-fit-this-hackney/screenshots/desktop.png",
+      "sha256": "b2bd2f7742a4f10624ab56b3f2b1efa04b3f98e179e0b5fcec541a360ea0748e",
+      "bytes": 2446842,
+      "key": "v1/sha256/b2bd2f7742a4f10624ab56b3f2b1efa04b3f98e179e0b5fcec541a360ea0748e.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-fitness-fit-this-hackney/screenshots/mobile.png",
+      "sha256": "b6504736c85af7cf4c2068d674615cca226d57b9f8bbd9d404dbc46008a1de47",
+      "bytes": 1289308,
+      "key": "v1/sha256/b6504736c85af7cf4c2068d674615cca226d57b9f8bbd9d404dbc46008a1de47.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-fitness-one-ldn/screenshots/desktop.png",
+      "sha256": "9954c06ce5b2fd3f8f15a6641cdc128791e4d03d1323ec5e69991421fb214319",
+      "bytes": 2188152,
+      "key": "v1/sha256/9954c06ce5b2fd3f8f15a6641cdc128791e4d03d1323ec5e69991421fb214319.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-fitness-one-ldn/screenshots/mobile.png",
+      "sha256": "c8ce75e90d699051bff9362a505766dc2f4ac1e7cfc7509f106e662c01b28125",
+      "bytes": 554188,
+      "key": "v1/sha256/c8ce75e90d699051bff9362a505766dc2f4ac1e7cfc7509f106e662c01b28125.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-home-care-hp-homecare/screenshots/desktop.png",
+      "sha256": "72f9abdab0bae8c31987163b0ed17cfea1a7bb8ff85834ca76279019683b3100",
+      "bytes": 2694856,
+      "key": "v1/sha256/72f9abdab0bae8c31987163b0ed17cfea1a7bb8ff85834ca76279019683b3100.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-home-care-hp-homecare/screenshots/mobile.png",
+      "sha256": "d7c0909ac704333d0176f4d13c2b98e2d6808cc8984d290aa5456f054df5627a",
+      "bytes": 1680916,
+      "key": "v1/sha256/d7c0909ac704333d0176f4d13c2b98e2d6808cc8984d290aa5456f054df5627a.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-home-care-ivy-homecare/screenshots/desktop.png",
+      "sha256": "7bd67c9fb6ebc8083304e6d14f5df3e086abcca304c6fd60b1defbbfaacb4043",
+      "bytes": 2632904,
+      "key": "v1/sha256/7bd67c9fb6ebc8083304e6d14f5df3e086abcca304c6fd60b1defbbfaacb4043.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-home-care-ivy-homecare/screenshots/mobile.png",
+      "sha256": "5fb537b8c18ee3d8941a31e2111846778076240c0aab2b93a3b4afb7a0419924",
+      "bytes": 1457067,
+      "key": "v1/sha256/5fb537b8c18ee3d8941a31e2111846778076240c0aab2b93a3b4afb7a0419924.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-home-care-kome-care/screenshots/desktop.png",
+      "sha256": "a874d0287f9bb3e61cd159f2750eccf886d6e3577c5647942bbac953947d6915",
+      "bytes": 2261600,
+      "key": "v1/sha256/a874d0287f9bb3e61cd159f2750eccf886d6e3577c5647942bbac953947d6915.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-home-care-kome-care/screenshots/mobile.png",
+      "sha256": "ca0bd0c1f60012e0ece8777dc35e8ba804236c78911a90ab003067fc97ebec67",
+      "bytes": 1777360,
+      "key": "v1/sha256/ca0bd0c1f60012e0ece8777dc35e8ba804236c78911a90ab003067fc97ebec67.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-homeservices-aptive/screenshots/desktop.png",
+      "sha256": "1a83afb0ad97443b5664f596d0329c8319775f38eb451863607399e110568565",
+      "bytes": 4856213,
+      "key": "v1/sha256/1a83afb0ad97443b5664f596d0329c8319775f38eb451863607399e110568565.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-homeservices-aptive/screenshots/mobile.png",
+      "sha256": "5e68367d96380177b6c5eacc5760c2bdb0f979b2aebc4e3283c1a3fd24334012",
+      "bytes": 2152069,
+      "key": "v1/sha256/5e68367d96380177b6c5eacc5760c2bdb0f979b2aebc4e3283c1a3fd24334012.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-homeservices-mister-sparky/screenshots/desktop.png",
+      "sha256": "acff427e25521555669dc4ed27db7ff9843e97df5d53c58cfb91f76d60f9d08d",
+      "bytes": 2647480,
+      "key": "v1/sha256/acff427e25521555669dc4ed27db7ff9843e97df5d53c58cfb91f76d60f9d08d.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-homeservices-mister-sparky/screenshots/mobile.png",
+      "sha256": "49c3c8cf6ad3063e655054487eec686677e412c9b80470afb2001c7b3249ebbd",
+      "bytes": 991926,
+      "key": "v1/sha256/49c3c8cf6ad3063e655054487eec686677e412c9b80470afb2001c7b3249ebbd.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-homeservices-morris-jenkins/screenshots/desktop.png",
+      "sha256": "60ae5d3e9601747e924b30939eff3fa8e311a5b7376e42a347a911b4186ca87e",
+      "bytes": 2400555,
+      "key": "v1/sha256/60ae5d3e9601747e924b30939eff3fa8e311a5b7376e42a347a911b4186ca87e.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-homeservices-morris-jenkins/screenshots/mobile.png",
+      "sha256": "28177895e18ad71bf23f6b2bd0236fde98b2b48dbed16236455de67d94ff46fd",
+      "bytes": 983360,
+      "key": "v1/sha256/28177895e18ad71bf23f6b2bd0236fde98b2b48dbed16236455de67d94ff46fd.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-homeservices-roto-rooter/screenshots/desktop.png",
+      "sha256": "8e2855adfcc3c7991c348bae3bac2301bae4172ca5569003035bcb1922f56ad9",
+      "bytes": 1510949,
+      "key": "v1/sha256/8e2855adfcc3c7991c348bae3bac2301bae4172ca5569003035bcb1922f56ad9.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-homeservices-roto-rooter/screenshots/mobile.png",
+      "sha256": "6ba98917dc363dd9d4f956c169a7fb5ec1f1d387c4f2962fc0b0b542d678565b",
+      "bytes": 681715,
+      "key": "v1/sha256/6ba98917dc363dd9d4f956c169a7fb5ec1f1d387c4f2962fc0b0b542d678565b.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hospitality-long-story-short-hudson/screenshots/desktop.png",
+      "sha256": "a9005d8503745735baf843e7379594bcba02adae0fb847939063fffad122eea5",
+      "bytes": 7060482,
+      "key": "v1/sha256/a9005d8503745735baf843e7379594bcba02adae0fb847939063fffad122eea5.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hospitality-long-story-short-hudson/screenshots/mobile.png",
+      "sha256": "06497cd094b223a12e64bcb002ba70736995a07069add2ffea463aaab92e304f",
+      "bytes": 1265252,
+      "key": "v1/sha256/06497cd094b223a12e64bcb002ba70736995a07069add2ffea463aaab92e304f.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hospitality-six-bells-inn/screenshots/desktop.png",
+      "sha256": "43fa506eba451bcc1dd59d37d76b8788fed8e6537a003c2b91e7f1acf59aa913",
+      "bytes": 4701711,
+      "key": "v1/sha256/43fa506eba451bcc1dd59d37d76b8788fed8e6537a003c2b91e7f1acf59aa913.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hospitality-six-bells-inn/screenshots/mobile.png",
+      "sha256": "77fac29c1b8e133ee3844d2686f95978b7b611a52b7fb559898b7adf27511def",
+      "bytes": 1468168,
+      "key": "v1/sha256/77fac29c1b8e133ee3844d2686f95978b7b611a52b7fb559898b7adf27511def.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hospitality-wm-farmer-and-sons/screenshots/desktop.png",
+      "sha256": "2e6c06161d38b0ff9287f689d664209634564529c7a3e58f26a89e02dae567e8",
+      "bytes": 2954181,
+      "key": "v1/sha256/2e6c06161d38b0ff9287f689d664209634564529c7a3e58f26a89e02dae567e8.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hospitality-wm-farmer-and-sons/screenshots/mobile.png",
+      "sha256": "9d5585d64579cb622c0497f0847fe35e057c06e590b8cefb1c4eea6ab21b6216",
+      "bytes": 1061475,
+      "key": "v1/sha256/9d5585d64579cb622c0497f0847fe35e057c06e590b8cefb1c4eea6ab21b6216.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hvac-alamo-austin-air/screenshots/desktop.png",
+      "sha256": "8cb0b4237f75e98bc456b12c71c6f443f66463e88f6b864ebcec4c1fa8f2e7b6",
+      "bytes": 6558570,
+      "key": "v1/sha256/8cb0b4237f75e98bc456b12c71c6f443f66463e88f6b864ebcec4c1fa8f2e7b6.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hvac-alamo-austin-air/screenshots/mobile.png",
+      "sha256": "68181819f917957f6bb6e5db03043adc4afa99f8a5480e09a5493a26719b8826",
+      "bytes": 2733880,
+      "key": "v1/sha256/68181819f917957f6bb6e5db03043adc4afa99f8a5480e09a5493a26719b8826.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hvac-allied-air-heat/screenshots/desktop.png",
+      "sha256": "499ee295225343db37ea1e9159d46824c95fcc329ac3d3bb0c5bb6a6b286d5b0",
+      "bytes": 9256088,
+      "key": "v1/sha256/499ee295225343db37ea1e9159d46824c95fcc329ac3d3bb0c5bb6a6b286d5b0.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hvac-allied-air-heat/screenshots/mobile.png",
+      "sha256": "08b76fa98ee0f9d65076d8528ad00db7a7603fdedcb93164941244d01daa69cf",
+      "bytes": 2351307,
+      "key": "v1/sha256/08b76fa98ee0f9d65076d8528ad00db7a7603fdedcb93164941244d01daa69cf.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hvac-city-wide-austin/screenshots/desktop.png",
+      "sha256": "7452705b32849b70b26b73eaa9e0f16204667ce12ced67e38e81e39f620ccd82",
+      "bytes": 4230573,
+      "key": "v1/sha256/7452705b32849b70b26b73eaa9e0f16204667ce12ced67e38e81e39f620ccd82.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hvac-city-wide-austin/screenshots/mobile.png",
+      "sha256": "099dd0489c2c2b560a3d3d622db28d1fbe2802c8a08994e6ed38fedbd0a604f4",
+      "bytes": 2286508,
+      "key": "v1/sha256/099dd0489c2c2b560a3d3d622db28d1fbe2802c8a08994e6ed38fedbd0a604f4.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hvac-finish-line-denver/screenshots/desktop.png",
+      "sha256": "d6d5a31e627440f2fb5cbc134e3a40b57a6f749df2a2cc3501f7835f292146af",
+      "bytes": 1630115,
+      "key": "v1/sha256/d6d5a31e627440f2fb5cbc134e3a40b57a6f749df2a2cc3501f7835f292146af.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hvac-finish-line-denver/screenshots/mobile.png",
+      "sha256": "728b623de6860fe64f6770e22f602b03bed0cbbe34fad4feef20c3a10c9e87eb",
+      "bytes": 1036822,
+      "key": "v1/sha256/728b623de6860fe64f6770e22f602b03bed0cbbe34fad4feef20c3a10c9e87eb.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hvac-russell-comfort/screenshots/desktop.png",
+      "sha256": "d03fc43d2b048502055b8532bca7b51f3db6c2a40fbb159f9727ded6edbcf924",
+      "bytes": 4095471,
+      "key": "v1/sha256/d03fc43d2b048502055b8532bca7b51f3db6c2a40fbb159f9727ded6edbcf924.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hvac-russell-comfort/screenshots/mobile.png",
+      "sha256": "7d27b3f0fb37b2274c46a074818e123056937e270c8ebdf017a34d2aa8ce2106",
+      "bytes": 2814883,
+      "key": "v1/sha256/7d27b3f0fb37b2274c46a074818e123056937e270c8ebdf017a34d2aa8ce2106.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hvac-trg-heating-cooling/screenshots/desktop.png",
+      "sha256": "6742bcd08739dd884cd6b0c97efd45e70723c91cb47061cba92479023c1af87d",
+      "bytes": 1963221,
+      "key": "v1/sha256/6742bcd08739dd884cd6b0c97efd45e70723c91cb47061cba92479023c1af87d.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-hvac-trg-heating-cooling/screenshots/mobile.png",
+      "sha256": "2fb40508b06c1ce1a395be7c8f5cc9dd4ad17d81ecac543333c8d46fe4cabbe9",
+      "bytes": 691927,
+      "key": "v1/sha256/2fb40508b06c1ce1a395be7c8f5cc9dd4ad17d81ecac543333c8d46fe4cabbe9.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-legal-chaudhry-law/screenshots/desktop.png",
+      "sha256": "d7a1c7a5664f3e651a3651b9c6e10e5021cdcdbf31af1d0376b39b46d32ab7ca",
+      "bytes": 552464,
+      "key": "v1/sha256/d7a1c7a5664f3e651a3651b9c6e10e5021cdcdbf31af1d0376b39b46d32ab7ca.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-legal-chaudhry-law/screenshots/mobile.png",
+      "sha256": "266165d199ac53d169ef283ef61fc19085a57c0f7a5a8ce1e0a9b3e46cf1602b",
+      "bytes": 523164,
+      "key": "v1/sha256/266165d199ac53d169ef283ef61fc19085a57c0f7a5a8ce1e0a9b3e46cf1602b.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-legal-flip-family-law/screenshots/desktop.png",
+      "sha256": "99bc157067554949d0d44297ba92c34fc4e7f2affc30c990c4abf1be2a96766c",
+      "bytes": 2104304,
+      "key": "v1/sha256/99bc157067554949d0d44297ba92c34fc4e7f2affc30c990c4abf1be2a96766c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-legal-flip-family-law/screenshots/mobile.png",
+      "sha256": "0a7a2a0f2d42cabeb0400b7ec67eba91eee0e446a20de62c17ce8481eabda1e8",
+      "bytes": 586388,
+      "key": "v1/sha256/0a7a2a0f2d42cabeb0400b7ec67eba91eee0e446a20de62c17ce8481eabda1e8.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-legal-valemus-law/screenshots/desktop.png",
+      "sha256": "0d5db61ee5fbf8e77118d5c7ea2896294c5f0d157768b75677725972d1d5c4da",
+      "bytes": 2366891,
+      "key": "v1/sha256/0d5db61ee5fbf8e77118d5c7ea2896294c5f0d157768b75677725972d1d5c4da.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-legal-valemus-law/screenshots/mobile.png",
+      "sha256": "030c3884ce0ffcb44d1dce0e0bbb56994a6b254b53824e87b64a44419bcf6c1e",
+      "bytes": 1209788,
+      "key": "v1/sha256/030c3884ce0ffcb44d1dce0e0bbb56994a6b254b53824e87b64a44419bcf6c1e.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-painting-av/screenshots/desktop.png",
+      "sha256": "78b7b6fc7042e09f0e6ad688543b69a053312eca7dd6b8b6651755e8d92c8875",
+      "bytes": 6472880,
+      "key": "v1/sha256/78b7b6fc7042e09f0e6ad688543b69a053312eca7dd6b8b6651755e8d92c8875.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-painting-av/screenshots/mobile.png",
+      "sha256": "089f3b117f494498b66f982832d21db09a47e9b66019bf59a45af75eef0cc19c",
+      "bytes": 1912636,
+      "key": "v1/sha256/089f3b117f494498b66f982832d21db09a47e9b66019bf59a45af75eef0cc19c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-painting-concept-pro/screenshots/desktop.png",
+      "sha256": "2e18631d58877949e4c8c1f4a914b364ef3cdb99624775a3b44a606941ff2a0c",
+      "bytes": 5213412,
+      "key": "v1/sha256/2e18631d58877949e4c8c1f4a914b364ef3cdb99624775a3b44a606941ff2a0c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-painting-concept-pro/screenshots/mobile.png",
+      "sha256": "2f6ce82fd4d99d7d8ec5fa35cd34dd28bb64b96ceaa1a944dce4beb5ffc86811",
+      "bytes": 1378615,
+      "key": "v1/sha256/2f6ce82fd4d99d7d8ec5fa35cd34dd28bb64b96ceaa1a944dce4beb5ffc86811.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-painting-house-doctor/screenshots/desktop.png",
+      "sha256": "50d1bc68c8e526b7a57a6031484058ba2ce735467b9e4e8ee6c1311c1a961fbb",
+      "bytes": 4200933,
+      "key": "v1/sha256/50d1bc68c8e526b7a57a6031484058ba2ce735467b9e4e8ee6c1311c1a961fbb.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-painting-house-doctor/screenshots/mobile.png",
+      "sha256": "afe1786a6bb1920c503f5e1f261e77dc367d4336eb76d13b81662f04138a4393",
+      "bytes": 2430669,
+      "key": "v1/sha256/afe1786a6bb1920c503f5e1f261e77dc367d4336eb76d13b81662f04138a4393.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-painting-mfl/screenshots/desktop.png",
+      "sha256": "7cc8247867d45793842c592d7bdddcf08805e23a0163a9d4069e377bdc9898d5",
+      "bytes": 3340151,
+      "key": "v1/sha256/7cc8247867d45793842c592d7bdddcf08805e23a0163a9d4069e377bdc9898d5.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-painting-mfl/screenshots/mobile.png",
+      "sha256": "305e5a2d87e80bfa4925d72304d4b3d62dfcf04f6b7077bb394d17e89f01b332",
+      "bytes": 1843551,
+      "key": "v1/sha256/305e5a2d87e80bfa4925d72304d4b3d62dfcf04f6b7077bb394d17e89f01b332.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-painting-novak/screenshots/desktop.png",
+      "sha256": "0f8ddf6e6d37c4029ebb32c8b4254ccc95e1768f0d5c9f69061a9406f2657b3a",
+      "bytes": 2442525,
+      "key": "v1/sha256/0f8ddf6e6d37c4029ebb32c8b4254ccc95e1768f0d5c9f69061a9406f2657b3a.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-painting-novak/screenshots/mobile.png",
+      "sha256": "58d320319fdc39cc7bf0b80a0f185506845c22b06e658d08991bdb1c1ab17807",
+      "bytes": 1011314,
+      "key": "v1/sha256/58d320319fdc39cc7bf0b80a0f185506845c22b06e658d08991bdb1c1ab17807.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-painting-southern/screenshots/desktop.png",
+      "sha256": "c0b94467a70b419a3a11b3234c4240699b746351e68980b4a59802dc4c705992",
+      "bytes": 6527466,
+      "key": "v1/sha256/c0b94467a70b419a3a11b3234c4240699b746351e68980b4a59802dc4c705992.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-painting-southern/screenshots/mobile.png",
+      "sha256": "5af574f2684c0f750aa2e6906aaf2eceb6db785632f39742f08fd2a6662a2cb5",
+      "bytes": 1511646,
+      "key": "v1/sha256/5af574f2684c0f750aa2e6906aaf2eceb6db785632f39742f08fd2a6662a2cb5.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-real-estate-bosa-property-development/screenshots/desktop.png",
+      "sha256": "f0190138336025dc1a4f99c893d7ff6b889ff8940a5433bfde0d26e555d3130b",
+      "bytes": 1482335,
+      "key": "v1/sha256/f0190138336025dc1a4f99c893d7ff6b889ff8940a5433bfde0d26e555d3130b.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-real-estate-bosa-property-development/screenshots/mobile.png",
+      "sha256": "caacb9395c0c121edd460efbe1df1d49628b620b6544e8de30cc3bbff41fc2e1",
+      "bytes": 652649,
+      "key": "v1/sha256/caacb9395c0c121edd460efbe1df1d49628b620b6544e8de30cc3bbff41fc2e1.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-real-estate-greystar-renter-discovery/screenshots/desktop.png",
+      "sha256": "850e01d0908ed77050abd33f4238e45bcb4d456f5bc066eaceeb57310e13ccd7",
+      "bytes": 1456152,
+      "key": "v1/sha256/850e01d0908ed77050abd33f4238e45bcb4d456f5bc066eaceeb57310e13ccd7.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-real-estate-greystar-renter-discovery/screenshots/mobile.png",
+      "sha256": "a7cf6bfb98ad2898a4eb548cf1f309bf5f38531550aa8a8e2e945d8a4d9b5df3",
+      "bytes": 369582,
+      "key": "v1/sha256/a7cf6bfb98ad2898a4eb548cf1f309bf5f38531550aa8a8e2e945d8a4d9b5df3.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-real-estate-humahome-property-search/screenshots/desktop.png",
+      "sha256": "0fd1bdb57406e0ea42bed7ebfcb09b5dff9e2d3aaac6a5ae2620072a30ff8e37",
+      "bytes": 701232,
+      "key": "v1/sha256/0fd1bdb57406e0ea42bed7ebfcb09b5dff9e2d3aaac6a5ae2620072a30ff8e37.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-real-estate-humahome-property-search/screenshots/mobile.png",
+      "sha256": "2873bd23419df135d71710cc9a5215e8da34655243124761858447868ebec91a",
+      "bytes": 274318,
+      "key": "v1/sha256/2873bd23419df135d71710cc9a5215e8da34655243124761858447868ebec91a.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-real-estate-luv-estate-investment/screenshots/desktop.png",
+      "sha256": "69e048080720c1808219f4eca1c3b0bf9ee00f6052afba085ace16cc43967af4",
+      "bytes": 1660962,
+      "key": "v1/sha256/69e048080720c1808219f4eca1c3b0bf9ee00f6052afba085ace16cc43967af4.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-real-estate-luv-estate-investment/screenshots/mobile.png",
+      "sha256": "d8b74f1b3e5bc39c08320a52087f28cecccdfe0efca53ed4714795f032afb78f",
+      "bytes": 344437,
+      "key": "v1/sha256/d8b74f1b3e5bc39c08320a52087f28cecccdfe0efca53ed4714795f032afb78f.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-real-estate-serhant-media-brokerage/screenshots/desktop.png",
+      "sha256": "9d362d1df1003c87f206a046e22f9b43623280c50f21d389fbb17553c2cf1573",
+      "bytes": 2877292,
+      "key": "v1/sha256/9d362d1df1003c87f206a046e22f9b43623280c50f21d389fbb17553c2cf1573.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-real-estate-serhant-media-brokerage/screenshots/mobile.png",
+      "sha256": "9f9ce8f869143d2ce94672fe87f755b99582f0620645e3c1ba6f855d9bbeab52",
+      "bytes": 1365275,
+      "key": "v1/sha256/9f9ce8f869143d2ce94672fe87f755b99582f0620645e3c1ba6f855d9bbeab52.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-real-estate-stoebe-boutique-listings/screenshots/desktop.png",
+      "sha256": "b1953d99cca0eec0a302b56948393ca13862402829c476053bb90229309c5fe9",
+      "bytes": 1949977,
+      "key": "v1/sha256/b1953d99cca0eec0a302b56948393ca13862402829c476053bb90229309c5fe9.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-real-estate-stoebe-boutique-listings/screenshots/mobile.png",
+      "sha256": "a2bd9b74b7c66f9d93c65b44a3ea824a1401574cc59a647bb6fc33ab5d5a4c8a",
+      "bytes": 1055641,
+      "key": "v1/sha256/a2bd9b74b7c66f9d93c65b44a3ea824a1401574cc59a647bb6fc33ab5d5a4c8a.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-restaurant-cafe-carmellini/screenshots/desktop.png",
+      "sha256": "d4935fc3b202d4f0bc2a4fb896a3e0ef522e966f22233918b5c376c5a8063d60",
+      "bytes": 3453520,
+      "key": "v1/sha256/d4935fc3b202d4f0bc2a4fb896a3e0ef522e966f22233918b5c376c5a8063d60.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-restaurant-cafe-carmellini/screenshots/mobile.png",
+      "sha256": "b02654e365ba8327271c963831f1e9434474ddabb69097e82831f3a067e4f136",
+      "bytes": 801678,
+      "key": "v1/sha256/b02654e365ba8327271c963831f1e9434474ddabb69097e82831f3a067e4f136.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-restaurant-leons-new-york/screenshots/desktop.png",
+      "sha256": "b94a4186b0131f6d7603b5d42b274be093bc3fc64bc8adab2755d0d3cff1dd0c",
+      "bytes": 2123826,
+      "key": "v1/sha256/b94a4186b0131f6d7603b5d42b274be093bc3fc64bc8adab2755d0d3cff1dd0c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-restaurant-leons-new-york/screenshots/mobile.png",
+      "sha256": "5243a6776fb56ee403fb8fbeb4cf67a6ad88c1aae52c441a486f231b78f27926",
+      "bytes": 1051487,
+      "key": "v1/sha256/5243a6776fb56ee403fb8fbeb4cf67a6ad88c1aae52c441a486f231b78f27926.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-restaurant-zuni-cafe/screenshots/desktop.png",
+      "sha256": "6b4c1c1431d3178df036b64e7606b81a52ced4a35dfc89076ae897519591633b",
+      "bytes": 4287781,
+      "key": "v1/sha256/6b4c1c1431d3178df036b64e7606b81a52ced4a35dfc89076ae897519591633b.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-restaurant-zuni-cafe/screenshots/mobile.png",
+      "sha256": "830ac153a0479611581990be3d81b2fdc757bd3f1ff1703670ddda8d66437ff1",
+      "bytes": 1955461,
+      "key": "v1/sha256/830ac153a0479611581990be3d81b2fdc757bd3f1ff1703670ddda8d66437ff1.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-roofing-baker/screenshots/desktop.png",
+      "sha256": "9db08711cb134323598275e67c6980a916918c892aad661580fac5cf3513cc5c",
+      "bytes": 6955353,
+      "key": "v1/sha256/9db08711cb134323598275e67c6980a916918c892aad661580fac5cf3513cc5c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-roofing-baker/screenshots/mobile.png",
+      "sha256": "3c2f2634948d4191636b808120736b0c492210d4a1e190c26e6f75eac14a1ca0",
+      "bytes": 2437011,
+      "key": "v1/sha256/3c2f2634948d4191636b808120736b0c492210d4a1e190c26e6f75eac14a1ca0.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-roofing-joe-hall/screenshots/desktop.png",
+      "sha256": "aad2bf158ad8181ce028c6171603b9989d07515983b4d2d97bd5fbe4119ff504",
+      "bytes": 2423783,
+      "key": "v1/sha256/aad2bf158ad8181ce028c6171603b9989d07515983b4d2d97bd5fbe4119ff504.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-roofing-joe-hall/screenshots/mobile.png",
+      "sha256": "51580db813c49fa5cc5a4d86a60bbb1edda258b007bf2bf9aa0f84519d55c6be",
+      "bytes": 561939,
+      "key": "v1/sha256/51580db813c49fa5cc5a4d86a60bbb1edda258b007bf2bf9aa0f84519d55c6be.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-roofing-olyn/screenshots/desktop.png",
+      "sha256": "e930fafb78bc3cb40e764c93a9b1fcab98d23d00ce55020b2b2d8335c67ef3e3",
+      "bytes": 7914741,
+      "key": "v1/sha256/e930fafb78bc3cb40e764c93a9b1fcab98d23d00ce55020b2b2d8335c67ef3e3.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-roofing-olyn/screenshots/mobile.png",
+      "sha256": "48bf7ce2404053dcc6ddf37cc4fc6bb0c01a9df7365ccdc08963f0292d29592f",
+      "bytes": 2698619,
+      "key": "v1/sha256/48bf7ce2404053dcc6ddf37cc4fc6bb0c01a9df7365ccdc08963f0292d29592f.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-roofing-quick-roofing/screenshots/desktop.png",
+      "sha256": "a15999ff1cb3c90005b8e83051f553994be3818b4c224708b2c6d9fead560505",
+      "bytes": 5952648,
+      "key": "v1/sha256/a15999ff1cb3c90005b8e83051f553994be3818b4c224708b2c6d9fead560505.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-roofing-quick-roofing/screenshots/mobile.png",
+      "sha256": "744213c865c3d5e6817272ec94705e6f1abdf4a4d9c4cb16f1add92c0c17891c",
+      "bytes": 2344926,
+      "key": "v1/sha256/744213c865c3d5e6817272ec94705e6f1abdf4a4d9c4cb16f1add92c0c17891c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-roofing-roofing-coats/screenshots/desktop.png",
+      "sha256": "90d4e98686cda0e791503743f8d7cc5e23ef224452b0fbc6490c0c8231503750",
+      "bytes": 1719926,
+      "key": "v1/sha256/90d4e98686cda0e791503743f8d7cc5e23ef224452b0fbc6490c0c8231503750.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-roofing-roofing-coats/screenshots/mobile.png",
+      "sha256": "ab3fdb4cefd95d3deec77e5326c65af4a96f7414b9017689175ec086a72f624b",
+      "bytes": 1208552,
+      "key": "v1/sha256/ab3fdb4cefd95d3deec77e5326c65af4a96f7414b9017689175ec086a72f624b.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-roofing-tar/screenshots/desktop.png",
+      "sha256": "c21a0b1f7e3427c7a0ef8b46dee8716cc1a05fe806c7532567a0659e51c4b604",
+      "bytes": 4851884,
+      "key": "v1/sha256/c21a0b1f7e3427c7a0ef8b46dee8716cc1a05fe806c7532567a0659e51c4b604.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-roofing-tar/screenshots/mobile.png",
+      "sha256": "5b65b63e79a75781e02a22cfd4b903625597108fb25f2079f40dd4bc66433226",
+      "bytes": 1449442,
+      "key": "v1/sha256/5b65b63e79a75781e02a22cfd4b903625597108fb25f2079f40dd4bc66433226.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-veterinary-cat-clinic-edinburgh/screenshots/desktop.png",
+      "sha256": "aceb47c081a045d532778559d1076fd5931c3abc485cfd66084a163e4e9787a1",
+      "bytes": 634411,
+      "key": "v1/sha256/aceb47c081a045d532778559d1076fd5931c3abc485cfd66084a163e4e9787a1.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-veterinary-cat-clinic-edinburgh/screenshots/mobile.png",
+      "sha256": "c66aeacb4c59c8eeb826dccaa923efa99a24bfa6b203167f104c4ec9ac25b57e",
+      "bytes": 788880,
+      "key": "v1/sha256/c66aeacb4c59c8eeb826dccaa923efa99a24bfa6b203167f104c4ec9ac25b57e.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-veterinary-lap-of-love/screenshots/desktop.png",
+      "sha256": "80e237ebef236850e8eefcb964177ce219cd3881d801d4ebdbc61336e7f70555",
+      "bytes": 2166520,
+      "key": "v1/sha256/80e237ebef236850e8eefcb964177ce219cd3881d801d4ebdbc61336e7f70555.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-veterinary-lap-of-love/screenshots/mobile.png",
+      "sha256": "eaa38f469ade40bbc52bcb4f9044806423cddd04ea0fb643c72390593b706b40",
+      "bytes": 1074180,
+      "key": "v1/sha256/eaa38f469ade40bbc52bcb4f9044806423cddd04ea0fb643c72390593b706b40.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-veterinary-modern-animal/screenshots/desktop.png",
+      "sha256": "ec86e73a1d11837ea9a748815f492fe957933e752b40db0c7a8e09af0eabc1b8",
+      "bytes": 4442203,
+      "key": "v1/sha256/ec86e73a1d11837ea9a748815f492fe957933e752b40db0c7a8e09af0eabc1b8.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-veterinary-modern-animal/screenshots/mobile.png",
+      "sha256": "2d03c53589a0e154c6cc7f573baec1447019468aa6a7f37c6b96976f518460bc",
+      "bytes": 2004017,
+      "key": "v1/sha256/2d03c53589a0e154c6cc7f573baec1447019468aa6a7f37c6b96976f518460bc.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-veterinary-perry-paws-mobile/screenshots/desktop.png",
+      "sha256": "0ccd5a10f62aea50b5c78d6106c0be7e64984e923f07b4ad75fd38cff7204a0a",
+      "bytes": 1359057,
+      "key": "v1/sha256/0ccd5a10f62aea50b5c78d6106c0be7e64984e923f07b4ad75fd38cff7204a0a.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-veterinary-perry-paws-mobile/screenshots/mobile.png",
+      "sha256": "2d560a289e10dc53637724239dc49e06b0ac31bafc271bb90f0486032f67ea53",
+      "bytes": 627302,
+      "key": "v1/sha256/2d560a289e10dc53637724239dc49e06b0ac31bafc271bb90f0486032f67ea53.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-veterinary-schwarzman-amc/screenshots/desktop.png",
+      "sha256": "fbf958cb0fb4e1473425bbcfa93678ba732e52e36b9ed40cdb81ae49c23a2200",
+      "bytes": 2871203,
+      "key": "v1/sha256/fbf958cb0fb4e1473425bbcfa93678ba732e52e36b9ed40cdb81ae49c23a2200.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-veterinary-schwarzman-amc/screenshots/mobile.png",
+      "sha256": "e8489a5e8c3e1623d340f905616852d38fe78bb8d9f994a7c2a4be20cd58c693",
+      "bytes": 2235243,
+      "key": "v1/sha256/e8489a5e8c3e1623d340f905616852d38fe78bb8d9f994a7c2a4be20cd58c693.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-veterinary-veg-emergency/screenshots/desktop.png",
+      "sha256": "9387878e93942d39cf3022c6593124ed26c8932af943ebaaa835066a9ba3eb1c",
+      "bytes": 1541972,
+      "key": "v1/sha256/9387878e93942d39cf3022c6593124ed26c8932af943ebaaa835066a9ba3eb1c.png",
+      "contentType": "image/png"
+    },
+    {
+      "path": "data/reference-library/dossiers/web-veterinary-veg-emergency/screenshots/mobile.png",
+      "sha256": "bb1c66501a341d79075a35948e37d4dad126185e5bd2b9f804f27f0112481abd",
+      "bytes": 941889,
+      "key": "v1/sha256/bb1c66501a341d79075a35948e37d4dad126185e5bd2b9f804f27f0112481abd.png",
+      "contentType": "image/png"
+    }
+  ]
+}
