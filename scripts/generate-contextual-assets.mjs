@@ -1088,9 +1088,6 @@ async function generateContextualAssetsForRoute({
     placements: [],
     skipped: [],
   };
-  let requests = 0;
-  let filled = 0;
-  let generationBlockedByFailure = null;
   const hasReviewProvider =
     imageReviewer !== reviewGeneratedAsset ||
     (creativeLaneProvider() === "opencode-go"
@@ -1099,20 +1096,11 @@ async function generateContextualAssetsForRoute({
   const canGenerate = Boolean(key && !force && hasReviewProvider);
   if (canGenerate) falClient.config({ credentials: key });
 
-  for (const [placementIndex, placement] of placements.entries()) {
-    // Coverage-first allocation: every placement gets a fair share of the
-    // request budget (cumulative share by position), so a stubborn hero or its
-    // retry cannot consume the whole budget and starve secondary/tertiary. The
-    // per-placement attempt cap still bounds retries.
-    const placementRequestLimit = Math.min(
-      maxRequests,
-      Math.max(
-        1,
-        Math.ceil(
-          ((placementIndex + 1) * maxRequests) / Math.max(1, placements.length),
-        ),
-      ),
-    );
+  let generationBlockedByFailure = null;
+  const remainingImageBudget = Math.max(0, imageBudget);
+  const prepared = [];
+  let reusedCount = 0;
+  for (const placement of placements) {
     const prompt = promptFor(site, route, placement);
     const reviewPolicy = reviewPolicyFor({
       businessKind: site.businessKind || site.industry || "local business",
@@ -1124,36 +1112,16 @@ async function generateContextualAssetsForRoute({
     const promptHash = sha256(
       `${GENERATED_ASSET_REVIEW_POLICY_VERSION}\n${prompt}`,
     );
-
-    if (filled >= imageBudget) {
-      const fallback = await applyFallbackImage(site, placement, {
-        outputDir,
-        fetchImpl,
-        timeoutMs,
-      });
-      manifest.skipped.push({
-        placement: placement.id,
-        reason: "image-budget-exhausted",
-        fallback,
+    if (reusedCount >= remainingImageBudget) {
+      prepared.push({
+        placement,
+        prompt,
+        reviewPolicy,
+        promptHash,
+        mode: "budget-exhausted",
       });
       continue;
     }
-
-    if (generationBlockedByFailure) {
-      const fallback = await applyFallbackImage(site, placement, {
-        outputDir,
-        fetchImpl,
-        timeoutMs,
-      });
-      manifest.skipped.push({
-        placement: placement.id,
-        reason: generationBlockedByFailure.reason,
-        fallback,
-        providerFailure: generationBlockedByFailure.providerFailure,
-      });
-      continue;
-    }
-
     const existing = existingEntry(
       existingManifest,
       placement,
@@ -1163,36 +1131,117 @@ async function generateContextualAssetsForRoute({
     if (existing) {
       try {
         await fs.access(existing.filePath);
-        setImage(site, placement, existing.path);
         const { filePath: _filePath, ...reusedEntry } = existing;
-        manifest.placements.push({ ...reusedEntry, reused: true });
-        filled += 1;
+        reusedCount += 1;
+        prepared.push({
+          placement,
+          prompt,
+          reviewPolicy,
+          promptHash,
+          mode: "reused",
+          entry: { ...reusedEntry, reused: true },
+        });
         continue;
       } catch {
         // The manifest may outlive its asset directory. Generate or fall back below.
       }
     }
+    prepared.push({
+      placement,
+      prompt,
+      reviewPolicy,
+      promptHash,
+      mode: "generate",
+    });
+  }
 
-    if (!canGenerate || requests >= placementRequestLimit) {
+  const activeItems = prepared.filter((item) => item.mode === "generate");
+  const normalizedMaxRequests = Math.max(0, Math.floor(Number(maxRequests) || 0));
+  const baseShare = activeItems.length
+    ? Math.floor(normalizedMaxRequests / activeItems.length)
+    : 0;
+  const extraShare = activeItems.length
+    ? normalizedMaxRequests % activeItems.length
+    : 0;
+  for (const [activeIndex, item] of activeItems.entries()) {
+    item.requestShare = baseShare + (activeIndex < extraShare ? 1 : 0);
+  }
+
+  // Parallelize placements when every pending placement fits within the
+  // remaining image budget (e.g. 3 placements with maxImages=3). When the
+  // remaining image budget is smaller than pending placements (e.g. maxImages=1
+  // across hero/secondary/tertiary), process sequentially so a failed earlier
+  // placement can still fall through to the next placement without overshooting
+  // the image budget.
+  const canRunPlacementsInParallel =
+    activeItems.length <= Math.max(0, remainingImageBudget - reusedCount);
+  let filled = reusedCount;
+
+  const runPreparedItem = async (item) => {
+    const { placement, prompt, reviewPolicy, promptHash } = item;
+    if (item.mode === "reused") {
+      return { kind: "placement", placement, entry: item.entry, requests: 0 };
+    }
+    if (item.mode === "budget-exhausted" || filled >= remainingImageBudget) {
       const fallback = await applyFallbackImage(site, placement, {
         outputDir,
         fetchImpl,
         timeoutMs,
       });
-      manifest.skipped.push({
-        placement: placement.id,
-        reason: !canGenerate
-          ? !key
-            ? "FAL_KEY-not-configured"
-            : !hasReviewProvider
-              ? "OPENCODE_GO_API_KEY-not-configured"
-              : "image-generation-disabled"
-          : "request-budget-exhausted",
-        fallback,
+      return {
+        kind: "skipped",
+        placement,
+        entry: {
+          placement: placement.id,
+          reason: "image-budget-exhausted",
+          fallback,
+        },
+        requests: 0,
+      };
+    }
+    if (generationBlockedByFailure) {
+      const fallback = await applyFallbackImage(site, placement, {
+        outputDir,
+        fetchImpl,
+        timeoutMs,
       });
-      continue;
+      return {
+        kind: "skipped",
+        placement,
+        entry: {
+          placement: placement.id,
+          reason: generationBlockedByFailure.reason,
+          fallback,
+          providerFailure: generationBlockedByFailure.providerFailure,
+        },
+        requests: 0,
+      };
+    }
+    if (!canGenerate || item.requestShare <= 0) {
+      const fallback = await applyFallbackImage(site, placement, {
+        outputDir,
+        fetchImpl,
+        timeoutMs,
+      });
+      return {
+        kind: "skipped",
+        placement,
+        entry: {
+          placement: placement.id,
+          reason: !canGenerate
+            ? !key
+              ? "FAL_KEY-not-configured"
+              : !hasReviewProvider
+                ? "OPENCODE_GO_API_KEY-not-configured"
+                : "image-generation-disabled"
+            : "request-budget-exhausted",
+          fallback,
+        },
+        requests: 0,
+      };
     }
 
+    let placementRequests = 0;
     let outcome;
     let failure = "";
     let finalReview;
@@ -1200,10 +1249,15 @@ async function generateContextualAssetsForRoute({
     const imageReviews = [];
     for (
       let attempt = 0;
-      attempt < 2 && requests < placementRequestLimit;
+      attempt < 2 && placementRequests < item.requestShare;
       attempt += 1
     ) {
-      requests += 1;
+      if (generationBlockedByFailure) {
+        failure = generationBlockedByFailure.reason;
+        providerFailure = generationBlockedByFailure.providerFailure;
+        break;
+      }
+      placementRequests += 1;
       let requested;
       try {
         requested = await requestImage({
@@ -1294,7 +1348,7 @@ async function generateContextualAssetsForRoute({
         }
         if (reviewSummary.status !== "approved") {
           failure = "image-review-rejected";
-          if (attempt === 0 && requests < placementRequestLimit) continue;
+          if (attempt === 0 && placementRequests < item.requestShare) continue;
           break;
         }
         const fileName = `${placement.id}-${promptHash.slice(0, 12)}.webp`;
@@ -1327,21 +1381,48 @@ async function generateContextualAssetsForRoute({
     }
     if (outcome) {
       filled += 1;
-      setImage(site, placement, outcome.path);
-      manifest.placements.push(outcome);
-    } else {
-      const fallback = await applyFallbackImage(site, placement, {
-        outputDir,
-        fetchImpl,
-        timeoutMs,
-      });
-      manifest.skipped.push({
+      return {
+        kind: "placement",
+        placement,
+        entry: outcome,
+        requests: placementRequests,
+      };
+    }
+    const fallback = await applyFallbackImage(site, placement, {
+      outputDir,
+      fetchImpl,
+      timeoutMs,
+    });
+    return {
+      kind: "skipped",
+      placement,
+      entry: {
         placement: placement.id,
         reason: failure || "FAL image generation failed.",
         fallback,
         ...(providerFailure ? { providerFailure } : {}),
         ...(finalReview ? { imageReviews } : {}),
-      });
+      },
+      requests: placementRequests,
+    };
+  };
+
+  const outcomes = canRunPlacementsInParallel
+    ? await Promise.all(prepared.map(runPreparedItem))
+    : await (async () => {
+        const serial = [];
+        for (const item of prepared) serial.push(await runPreparedItem(item));
+        return serial;
+      })();
+
+  let requests = 0;
+  for (const result of outcomes) {
+    requests += result.requests;
+    if (result.kind === "placement") {
+      setImage(site, result.placement, result.entry.path);
+      manifest.placements.push(result.entry);
+    } else {
+      manifest.skipped.push(result.entry);
     }
   }
 
@@ -1444,39 +1525,40 @@ export async function generateContextualAssets(options = {}) {
         .then((value) => JSON.parse(value))
         .catch(() => ({}))
     : {};
-  let remainingRequests = Math.max(0, requestBudget);
-  let remainingImages = imageBudget;
+  const totalRequestBudget = Math.max(0, Math.floor(requestBudget));
+  const baseRouteRequests = Math.floor(totalRequestBudget / routes.length);
+  const extraRouteRequests = totalRequestBudget % routes.length;
+  const baseRouteImages = Math.floor(imageBudget / routes.length);
+  const extraRouteImages = imageBudget % routes.length;
+
+  const routeResults = await Promise.all(
+    routes.map(async (route, index) => {
+      const routeRequestBudget =
+        baseRouteRequests + (index < extraRouteRequests ? 1 : 0);
+      const routeImageBudget =
+        baseRouteImages + (index < extraRouteImages ? 1 : 0);
+      const routeSite = structuredClone(site);
+      const result = await generateContextualAssetsForRoute({
+        ...options,
+        site: routeSite,
+        inspiration: { ...(options.inspiration || {}), routes: [route] },
+        manifestPath: undefined,
+        reuseManifest: existingManifest.routes?.find(
+          (manifest) => manifest.routeId === route.id,
+        ),
+        maxImages: routeImageBudget,
+        maxRequests: routeRequestBudget,
+      });
+      return { route, result };
+    }),
+  );
+
   let totalRequests = 0;
   const routeManifests = [];
   const creativeAssets = {};
   let firstRouteSite;
-
-  for (const [index, route] of routes.entries()) {
-    const remainingRoutes = routes.length - index;
-    const routeRequestBudget = Math.max(
-      0,
-      Math.ceil(remainingRequests / remainingRoutes),
-    );
-    const routeImageBudget = Math.max(
-      0,
-      Math.ceil(remainingImages / remainingRoutes),
-    );
-    const routeSite = structuredClone(site);
-    const result = await generateContextualAssetsForRoute({
-      ...options,
-      site: routeSite,
-      inspiration: { ...(options.inspiration || {}), routes: [route] },
-      manifestPath: undefined,
-      reuseManifest: existingManifest.routes?.find(
-        (manifest) => manifest.routeId === route.id,
-      ),
-      maxImages: routeImageBudget,
-      maxRequests: routeRequestBudget,
-    });
-    const retainedRouteImages = result.manifest.placements.length;
+  for (const { route, result } of routeResults) {
     totalRequests += result.requests;
-    remainingRequests = Math.max(0, remainingRequests - result.requests);
-    remainingImages = Math.max(0, remainingImages - retainedRouteImages);
     routeManifests.push(result.manifest);
     if (!firstRouteSite) firstRouteSite = result.site;
     creativeAssets[route.id] = {
