@@ -79,4 +79,28 @@ describe("pages preview readiness marker", () => {
       /Missing value/u,
     );
   });
+
+  it("ramps initial poll delays from 2s to 4s to the configured interval and clamps to the deadline", async () => {
+    let elapsed = 0;
+    const waits: number[] = [];
+    let attempt = 0;
+    const result = await waitForPagesPreview({
+      url,
+      timeoutSeconds: 60,
+      intervalSeconds: 10,
+      now: () => elapsed,
+      wait: async (ms) => {
+        waits.push(ms);
+        elapsed += ms;
+      },
+      send: async () => {
+        attempt += 1;
+        return attempt < 4
+          ? response("not ready", 503)
+          : response("<html>ok</html>", 200);
+      },
+    });
+    expect(result).toEqual({ state: "ready", status: 200 });
+    expect(waits).toEqual([2_000, 4_000, 10_000]);
+  });
 });

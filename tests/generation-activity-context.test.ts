@@ -149,6 +149,55 @@ describe("generation activity environment context", () => {
     expect(calls).toEqual(["oidc", "worker", "worker"]);
   });
 
+  it("circuit-breaks subsequent sends after a permanent 401/403 rejection", async () => {
+    const payload = Buffer.from(
+      JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 600 }),
+    ).toString("base64url");
+    const jwt = `eyJhbGciOiJSUzI1NiJ9.${payload}.sig`;
+    const calls: string[] = [];
+    const fetchImpl = (async (url: string | URL | Request) => {
+      const target = String(url);
+      if (target.includes("pipelines.actions.githubusercontent.com")) {
+        calls.push("oidc");
+        return new Response(JSON.stringify({ value: jwt }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      calls.push("worker");
+      return new Response(
+        JSON.stringify({ error: { code: "subject" } }),
+        { status: 401, headers: { "content-type": "application/json" } },
+      );
+    }) as typeof fetch;
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const transport = createActivityTransport({
+        env: {
+          ACTIONS_ID_TOKEN_REQUEST_URL:
+            "https://pipelines.actions.githubusercontent.com/token?api-version=2.0",
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: "request-token",
+          LAUNCHLOOM_API_URL: "https://api.launchloom.wrazyos.com",
+        },
+        identity: { namespace: "legacy", attemptId: "test" },
+        fetchImpl,
+      });
+      await expect(
+        transport.send([], { signal: AbortSignal.timeout(2_000), attempt: 1 }),
+      ).resolves.toMatchObject({ status: 401, suppressed: true });
+      await expect(
+        transport.send([], { signal: AbortSignal.timeout(2_000), attempt: 1 }),
+      ).resolves.toMatchObject({ status: 401, suppressed: true });
+      await expect(
+        transport.send([], { signal: AbortSignal.timeout(2_000), attempt: 1 }),
+      ).resolves.toMatchObject({ status: 401, suppressed: true });
+      expect(calls).toEqual(["oidc", "worker"]);
+      expect(warn).toHaveBeenCalledTimes(1);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it("lets a Node script exit without an explicit close", async () => {
     // Regression: a ref'd heartbeat timer used to keep generate-site-config
     // alive when the feature was enabled.
