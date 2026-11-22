@@ -99,8 +99,47 @@ jobs:
       - run: npm ci
       - name: Install browser runtime
         uses: ./.github/actions/install-playwright-chromium
-      - name: Run application tests
-        run: npm test
+      - name: Run application tests (shard 1/2)
+        run: npx vitest run --dir tests --shard=1/2
+
+  validate-shard-2:
+    needs: classify
+    if: needs.classify.outputs.runtime == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install browser runtime
+        uses: ./.github/actions/install-playwright-chromium
+      - name: Run application tests (shard 2/2)
+        run: npx vitest run --dir tests --shard=2/2
+
+  worker-and-checks:
+    needs: classify
+    if: needs.classify.outputs.runtime == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/data/reference-library/dossiers/
+            !/data/reference-library/*.png
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
       - name: Build admin workspace assets
         run: npm run build:admin
       - name: Run worker tests
