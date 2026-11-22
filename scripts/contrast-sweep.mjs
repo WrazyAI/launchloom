@@ -78,7 +78,7 @@ async function serve(dist) {
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   return { server, origin: `http://127.0.0.1:${server.address().port}` };
 }
-/** @param {{dist: string, browser?: import("playwright").Browser, screenshotsDir?: string, viewports?: typeof CONTRAST_VIEWPORTS, states?: boolean, routes?: string[] | null}} options */
+/** @param {{dist: string, browser?: import("playwright").Browser, screenshotsDir?: string, viewports?: typeof CONTRAST_VIEWPORTS, states?: boolean, routes?: string[] | null, concurrency?: number}} options */
 export async function auditBuiltContrast({
   dist,
   browser: existingBrowser,
@@ -86,6 +86,7 @@ export async function auditBuiltContrast({
   viewports = CONTRAST_VIEWPORTS,
   states = true,
   routes: routeAllowlist = null,
+  concurrency,
 }) {
   const allRoutes = await htmlRoutes(dist);
   const routes = routeAllowlist
@@ -102,11 +103,24 @@ export async function auditBuiltContrast({
   const browser =
     existingBrowser || (await chromium.launch({ headless: true }));
   const { server, origin } = await serve(dist);
-  const pages = [];
+  const tasks = routes.flatMap((route) =>
+    viewports.map((viewport) => ({ route, viewport })),
+  );
+  const pages = new Array(tasks.length);
+  const requestedConcurrency =
+    Number(concurrency) || Number(process.env.LL_CONTRAST_CONCURRENCY) || 4;
+  const workerCount = Math.min(
+    tasks.length,
+    Math.max(1, Math.floor(requestedConcurrency)),
+  );
   try {
     if (screenshotsDir) await fs.mkdir(screenshotsDir, { recursive: true });
-    for (const route of routes) {
-      for (const viewport of viewports) {
+    let nextIndex = 0;
+    const runWorker = async () => {
+      while (true) {
+        const index = nextIndex++;
+        if (index >= tasks.length) return;
+        const { route, viewport } = tasks[index];
         const auditStarted = Date.now();
         if (process.env.LL_CONTRAST_TRACE === "1")
           process.stdout.write(
@@ -117,7 +131,7 @@ export async function auditBuiltContrast({
         });
         try {
           const response = await page.goto(origin + route, {
-            waitUntil: "networkidle",
+            waitUntil: "load",
           });
           if (!response?.ok())
             throw new Error(`Route HTTP ${response?.status()}`);
@@ -179,14 +193,14 @@ export async function auditBuiltContrast({
             process.stdout.write(
               `contrast_audit=complete route=${route} viewport=${viewport.name} ms=${Date.now() - auditStarted} findings=${report.findings.length}\n`,
             );
-          pages.push({
+          pages[index] = {
             ...report,
             viewport,
             repairScopeVerified: scope === route && mediaConditions !== null,
             mediaConditions,
-          });
+          };
         } catch (error) {
-          pages.push({
+          pages[index] = {
             route,
             viewport,
             pass: false,
@@ -199,12 +213,13 @@ export async function auditBuiltContrast({
                 repairEligible: false,
               },
             ],
-          });
+          };
         } finally {
           await page.close();
         }
       }
-    }
+    };
+    await Promise.all(Array.from({ length: workerCount }, () => runWorker()));
   } finally {
     await new Promise((resolve) => server.close(resolve));
     if (!existingBrowser) await browser.close();
