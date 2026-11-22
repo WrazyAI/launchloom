@@ -39,9 +39,11 @@ const conclusion = (run) =>
 export async function reconcileGenerationHistory({
   mode = "incremental",
   from = 0,
+  lookbackHours = null,
   dryRun = true,
   pageBudget = 10,
   deadlineMs = 90000,
+  concurrency = 8,
   fetchImpl = fetch,
   postImpl,
   checkpoint = null,
@@ -56,11 +58,26 @@ export async function reconcileGenerationHistory({
     pageBudget > 100 ||
     !Number.isFinite(deadlineMs) ||
     deadlineMs < 1 ||
-    deadlineMs > 90000
+    deadlineMs > 90000 ||
+    !Number.isInteger(concurrency) ||
+    concurrency < 1 ||
+    concurrency > 16 ||
+    (lookbackHours !== null &&
+      (!Number.isFinite(lookbackHours) ||
+        lookbackHours <= 0 ||
+        lookbackHours > 2160))
   )
     throw new Error("invalid reconciliation options");
   const start = now();
   const deadline = start + deadlineMs;
+  const resolvedFrom =
+    typeof from === "number" && from > 0
+      ? from
+      : typeof from === "string" && from
+        ? timestamp(from)
+        : mode === "incremental" && lookbackHours !== null
+          ? Math.max(0, Math.floor(start - lookbackHours * 3600 * 1000))
+          : 0;
   const initial = checkpoint
     ? typeof checkpoint === "string"
       ? JSON.parse(checkpoint)
@@ -68,7 +85,7 @@ export async function reconcileGenerationHistory({
     : {
         workflow: 0,
         page: 1,
-        from: typeof from === "number" ? from : timestamp(from),
+        from: resolvedFrom,
       };
   if (
     !Number.isInteger(initial.workflow) ||
@@ -100,15 +117,32 @@ export async function reconcileGenerationHistory({
     for (let retry = 0; retry < 3; retry++) {
       const remaining = deadline - now();
       if (remaining <= 0) throw new Error("deadline exceeded");
-      const response = await fetchImpl(url, {
-        method: "GET",
-        headers: {
-          Accept: "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        signal: AbortSignal.timeout(Math.max(1, Math.min(15000, remaining))),
-      });
+      let response;
+      try {
+        response = await fetchImpl(url, {
+          method: "GET",
+          headers: {
+            Accept: "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          signal: AbortSignal.timeout(Math.max(1, Math.min(15000, remaining))),
+        });
+      } catch (error) {
+        if (
+          now() >= deadline ||
+          error?.name === "TimeoutError" ||
+          error?.name === "AbortError"
+        ) {
+          if (now() >= deadline) throw new Error("deadline exceeded");
+          if (retry === 2) throw new Error("deadline exceeded");
+          await sleepImpl(
+            Math.min(1000 * (retry + 1), Math.max(0, deadline - now())),
+          );
+          continue;
+        }
+        throw error;
+      }
       report.readCount++;
       if (response.ok) return response.json();
       if (allowExpired && [404, 410].includes(response.status)) return null;
@@ -193,10 +227,9 @@ export async function reconcileGenerationHistory({
       now() < deadline
     ) {
       const definition = definitions[cursor.workflow];
-      const filter =
-        mode === "backfill" && cursor.from
-          ? `&created=${encodeURIComponent(">=" + new Date(cursor.from).toISOString())}`
-          : "";
+      const filter = cursor.from
+        ? `&created=${encodeURIComponent(">=" + new Date(cursor.from).toISOString())}`
+        : "";
       const body = await get(
         `${api}/actions/workflows/${definition.id}/runs?per_page=100&page=${cursor.page}${filter}`,
       );
@@ -210,7 +243,8 @@ export async function reconcileGenerationHistory({
         throw new Error(
           "GitHub result window incomplete; narrow the requested range.",
         );
-      const attempts = [];
+      const pendingTargets = [];
+      const pageSeen = new Set();
       for (const listed of body.workflow_runs) {
         const metadata = parseGenerationRunName(listed.display_title);
         // Reusable workflows normally share the parent's run identity; distinct
@@ -243,70 +277,98 @@ export async function reconcileGenerationHistory({
           throw new Error("invalid GitHub run identity");
         for (let attempt = 1; attempt <= listed.run_attempt; attempt++) {
           const key = `${listed.id}:${attempt}`;
-          if (seen.has(key)) continue;
-          const run =
-            attempt === listed.run_attempt
-              ? listed
-              : await get(
-                  `${api}/actions/runs/${listed.id}/attempts/${attempt}`,
-                );
-          if (
-            run.id !== listed.id ||
-            run.run_attempt !== attempt ||
-            run.workflow_id !== definition.id ||
-            run.repository?.id !== repository.id ||
-            parseGenerationRunName(run.display_title)?.issueNumber !==
-              metadata.issueNumber ||
-            parseGenerationRunName(run.display_title)?.profile !==
-              metadata.profile ||
-            parseGenerationRunName(run.display_title)?.requestId !==
-              metadata.requestId
-          )
-            throw new Error("conflicting run attempt evidence");
-          const jobs = await jobsFor(run);
-          const observedAt = timestamp(run.updated_at);
-          const createdAt = timestamp(run.created_at);
-          const finished = jobs
-            .filter((j) => j.completed_at)
-            .map((j) => timestamp(j.completed_at));
-          const started = jobs
-            .filter((j) => j.started_at)
-            .map((j) => timestamp(j.started_at));
-          // Never copy raw job names or logs, or infer delivery from a passed step.
-          const observation = buildAttemptObservation({
-            repository: TRACKING_REPOSITORY,
-            runId: String(run.id),
-            runAttempt: attempt,
-            ...metadata,
-            triggeringActor: run.triggering_actor?.login ?? null,
-            executionStatus: conclusion(run),
-            deliveryStatus: "none",
-            observedAt,
-            createdAt,
-            startedAt: started.length ? Math.min(...started) : null,
-            completedAt:
-              run.status === "completed" && finished.length
-                ? Math.max(...finished)
-                : null,
-            source: "github-reconcile",
-            failure: {
-              evidenceUrl: `https://github.com/${TRACKING_REPOSITORY}/actions/runs/${run.id}/attempts/${attempt}`,
-            },
-          });
-          attempts.push({
-            observation,
-            events:
-              definition.path === ".github/workflows/generate-client.yml" &&
-              metadata.profile === "full"
-                ? generationStageOutcomes(jobs, observedAt)
-                : [],
-          });
-          seen.add(key);
-          report.coverageStart =
-            report.coverageStart === null
-              ? createdAt
-              : Math.min(report.coverageStart, createdAt);
+          if (seen.has(key) || pageSeen.has(key)) continue;
+          pageSeen.add(key);
+          pendingTargets.push({ listed, metadata, attempt, key });
         }
+      }
+      const resolvedTargets = new Array(pendingTargets.length);
+      let nextIndex = 0;
+      let workerFailure = null;
+      const workerCount = Math.min(concurrency, pendingTargets.length);
+      const workers = Array.from({ length: workerCount }, async () => {
+        while (!workerFailure) {
+          const index = nextIndex++;
+          if (index >= pendingTargets.length) return;
+          const { listed, metadata, attempt, key } = pendingTargets[index];
+          try {
+            const run =
+              attempt === listed.run_attempt
+                ? listed
+                : await get(
+                    `${api}/actions/runs/${listed.id}/attempts/${attempt}`,
+                  );
+            if (
+              run.id !== listed.id ||
+              run.run_attempt !== attempt ||
+              run.workflow_id !== definition.id ||
+              run.repository?.id !== repository.id ||
+              parseGenerationRunName(run.display_title)?.issueNumber !==
+                metadata.issueNumber ||
+              parseGenerationRunName(run.display_title)?.profile !==
+                metadata.profile ||
+              parseGenerationRunName(run.display_title)?.requestId !==
+                metadata.requestId
+            )
+              throw new Error("conflicting run attempt evidence");
+            const jobs = await jobsFor(run);
+            const observedAt = timestamp(run.updated_at);
+            const createdAt = timestamp(run.created_at);
+            const finished = jobs
+              .filter((j) => j.completed_at)
+              .map((j) => timestamp(j.completed_at));
+            const started = jobs
+              .filter((j) => j.started_at)
+              .map((j) => timestamp(j.started_at));
+            // Never copy raw job names or logs, or infer delivery from a passed step.
+            const observation = buildAttemptObservation({
+              repository: TRACKING_REPOSITORY,
+              runId: String(run.id),
+              runAttempt: attempt,
+              ...metadata,
+              triggeringActor: run.triggering_actor?.login ?? null,
+              executionStatus: conclusion(run),
+              deliveryStatus: "none",
+              observedAt,
+              createdAt,
+              startedAt: started.length ? Math.min(...started) : null,
+              completedAt:
+                run.status === "completed" && finished.length
+                  ? Math.max(...finished)
+                  : null,
+              source: "github-reconcile",
+              failure: {
+                evidenceUrl: `https://github.com/${TRACKING_REPOSITORY}/actions/runs/${run.id}/attempts/${attempt}`,
+              },
+            });
+            resolvedTargets[index] = {
+              key,
+              createdAt,
+              entry: {
+                observation,
+                events:
+                  definition.path === ".github/workflows/generate-client.yml" &&
+                  metadata.profile === "full"
+                    ? generationStageOutcomes(jobs, observedAt)
+                    : [],
+              },
+            };
+          } catch (error) {
+            if (!workerFailure) workerFailure = error;
+            return;
+          }
+        }
+      });
+      await Promise.all(workers);
+      if (workerFailure) throw workerFailure;
+      const attempts = [];
+      for (const item of resolvedTargets) {
+        attempts.push(item.entry);
+        seen.add(item.key);
+        report.coverageStart =
+          report.coverageStart === null
+            ? item.createdAt
+            : Math.min(report.coverageStart, item.createdAt);
       }
       const next =
         body.workflow_runs.length === 100
@@ -443,8 +505,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const report = await reconcileGenerationHistory({
     mode: args.mode || "incremental",
     from: args.from || 0,
+    lookbackHours: args["lookback-hours"]
+      ? Number(args["lookback-hours"])
+      : null,
     dryRun,
     pageBudget: Number(args["page-budget"] || 10),
+    concurrency: args.concurrency ? Number(args.concurrency) : 8,
     checkpoint: args.checkpoint || null,
     fetchImpl,
     postImpl,

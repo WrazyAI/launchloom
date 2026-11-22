@@ -65,6 +65,10 @@ jobs:
         run: |
           ARGS=(--mode "$RECONCILE_MODE" --page-budget 10)
           if [ "$RECONCILE_DRY_RUN" = "true" ]; then ARGS+=(--dry-run); else ARGS+=(--write); fi
-          if [ -n "$RECONCILE_FROM" ]; then ARGS+=(--from "$RECONCILE_FROM"); fi
+          if [ -n "$RECONCILE_FROM" ]; then
+            ARGS+=(--from "$RECONCILE_FROM")
+          elif [ "$RECONCILE_MODE" = "incremental" ] && [ -z "$RECONCILE_CHECKPOINT" ]; then
+            ARGS+=(--lookback-hours 72)
+          fi
           if [ -n "$RECONCILE_CHECKPOINT" ]; then ARGS+=(--checkpoint "$RECONCILE_CHECKPOINT"); fi
           node scripts/reconcile-generation-history.mjs "${ARGS[@]}"
