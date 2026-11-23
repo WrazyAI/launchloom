@@ -2150,11 +2150,11 @@ describe("real admin workspace browser behavior", () => {
         return {
           background: style.backgroundColor,
           color: style.color,
-          border: style.borderTopColor,
+          shadow: style.boxShadow,
         };
       });
-      expect(tone.background).toBe("rgb(217, 233, 223)");
-      expect(relativeLuminance(tone.background)).toBeGreaterThan(0.5);
+      expect(tone.background).toBe("rgb(27, 59, 50)");
+      expect(tone.shadow).toContain("rgb(217, 240, 107)");
       expect(contrastRatio(tone.color, tone.background)).toBeGreaterThanOrEqual(
         4.5,
       );
@@ -2218,6 +2218,26 @@ describe("real admin workspace browser behavior", () => {
         /^https:\/\/business-\d+\.pages\.dev\/$/u,
       );
       expect(await viewSite.getAttribute("target")).toBe("_blank");
+      expect(
+        await viewSite.evaluate(
+          (element) => getComputedStyle(element).textDecorationLine,
+        ),
+      ).toBe("none");
+      const proofFrame = page.locator(".admin-site-proof__frame").first();
+      await visible(proofFrame);
+      const proofBox = await proofFrame.boundingBox();
+      expect(proofBox).not.toBeNull();
+      expect(proofBox!.width).toBeGreaterThanOrEqual(200);
+      expect(proofBox!.height).toBeGreaterThanOrEqual(120);
+      const readyPill = page.locator(".admin-site-status--ready").first();
+      if (await readyPill.count()) {
+        await visible(readyPill);
+        expect(
+          await readyPill.evaluate(
+            (element) => getComputedStyle(element).color,
+          ),
+        ).toBe("rgb(18, 88, 97)");
+      }
       const openClient = page
         .getByRole("button", { name: "Open client" })
         .first();

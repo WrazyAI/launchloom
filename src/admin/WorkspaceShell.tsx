@@ -23,7 +23,7 @@ const VIEW_LABELS: Record<AdminView, string> = {
 
 const VIEW_ICONS: Record<AdminView, AdminIconName> = {
   operations: "operations",
-  generations: "history",
+  generations: "sites",
   clients: "clients",
   invitations: "invitations",
   team: "team",
@@ -221,6 +221,7 @@ export function WorkspaceShell({
             <a
               className="admin-account-link"
               href="/admin/onboarding-invites?view=settings"
+              aria-label="Open your profile"
               title={
                 principal
                   ? `${principal.displayName || principal.email} (${principal.role})`
@@ -281,26 +282,6 @@ export function WorkspaceShell({
             <strong>{VIEW_LABELS[active]}</strong>
           </div>
           <div className="admin-commandbar__actions">
-            <a
-              className="admin-commandbar__profile"
-              href="/admin/onboarding-invites?view=settings"
-              onClick={(event) => {
-                if (
-                  event.defaultPrevented ||
-                  event.button !== 0 ||
-                  event.metaKey ||
-                  event.ctrlKey ||
-                  event.shiftKey ||
-                  event.altKey
-                )
-                  return;
-                event.preventDefault();
-                navigate("settings");
-              }}
-              aria-label="Open your profile"
-            >
-              <AdminIcon name="team" />
-            </a>
             <a
               className="admin-create-link"
               href="/admin/onboarding-invites?view=invitations"
