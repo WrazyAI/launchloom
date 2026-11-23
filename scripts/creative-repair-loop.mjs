@@ -1015,7 +1015,7 @@ ${JSON.stringify(stableReferenceDna, null, 2)}
 ASSIGNED REFERENCE DOSSIER
 ${referenceDossierPromptBlock(referenceDossier) || "No dossier prompt was attached; use the measured Reference DNA and screenshots without inferring missing evidence."}
 
-${designAdherencePromptBlock()}
+${designAdherencePromptBlock({ mode: "repair" })}
 
 SEALED CONTENT TOKENS
 ${contentTokens.join("\n") || "(not supplied)"}
