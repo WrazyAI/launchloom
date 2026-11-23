@@ -1408,6 +1408,10 @@ describe("creative repair loop", () => {
     expect(prompt).toContain("Adapt within the template");
     expect(prompt).toContain("PINNED FRONTEND-DESIGN GUIDANCE");
     expect(prompt).toContain("Anthropic frontend-design skill");
+    expect(prompt).toContain("INTERFACE CRAFT AND INTERACTION HYGIENE");
+    expect(prompt).toContain("STRUCTURED REPAIR CRITIQUE DISCIPLINE");
+    expect(prompt).not.toContain("come up with copy and placeholder content");
+    expect(prompt).not.toContain("describe the core base palette as 4");
     expect(prompt).toContain("CLIENT PALETTE ROLE CONTRACT");
     expect(prompt).toContain("surfaceColor is the dominant page surface");
     expect(prompt).toContain(

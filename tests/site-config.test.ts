@@ -319,6 +319,9 @@ describe("site configuration", () => {
       (message: { role: string }) => message.role === "user",
     )?.content;
     expect(systemPrompt).toContain("NARRATIVE SPINE");
+    expect(systemPrompt).toContain("PINNED WRITING-IN-DESIGN GUIDANCE (COPY LANE)");
+    expect(systemPrompt).toContain("Write from the end user's perspective.");
+    expect(systemPrompt).not.toContain("INTERFACE CRAFT AND INTERACTION HYGIENE");
     expect(userPrompt).toContain("keys narrative");
     expect(config.qualityReport.narrative.audience).toContain(
       "Portland drivers",
