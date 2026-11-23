@@ -410,3 +410,191 @@ export function selectedEvent(
   if (!id) return null;
   return events.find((event) => event.eventId === id) ?? null;
 }
+
+export function modelDurationSeconds(entry: ActivityEntry): number | null {
+  if (entry.kind !== "model") return null;
+  const started = entry.evidence.find(
+    (event) => event.kind === "model_started",
+  );
+  const finished = entry.evidence.findLast(
+    (event) => event.kind === "model_finished",
+  );
+  if (started && finished) {
+    const startMs = Date.parse(started.emittedAt);
+    const endMs = Date.parse(finished.emittedAt);
+    if (
+      Number.isFinite(startMs) &&
+      Number.isFinite(endMs) &&
+      endMs >= startMs
+    ) {
+      return Math.round((endMs - startMs) / 100) / 10;
+    }
+  }
+  const progress = activityProgress(entry);
+  if (progress && progress.elapsedMs > 0) {
+    return Math.round(progress.elapsedMs / 100) / 10;
+  }
+  return null;
+}
+
+export function modelReasoningCount(entry: ActivityEntry): {
+  tokens: number;
+  kind: "reported" | "deltas";
+} | null {
+  if (entry.kind !== "model") return null;
+  const usageEvent = entry.evidence.findLast((event) => event.kind === "usage");
+  if (
+    usageEvent &&
+    usageEvent.kind === "usage" &&
+    usageEvent.payload.usage.reasoningTokens !== null &&
+    usageEvent.payload.usage.reasoningTokens > 0
+  ) {
+    return {
+      tokens: usageEvent.payload.usage.reasoningTokens,
+      kind: "reported",
+    };
+  }
+  const progress = activityProgress(entry);
+  if (progress && progress.reasoningTokens > 0) {
+    return { tokens: progress.reasoningTokens, kind: "deltas" };
+  }
+  return null;
+}
+
+const CHIP_FIELD_PRIORITY = [
+  "path",
+  "file",
+  "route",
+  "command",
+  "stage",
+  "boundary",
+  "target",
+  "url",
+  "profile",
+  "renderer",
+];
+
+export function actionChipText(entry: ActivityEntry): string | null {
+  const started = entry.evidence.find(
+    (event) => event.kind === "action_started",
+  );
+  const finished = entry.evidence.findLast(
+    (event) => event.kind === "action_finished",
+  );
+  const fields: Record<string, string | number | boolean | null> = {};
+  if (started && started.kind === "action_started") {
+    Object.assign(fields, started.payload.input);
+  }
+  if (finished && finished.kind === "action_finished") {
+    Object.assign(fields, finished.payload.result);
+  }
+  for (const key of CHIP_FIELD_PRIORITY) {
+    const val = fields[key];
+    if (typeof val === "string" && val.trim()) {
+      const cleaned = val.trim();
+      return cleaned.length > 44 ? `${cleaned.slice(0, 41)}...` : cleaned;
+    }
+  }
+  for (const [key, val] of Object.entries(fields)) {
+    if (typeof val === "string" && val.trim()) {
+      const cleaned = `${key}: ${val.trim()}`;
+      return cleaned.length > 44 ? `${cleaned.slice(0, 41)}...` : cleaned;
+    }
+  }
+  if (
+    finished &&
+    finished.kind === "action_finished" &&
+    finished.payload.durationMs !== null
+  ) {
+    return finished.payload.durationMs >= 1000
+      ? `${(finished.payload.durationMs / 1000).toFixed(1)}s`
+      : `${finished.payload.durationMs} ms`;
+  }
+  return null;
+}
+
+export type ParsedModelOutput =
+  | { kind: "prose"; text: string }
+  | {
+      kind: "json";
+      stageTag: string | null;
+      summary: string | null;
+      keys: string[];
+      formatted: string;
+    };
+
+const SUMMARY_KEYS = [
+  "designContract",
+  "summary",
+  "message",
+  "rationale",
+  "verdict",
+  "finding",
+  "reason",
+  "headline",
+  "title",
+  "description",
+];
+
+export function parseModelOutputPreview(raw: string): ParsedModelOutput {
+  const trimmed = raw.trim();
+  if (!trimmed) return { kind: "prose", text: "" };
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    try {
+      const parsed: unknown = JSON.parse(trimmed);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        const record = parsed as Record<string, unknown>;
+        const keys = Object.keys(record);
+        const stageTag =
+          typeof record.stage === "string" && record.stage.trim()
+            ? record.stage.trim()
+            : null;
+        let summary: string | null = null;
+        for (const key of SUMMARY_KEYS) {
+          const candidate = record[key];
+          if (typeof candidate === "string" && candidate.trim()) {
+            summary = candidate.trim();
+            break;
+          }
+        }
+        return {
+          kind: "json",
+          stageTag,
+          summary,
+          keys,
+          formatted: JSON.stringify(parsed, null, 2),
+        };
+      }
+      return {
+        kind: "json",
+        stageTag: null,
+        summary: Array.isArray(parsed)
+          ? `Structured list (${parsed.length} ${parsed.length === 1 ? "item" : "items"})`
+          : null,
+        keys: [],
+        formatted: JSON.stringify(parsed, null, 2),
+      };
+    } catch {
+      // Truncated or partial JSON (e.g., mid-stream or server-bounded excerpt):
+      // try extracting a clean readable field while still exposing the raw payload.
+      const stageMatch = /"stage"\s*:\s*"([^"]+)"/u.exec(trimmed);
+      const contractMatch =
+        /"(?:designContract|summary|message|rationale|reason)"\s*:\s*"((?:\\.|[^"\\]){12,})/u.exec(
+          trimmed,
+        );
+      if (stageMatch || contractMatch) {
+        const extracted = contractMatch
+          ? contractMatch[1].replace(/\\n/gu, " ").replace(/\\"/gu, '"').trim()
+          : null;
+        return {
+          kind: "json",
+          stageTag: stageMatch?.[1] ?? null,
+          summary: extracted,
+          keys: [],
+          formatted: trimmed,
+        };
+      }
+    }
+  }
+  return { kind: "prose", text: raw };
+}
