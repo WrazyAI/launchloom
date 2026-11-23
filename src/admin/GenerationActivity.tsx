@@ -8,6 +8,7 @@ import type {
 } from "../lib/generation-activity";
 import type { AdminApi } from "./api";
 import {
+  actionChipText,
   activityProgress,
   activityRoleLabel,
   activityStageLabel,
@@ -19,6 +20,9 @@ import {
   groupActivity,
   heartbeatNotice,
   isOpenEntry,
+  modelDurationSeconds,
+  modelReasoningCount,
+  parseModelOutputPreview,
   recordingLabel,
   type ActivityEntry,
   type ActivityFilter,
@@ -57,6 +61,82 @@ function coverageSummary(entries: GenerationActivityCoverageEntry[]): string {
     .filter((status) => counts.has(status))
     .map((status) => `${counts.get(status)} ${status.replace(/_/gu, " ")}`);
   return `Coverage: ${parts.join(", ") || "not reported"}`;
+}
+
+function SparkleIcon({ active = false }: { active?: boolean }) {
+  return (
+    <svg
+      className="admin-chat__sparkle"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      data-active={active ? "true" : undefined}
+      aria-hidden="true"
+    >
+      <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
+    </svg>
+  );
+}
+
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      className="admin-chat__chevron"
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      data-open={open ? "true" : undefined}
+      aria-hidden="true"
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+function ToolKindIcon({ kind }: { kind: ActivityEntry["kind"] }) {
+  return (
+    <svg
+      className="admin-chat__tool-ico"
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {kind === "action" ? (
+        <path d="M4 17l6-5-6-5M12 19h8" />
+      ) : kind === "error" ? (
+        <>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 8v4.5M12 16h.01" />
+        </>
+      ) : kind === "retry" ? (
+        <path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" />
+      ) : kind === "finished" ? (
+        <path d="M20 6L9 17l-5-5" />
+      ) : kind === "coverage" ? (
+        <>
+          <circle cx="12" cy="12" r="8" />
+          <circle cx="12" cy="12" r="3" />
+        </>
+      ) : (
+        <>
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <path d="M14 2v6h6" />
+        </>
+      )}
+    </svg>
+  );
 }
 
 function StatusPill({ status }: { status: string | null }) {
@@ -326,27 +406,254 @@ function Evidence({ event }: { event: StoredTraceEvent }) {
   }
 }
 
-function EntryRow({
+function ModelThinkingTrace({
+  entry,
+  open,
+  active,
+  expanded,
+  onToggle,
+}: {
+  entry: ActivityEntry;
+  open: boolean;
+  active: boolean;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const isLive = open && active;
+  const started = entry.evidence.find(
+    (event) => event.kind === "model_started",
+  );
+  const finished = entry.evidence.findLast(
+    (event) => event.kind === "model_finished",
+  );
+  const usageEvent = entry.evidence.findLast((event) => event.kind === "usage");
+  const progress = activityProgress(entry);
+  const duration = modelDurationSeconds(entry);
+  const reasoning = modelReasoningCount(entry);
+
+  let label = "Reasoning & execution trace";
+  if (isLive) {
+    label = progress?.reasoningTokens
+      ? `Thinking (${formatCount(progress.reasoningTokens)} reasoning deltas)`
+      : "Thinking";
+  } else if (duration !== null && reasoning) {
+    label = `Thought for ${duration}s (${formatCount(reasoning.tokens)} reasoning ${reasoning.kind === "reported" ? "tokens" : "deltas"})`;
+  } else if (duration !== null) {
+    label = `Thought for ${duration}s`;
+  } else if (reasoning) {
+    label = `Thought (${formatCount(reasoning.tokens)} reasoning ${reasoning.kind === "reported" ? "tokens" : "deltas"})`;
+  }
+
+  const steps: Array<{ label: string; meta?: string; spinning?: boolean }> = [];
+  if (started && started.kind === "model_started") {
+    steps.push({
+      label: `Dispatched to ${started.payload.provider}`,
+      meta: started.payload.model,
+    });
+  } else {
+    steps.push({
+      label: "Earlier request event not loaded on this page",
+      meta: activityStageLabel(entry.stage),
+    });
+  }
+  if (progress) {
+    steps.push({
+      label: isLive
+        ? `Streaming ~${formatCount(Math.ceil(progress.visibleChars / 4))} estimated tokens`
+        : `Streamed ~${formatCount(Math.ceil(progress.visibleChars / 4))} estimated tokens`,
+      meta: `${progress.reasoningTokens} reasoning deltas`,
+      spinning: isLive,
+    });
+  } else if (isLive) {
+    steps.push({
+      label: "Waiting for streamed output deltas",
+      spinning: true,
+    });
+  }
+  if (usageEvent && usageEvent.kind === "usage") {
+    const u = usageEvent.payload.usage;
+    steps.push({
+      label: "Provider reported usage",
+      meta: `${formatCount(u.inputTokens)} in / ${formatCount(u.outputTokens)} out${u.cachedInputTokens ? ` (${formatCount(u.cachedInputTokens)} cached)` : ""}`,
+    });
+  }
+  if (finished && finished.kind === "model_finished") {
+    steps.push({
+      label: `Response ${finished.payload.status.replace(/_/gu, " ")}`,
+      meta: formatClock(Date.parse(finished.emittedAt)),
+    });
+  }
+
+  return (
+    <div className="admin-chat__thinking">
+      <button
+        type="button"
+        className="admin-chat__thinking-toggle"
+        aria-expanded={expanded}
+        onClick={onToggle}
+      >
+        <SparkleIcon active={isLive} />
+        <span
+          className={
+            isLive
+              ? "admin-chat__thinking-label admin-chat__thinking-label--shimmer"
+              : "admin-chat__thinking-label"
+          }
+        >
+          {label}
+        </span>
+        <ChevronIcon open={expanded} />
+      </button>
+      <div
+        className={`admin-chat__collapse${expanded ? " is-open" : ""}`}
+        aria-hidden={!expanded}
+      >
+        <div>
+          <div className="admin-chat__thinking-body">
+            {steps.map((step, index) => (
+              <div className="admin-chat__thinking-step" key={index}>
+                {step.spinning ? (
+                  <span className="admin-chat__spinner" aria-hidden="true" />
+                ) : (
+                  <svg
+                    className="admin-chat__check"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                )}
+                <span className="admin-chat__thinking-text">{step.label}</span>
+                {step.meta ? (
+                  <span className="admin-chat__thinking-meta">{step.meta}</span>
+                ) : null}
+              </div>
+            ))}
+            <p className="admin-chat__thinking-note">
+              Private chain-of-thought text is withheld by policy. Recorded
+              request timing, reasoning counts, and stream progress are shown.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChatModelOutput({ rawText }: { rawText: string }) {
+  const [copied, setCopied] = useState(false);
+  const copyTimer = useRef<number | null>(null);
+  const parsed = useMemo(() => parseModelOutputPreview(rawText), [rawText]);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimer.current !== null) window.clearTimeout(copyTimer.current);
+    };
+  }, []);
+
+  if (!rawText) return null;
+
+  if (parsed.kind === "prose") {
+    return (
+      <p className="admin-activity__excerpt admin-chat__prose">
+        {parsed.text.length > 520
+          ? `${parsed.text.slice(0, 520)}…`
+          : parsed.text}
+      </p>
+    );
+  }
+
+  const rawPayload = parsed.raw;
+
+  function copyPayload() {
+    if (typeof navigator === "undefined" || !navigator.clipboard) return;
+    navigator.clipboard
+      .writeText(rawPayload)
+      .then(() => {
+        setCopied(true);
+        if (copyTimer.current !== null) window.clearTimeout(copyTimer.current);
+        copyTimer.current = window.setTimeout(() => {
+          setCopied(false);
+          copyTimer.current = null;
+        }, 1500);
+      })
+      .catch(() => {});
+  }
+
+  return (
+    <div className="admin-chat__structured">
+      {parsed.stageTag || parsed.summary ? (
+        <div className="admin-chat__structured-head">
+          {parsed.stageTag ? (
+            <span className="admin-chat__stage-chip">{parsed.stageTag}</span>
+          ) : null}
+          {parsed.summary ? (
+            <p className="admin-activity__excerpt admin-chat__prose">
+              {parsed.summary.length > 420
+                ? `${parsed.summary.slice(0, 420)}…`
+                : parsed.summary}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+      <details className="admin-chat__code-disclosure">
+        <summary>
+          <span>
+            {parsed.truncated
+              ? "View recorded output payload (truncated)"
+              : "View recorded output payload"}
+          </span>
+          {parsed.keys.length ? (
+            <span className="admin-chat__code-keys">
+              {parsed.keys.slice(0, 4).join(", ")}
+              {parsed.keys.length > 4 ? ` +${parsed.keys.length - 4}` : ""}
+            </span>
+          ) : null}
+        </summary>
+        <div className="admin-chat__codeblock">
+          <div className="admin-chat__codeblock-bar">
+            <span className="admin-activity__mono">recorded-output.json</span>
+            <button
+              type="button"
+              className="admin-chat__copy-btn"
+              onClick={copyPayload}
+            >
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+          <pre className="admin-chat__codeblock-pre">{parsed.formatted}</pre>
+        </div>
+      </details>
+    </div>
+  );
+}
+
+function ThreadedEntry({
   entry,
   selected,
+  thinkingOpen,
   onSelect,
-  threaded,
+  onToggleThinking,
   active,
 }: {
   entry: ActivityEntry;
   selected: boolean;
+  thinkingOpen: boolean;
   onSelect: (id: string) => void;
-  threaded: boolean;
+  onToggleThinking: (key: string) => void;
   active: boolean;
 }) {
   const open = isOpenEntry(entry);
   const progress = entry.kind === "model" ? activityProgress(entry) : null;
-  const usage = threaded
-    ? entry.evidence.findLast((event) => event.kind === "usage")
-    : null;
-  const output = threaded
-    ? entry.evidence.findLast((event) => event.kind === "output")
-    : null;
+  const usage = entry.evidence.findLast((event) => event.kind === "usage");
+  const output = entry.evidence.findLast((event) => event.kind === "output");
   const outputText = output ? text(output.payload.message) : "";
   const latestProgress = entry.evidence.findLast(
     (event) => event.kind === "output_delta",
@@ -360,6 +667,198 @@ function EntryRow({
             (event === latestProgress && !usage),
         )
       : entry.evidence;
+  const modelName =
+    entry.primary.kind === "model_started" ? entry.primary.payload.model : null;
+  const chip = entry.kind === "model" ? null : actionChipText(entry);
+
+  const statusBadge =
+    open && active ? (
+      <span className="admin-activity__status admin-activity__status--live">
+        running
+      </span>
+    ) : (
+      <StatusPill status={open ? "Unconfirmed" : entry.status} />
+    );
+
+  // Model turns render as full thread-native chat messages with collapsible thinking traces.
+  if (entry.kind === "model") {
+    return (
+      <li
+        className={`admin-activity__entry admin-chat__turn${
+          selected ? " admin-activity__entry--selected" : ""
+        }${open ? " admin-activity__entry--open" : ""}`}
+        data-kind={entry.kind}
+      >
+        <div className="admin-chat__turn-head">
+          <button
+            type="button"
+            className="admin-activity__row admin-chat__turn-trigger"
+            aria-expanded={selected}
+            onClick={() => onSelect(entry.key)}
+          >
+            <span className="admin-chat__avatar" aria-hidden="true">
+              L
+            </span>
+            <span className="admin-activity__copy">
+              <span className="admin-chat__turn-topline">
+                <span className="admin-activity__title">{entry.title}</span>
+                <span className="admin-chat__role-pill">
+                  {activityRoleLabel(entry.role)}
+                </span>
+                {modelName ? (
+                  <span className="admin-chat__model-pill">{modelName}</span>
+                ) : null}
+              </span>
+              <span className="admin-activity__sub">
+                {activityStageLabel(entry.stage)}
+              </span>
+              {usage ? (
+                <span className="admin-activity__tokens">
+                  {formatCount(usage.payload.usage.inputTokens)} in ·{" "}
+                  {formatCount(usage.payload.usage.outputTokens)} out · reported
+                </span>
+              ) : progress && open && active ? (
+                <span className="admin-activity__sub">
+                  ~{Math.ceil(progress.visibleChars / 4)} output tokens
+                  estimated while streaming · {progress.reasoningTokens}{" "}
+                  reasoning deltas
+                </span>
+              ) : null}
+            </span>
+            <span className="admin-chat__turn-right">
+              <time
+                className="admin-activity__clock"
+                dateTime={new Date(entry.at).toISOString()}
+              >
+                {formatClock(entry.at)}
+              </time>
+              {statusBadge}
+            </span>
+          </button>
+        </div>
+
+        <div className="admin-chat__turn-body">
+          <ModelThinkingTrace
+            entry={entry}
+            open={open}
+            active={active}
+            expanded={thinkingOpen}
+            onToggle={() => onToggleThinking(entry.key)}
+          />
+
+          {outputText && !selected ? (
+            <ChatModelOutput rawText={outputText} />
+          ) : null}
+
+          {selected ? (
+            <div
+              className="admin-activity__evidence"
+              aria-label="Recorded evidence"
+            >
+              {visibleEvidence.map((event) => (
+                <div
+                  className="admin-activity__evidence-block"
+                  key={event.eventId}
+                >
+                  <Evidence event={event} />
+                </div>
+              ))}
+              {entry.evidence.some(
+                (event) =>
+                  event.kind === "model_started" ||
+                  event.kind === "model_finished",
+              ) ? (
+                <details className="admin-activity__request-details">
+                  <summary>Request and completion details</summary>
+                  {entry.evidence
+                    .filter(
+                      (event) =>
+                        event.kind === "model_started" ||
+                        event.kind === "model_finished",
+                    )
+                    .map((event) => (
+                      <div
+                        className="admin-activity__evidence-block"
+                        key={event.eventId}
+                      >
+                        <Evidence event={event} />
+                      </div>
+                    ))}
+                </details>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </li>
+    );
+  }
+
+  // Non-model pipeline actions, tasks, errors, retries render as compact interactive Tool Chip rows.
+  return (
+    <li
+      className={`admin-activity__entry admin-chat__tool-entry${
+        selected ? " admin-activity__entry--selected" : ""
+      }${open ? " admin-activity__entry--open" : ""}`}
+      data-kind={entry.kind}
+    >
+      <button
+        type="button"
+        className="admin-activity__row admin-chat__tool-row"
+        aria-expanded={selected}
+        onClick={() => onSelect(entry.key)}
+      >
+        <span className="admin-chat__tool-icon-wrap" aria-hidden="true">
+          <ToolKindIcon kind={entry.kind} />
+          <ChevronIcon open={selected} />
+        </span>
+        <span className="admin-activity__copy admin-chat__tool-copy">
+          <span className="admin-activity__title">{entry.title}</span>
+          {chip ? (
+            <span className="admin-chat__chip">{chip}</span>
+          ) : (
+            <span className="admin-activity__sub">
+              {activityRoleLabel(entry.role)}
+            </span>
+          )}
+        </span>
+        <span className="admin-chat__tool-right">
+          <time
+            className="admin-activity__clock"
+            dateTime={new Date(entry.at).toISOString()}
+          >
+            {formatClock(entry.at)}
+          </time>
+          {statusBadge}
+        </span>
+      </button>
+
+      {selected ? (
+        <div
+          className="admin-activity__evidence admin-chat__tool-evidence"
+          aria-label="Recorded evidence"
+        >
+          {visibleEvidence.map((event) => (
+            <div className="admin-activity__evidence-block" key={event.eventId}>
+              <Evidence event={event} />
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+function EntryRow({
+  entry,
+  selected,
+  onSelect,
+}: {
+  entry: ActivityEntry;
+  selected: boolean;
+  onSelect: (id: string) => void;
+}) {
+  const open = isOpenEntry(entry);
+  const progress = entry.kind === "model" ? activityProgress(entry) : null;
   const subtitle =
     entry.kind === "model"
       ? `${entry.role.replace(/_/gu, " ")} · model call`
@@ -376,8 +875,7 @@ function EntryRow({
       <button
         type="button"
         className="admin-activity__row"
-        aria-pressed={threaded ? undefined : selected}
-        aria-expanded={threaded ? selected : undefined}
+        aria-pressed={selected}
         onClick={() => onSelect(entry.primary.eventId)}
       >
         <time
@@ -391,74 +889,163 @@ function EntryRow({
         </span>
         <span className="admin-activity__copy">
           <span className="admin-activity__title">{entry.title}</span>
-          <span className="admin-activity__sub">
-            {threaded
-              ? `${activityStageLabel(entry.stage)} · ${activityRoleLabel(entry.role)}${entry.primary.kind === "model_started" ? ` · ${entry.primary.payload.model}` : ""}`
-              : subtitle}
-          </span>
-          {usage ? (
-            <span className="admin-activity__tokens">
-              {formatCount(usage.payload.usage.inputTokens)} in ·{" "}
-              {formatCount(usage.payload.usage.outputTokens)} out · reported
-            </span>
-          ) : progress && (!threaded || (open && active)) ? (
+          <span className="admin-activity__sub">{subtitle}</span>
+          {progress ? (
             <span className="admin-activity__sub">
               ~{Math.ceil(progress.visibleChars / 4)} output tokens estimated
               while streaming · {progress.reasoningTokens} reasoning deltas
             </span>
           ) : null}
         </span>
-        {open && (!threaded || active) ? (
+        {open ? (
           <span className="admin-activity__status admin-activity__status--live">
             running
           </span>
         ) : (
-          <StatusPill status={open ? "Unconfirmed" : entry.status} />
+          <StatusPill status={entry.status} />
         )}
       </button>
-      {threaded && outputText && !selected ? (
-        <p className="admin-activity__excerpt">
-          {outputText.length > 320
-            ? `${outputText.slice(0, 320)}…`
-            : outputText}
-        </p>
-      ) : null}
-      {threaded && selected ? (
-        <div
-          className="admin-activity__evidence"
-          aria-label="Recorded evidence"
-        >
-          {visibleEvidence.map((event) => (
-            <div className="admin-activity__evidence-block" key={event.eventId}>
-              <Evidence event={event} />
-            </div>
-          ))}
-          {entry.kind === "model" &&
-          entry.evidence.some(
-            (event) =>
-              event.kind === "model_started" || event.kind === "model_finished",
-          ) ? (
-            <details className="admin-activity__request-details">
-              <summary>Request and completion details</summary>
-              {entry.evidence
-                .filter(
-                  (event) =>
-                    event.kind === "model_started" ||
-                    event.kind === "model_finished",
-                )
-                .map((event) => (
-                  <div
-                    className="admin-activity__evidence-block"
-                    key={event.eventId}
-                  >
-                    <Evidence event={event} />
-                  </div>
-                ))}
-            </details>
-          ) : null}
-        </div>
-      ) : null}
     </li>
+  );
+}
+
+function LockedAgentComposer() {
+  const [nudged, setNudged] = useState(false);
+  const [notice, setNotice] = useState(false);
+  const nudgeTimer = useRef<number | null>(null);
+  const noticeTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (nudgeTimer.current !== null) window.clearTimeout(nudgeTimer.current);
+      if (noticeTimer.current !== null)
+        window.clearTimeout(noticeTimer.current);
+    };
+  }, []);
+
+  function notifyLocked() {
+    setNudged(true);
+    setNotice(true);
+    if (nudgeTimer.current !== null) window.clearTimeout(nudgeTimer.current);
+    if (noticeTimer.current !== null) window.clearTimeout(noticeTimer.current);
+    nudgeTimer.current = window.setTimeout(() => {
+      setNudged(false);
+      nudgeTimer.current = null;
+    }, 260);
+    noticeTimer.current = window.setTimeout(() => {
+      setNotice(false);
+      noticeTimer.current = null;
+    }, 2400);
+  }
+
+  return (
+    <div
+      className={`admin-chat__composer${nudged ? " is-nudged" : ""}`}
+      aria-label="Follow-up agent prompt (read-only)"
+      aria-disabled="true"
+      onClick={notifyLocked}
+    >
+      <div className="admin-chat__composer-lock">
+        <span className="admin-chat__composer-lock-title">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="4" y="11" width="16" height="10" rx="2" />
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+          </svg>
+          Read-only run trace
+        </span>
+        <span
+          className="admin-chat__composer-lock-hint"
+          role="status"
+          aria-live="polite"
+        >
+          {notice
+            ? "Follow-up messaging is disabled on recorded runs for now."
+            : "Interactive agent messaging coming soon"}
+        </span>
+      </div>
+      <div className="admin-chat__composer-surface">
+        <textarea
+          rows={1}
+          disabled
+          aria-label="Send a follow-up instruction to the agent (disabled for recorded runs)"
+          placeholder="Ask the agent to revise a section, inspect a gate finding, or branch this preview..."
+          className="admin-chat__composer-input"
+        />
+        <div className="admin-chat__composer-bar">
+          <div className="admin-chat__composer-tools">
+            <button
+              type="button"
+              disabled
+              aria-label="Attach context (disabled)"
+              className="admin-chat__composer-icon"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+            <span className="admin-chat__composer-pill">@ Context</span>
+            <span className="admin-chat__composer-pill">/ Commands</span>
+          </div>
+          <div className="admin-chat__composer-actions">
+            <span className="admin-chat__composer-model">
+              Run agent
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </span>
+            <button
+              type="button"
+              disabled
+              aria-label="Send message (disabled)"
+              className="admin-chat__composer-send"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -480,7 +1067,11 @@ export function GenerationActivity({
     [identity.namespace, identity.attemptId],
   );
   const [filter, setFilter] = useState<ActivityFilter>("all");
+  const [stageFilter, setStageFilter] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [thinkingState, setThinkingState] = useState<Record<string, boolean>>(
+    {},
+  );
   const [now, setNow] = useState(() => Date.now());
   const follow = useRef(true);
   const feedRef = useRef<HTMLOListElement | null>(null);
@@ -509,20 +1100,55 @@ export function GenerationActivity({
     () => groupActivity(events, threaded),
     [events, threaded],
   );
-  const visible = useMemo(
-    () => filterActivity(entries, filter),
-    [entries, filter],
-  );
   const stages = useMemo(
     () => activityStages(entries, active),
     [entries, active],
   );
+  const activeStageFilter =
+    stageFilter && stages.some((stage) => stage.stage === stageFilter)
+      ? stageFilter
+      : null;
+  const visible = useMemo(() => {
+    const byType = filterActivity(entries, filter);
+    if (!threaded || !activeStageFilter) return byType;
+    return byType.filter((entry) => entry.stage === activeStageFilter);
+  }, [entries, filter, threaded, activeStageFilter]);
   const recording = page ? recordingLabel(page.recording, active) : null;
   const notice = page ? heartbeatNotice(page, now) : null;
   const usage = page ? formatUsage(page.usage) : null;
   const selected = selectedKey
     ? (entries.find((entry) => entry.key === selectedKey) ?? null)
     : null;
+
+  const modelEntries = useMemo(
+    () => visible.filter((entry) => entry.kind === "model"),
+    [visible],
+  );
+
+  function isThinkingExpanded(entry: ActivityEntry): boolean {
+    if (Object.hasOwn(thinkingState, entry.key))
+      return Boolean(thinkingState[entry.key]);
+    return isOpenEntry(entry) && active;
+  }
+
+  const allThinkingOpen =
+    modelEntries.length > 0 &&
+    modelEntries.every((entry) => isThinkingExpanded(entry));
+
+  function toggleAllThinking() {
+    const nextOpen = !allThinkingOpen;
+    setThinkingState((current) => {
+      const next = { ...current };
+      for (const entry of modelEntries) next[entry.key] = nextOpen;
+      return next;
+    });
+  }
+
+  function toggleThinking(key: string) {
+    const entry = entries.find((item) => item.key === key);
+    const currentlyOpen = entry ? isThinkingExpanded(entry) : false;
+    setThinkingState((current) => ({ ...current, [key]: !currentlyOpen }));
+  }
 
   useEffect(() => {
     if (threaded || !follow.current) return;
@@ -578,8 +1204,8 @@ export function GenerationActivity({
           </h3>
           {threaded ? (
             <p className="admin-activity__intro">
-              Follow recorded work, from pipeline actions to model outputs and
-              token usage.
+              Follow recorded agent turns, collapsible reasoning traces, tool
+              calls, and model outputs.
             </p>
           ) : null}
           <p className="admin-activity__meta">
@@ -652,15 +1278,44 @@ export function GenerationActivity({
 
           {stages.length ? (
             <ol className="admin-activity__stages" aria-label="Activity stages">
-              {stages.map((stage) => (
-                <li
-                  key={stage.stage}
-                  className={`admin-activity__stage admin-activity__stage--${stage.state}`}
-                >
-                  <span>{stage.label}</span>
-                  <small>{stage.entries}</small>
+              {threaded && activeStageFilter ? (
+                <li>
+                  <button
+                    type="button"
+                    className="admin-activity__stage admin-activity__stage--reset"
+                    onClick={() => setStageFilter(null)}
+                  >
+                    All stages
+                  </button>
                 </li>
-              ))}
+              ) : null}
+              {stages.map((stage) =>
+                threaded ? (
+                  <li key={stage.stage}>
+                    <button
+                      type="button"
+                      aria-pressed={activeStageFilter === stage.stage}
+                      className={`admin-activity__stage admin-activity__stage--${stage.state} admin-activity__stage--button`}
+                      onClick={() =>
+                        setStageFilter((current) =>
+                          current === stage.stage ? null : stage.stage,
+                        )
+                      }
+                    >
+                      <span>{stage.label}</span>
+                      <small>{stage.entries}</small>
+                    </button>
+                  </li>
+                ) : (
+                  <li
+                    key={stage.stage}
+                    className={`admin-activity__stage admin-activity__stage--${stage.state}`}
+                  >
+                    <span>{stage.label}</span>
+                    <small>{stage.entries}</small>
+                  </li>
+                ),
+              )}
             </ol>
           ) : null}
 
@@ -681,14 +1336,25 @@ export function GenerationActivity({
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              className="admin-link-button"
-              onClick={jumpToLatest}
-              disabled={threaded && !visible.length}
-            >
-              Jump to latest
-            </button>
+            <div className="admin-activity__toolbar-actions">
+              {threaded && modelEntries.length > 0 ? (
+                <button
+                  type="button"
+                  className="admin-link-button"
+                  onClick={toggleAllThinking}
+                >
+                  {allThinkingOpen ? "Collapse thinking" : "Expand thinking"}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="admin-link-button"
+                onClick={jumpToLatest}
+                disabled={threaded && !visible.length}
+              >
+                Jump to latest
+              </button>
+            </div>
           </div>
 
           <div className="admin-activity__layout">
@@ -710,16 +1376,32 @@ export function GenerationActivity({
                   <Fragment key={entry.key}>
                     {threaded && visible[index - 1]?.stage !== entry.stage ? (
                       <li className="admin-activity__chapter">
-                        <span>{activityStageLabel(entry.stage)}</span>
+                        <div className="admin-chat__stage-bubble">
+                          <span className="admin-chat__stage-bubble-title">
+                            {activityStageLabel(entry.stage)}
+                          </span>
+                          <span className="admin-chat__stage-bubble-meta">
+                            Stage handoff · {formatClock(entry.at)} UTC
+                          </span>
+                        </div>
                       </li>
                     ) : null}
-                    <EntryRow
-                      entry={entry}
-                      selected={selectedKey === entry.key}
-                      onSelect={select}
-                      threaded={threaded}
-                      active={active}
-                    />
+                    {threaded ? (
+                      <ThreadedEntry
+                        entry={entry}
+                        selected={selectedKey === entry.key}
+                        thinkingOpen={isThinkingExpanded(entry)}
+                        onSelect={select}
+                        onToggleThinking={toggleThinking}
+                        active={active}
+                      />
+                    ) : (
+                      <EntryRow
+                        entry={entry}
+                        selected={selectedKey === entry.key}
+                        onSelect={select}
+                      />
+                    )}
                   </Fragment>
                 ))
               ) : (
@@ -762,6 +1444,8 @@ export function GenerationActivity({
               </aside>
             ) : null}
           </div>
+
+          {threaded ? <LockedAgentComposer /> : null}
 
           <footer className="admin-activity__foot">
             <div className="admin-activity__foot-left">

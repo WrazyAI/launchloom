@@ -410,3 +410,347 @@ export function selectedEvent(
   if (!id) return null;
   return events.find((event) => event.eventId === id) ?? null;
 }
+
+export function modelDurationSeconds(entry: ActivityEntry): number | null {
+  if (entry.kind !== "model") return null;
+  const started = entry.evidence.find(
+    (event) => event.kind === "model_started",
+  );
+  const finished = entry.evidence.findLast(
+    (event) => event.kind === "model_finished",
+  );
+  if (started && finished) {
+    const startMs = Date.parse(started.emittedAt);
+    const endMs = Date.parse(finished.emittedAt);
+    if (
+      Number.isFinite(startMs) &&
+      Number.isFinite(endMs) &&
+      endMs >= startMs
+    ) {
+      return Math.round((endMs - startMs) / 100) / 10;
+    }
+  }
+  const progress = activityProgress(entry);
+  if (progress && progress.elapsedMs > 0) {
+    return Math.round(progress.elapsedMs / 100) / 10;
+  }
+  return null;
+}
+
+export function modelReasoningCount(entry: ActivityEntry): {
+  tokens: number;
+  kind: "reported" | "deltas";
+} | null {
+  if (entry.kind !== "model") return null;
+  const usageEvent = entry.evidence.findLast((event) => event.kind === "usage");
+  if (
+    usageEvent &&
+    usageEvent.kind === "usage" &&
+    usageEvent.payload.usage.reasoningTokens !== null &&
+    usageEvent.payload.usage.reasoningTokens > 0
+  ) {
+    return {
+      tokens: usageEvent.payload.usage.reasoningTokens,
+      kind: "reported",
+    };
+  }
+  const progress = activityProgress(entry);
+  if (progress && progress.reasoningTokens > 0) {
+    return { tokens: progress.reasoningTokens, kind: "deltas" };
+  }
+  return null;
+}
+
+const CHIP_FIELD_PRIORITY = [
+  "path",
+  "file",
+  "route",
+  "command",
+  "stage",
+  "boundary",
+  "target",
+  "url",
+  "profile",
+  "renderer",
+];
+
+export function actionChipText(entry: ActivityEntry): string | null {
+  const started = entry.evidence.find(
+    (event) => event.kind === "action_started",
+  );
+  const finished = entry.evidence.findLast(
+    (event) => event.kind === "action_finished",
+  );
+  const fields: Record<string, string | number | boolean | null> = {};
+  if (started && started.kind === "action_started") {
+    Object.assign(fields, started.payload.input);
+  }
+  if (finished && finished.kind === "action_finished") {
+    Object.assign(fields, finished.payload.result);
+  }
+  for (const key of CHIP_FIELD_PRIORITY) {
+    const val = fields[key];
+    if (typeof val === "string" && val.trim()) {
+      const cleaned = val.trim();
+      return cleaned.length > 44 ? `${cleaned.slice(0, 41)}...` : cleaned;
+    }
+  }
+  for (const [key, val] of Object.entries(fields)) {
+    if (typeof val === "string" && val.trim()) {
+      const cleaned = `${key}: ${val.trim()}`;
+      return cleaned.length > 44 ? `${cleaned.slice(0, 41)}...` : cleaned;
+    }
+  }
+  if (
+    finished &&
+    finished.kind === "action_finished" &&
+    finished.payload.durationMs !== null
+  ) {
+    return finished.payload.durationMs >= 1000
+      ? `${(finished.payload.durationMs / 1000).toFixed(1)}s`
+      : `${finished.payload.durationMs} ms`;
+  }
+  return null;
+}
+
+export type ParsedModelOutput =
+  | { kind: "prose"; text: string }
+  | {
+      kind: "json";
+      stageTag: string | null;
+      summary: string | null;
+      keys: string[];
+      formatted: string;
+      raw: string;
+      truncated: boolean;
+    };
+
+const SUMMARY_KEYS = [
+  "designContract",
+  "summary",
+  "message",
+  "rationale",
+  "verdict",
+  "finding",
+  "reason",
+  "headline",
+  "title",
+  "description",
+];
+
+/**
+ * Lossless JSON pretty-printer that preserves numeric literals (including
+ * 64-bit IDs beyond Number.MAX_SAFE_INTEGER) verbatim without JSON.parse/stringify rounding.
+ */
+export function formatJsonLossless(source: string): string {
+  let out = "";
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  const indent = (level: number) => "  ".repeat(level);
+
+  for (let i = 0; i < source.length; i += 1) {
+    const ch = source[i]!;
+    if (inString) {
+      out += ch;
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      out += ch;
+      continue;
+    }
+
+    if (ch === " " || ch === "\t" || ch === "\r" || ch === "\n") {
+      continue;
+    }
+
+    if (ch === "{" || ch === "[") {
+      // Peek ahead for empty container `{}` or `[]`.
+      let j = i + 1;
+      while (j < source.length && /\s/u.test(source[j]!)) j += 1;
+      const closing = ch === "{" ? "}" : "]";
+      if (source[j] === closing) {
+        out += `${ch}${closing}`;
+        i = j;
+        continue;
+      }
+      depth += 1;
+      out += `${ch}\n${indent(depth)}`;
+      continue;
+    }
+
+    if (ch === "}" || ch === "]") {
+      depth = Math.max(0, depth - 1);
+      out += `\n${indent(depth)}${ch}`;
+      continue;
+    }
+
+    if (ch === ",") {
+      out += `,\n${indent(depth)}`;
+      continue;
+    }
+
+    if (ch === ":") {
+      out += ": ";
+      continue;
+    }
+
+    out += ch;
+  }
+
+  return out;
+}
+
+function looksLikeTruncatedJson(trimmed: string): boolean {
+  if (/^\{\s*"(?:\\.|[^"\\])*"\s*:/u.test(trimmed)) return true;
+  if (
+    /^\[\s*(?:\{\s*"|\[|"(?:\\.|[^"\\])*(?:$|"\s*(?:,|$))|(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null)\s*,)/u.test(
+      trimmed,
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function extractTruncatedKeys(trimmed: string): string[] {
+  const keys: string[] = [];
+  const seen = new Set<string>();
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  let expectKey = false;
+  let currentKey = "";
+  let capturingKey = false;
+
+  for (let i = 0; i < trimmed.length && keys.length < 8; i += 1) {
+    const ch = trimmed[i]!;
+    if (inString) {
+      if (escaped) {
+        if (capturingKey) currentKey += ch;
+        escaped = false;
+      } else if (ch === "\\") {
+        if (capturingKey) currentKey += ch;
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+        if (capturingKey) {
+          capturingKey = false;
+          // Only record if followed by optional whitespace and `:`.
+          let j = i + 1;
+          while (j < trimmed.length && /\s/u.test(trimmed[j]!)) j += 1;
+          if (trimmed[j] === ":" && currentKey && !seen.has(currentKey)) {
+            seen.add(currentKey);
+            keys.push(currentKey);
+          }
+          currentKey = "";
+          expectKey = false;
+        }
+      } else if (capturingKey) {
+        currentKey += ch;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      if (depth === 1 && expectKey) {
+        capturingKey = true;
+        currentKey = "";
+      }
+      continue;
+    }
+
+    if (ch === "{") {
+      depth += 1;
+      if (depth === 1) expectKey = true;
+    } else if (ch === "[") {
+      depth += 1;
+    } else if (ch === "}" || ch === "]") {
+      depth = Math.max(0, depth - 1);
+      if (depth === 1) expectKey = false;
+    } else if (ch === "," && depth === 1) {
+      expectKey = true;
+    }
+  }
+  return keys;
+}
+
+export function parseModelOutputPreview(raw: string): ParsedModelOutput {
+  const trimmed = raw.trim();
+  if (!trimmed) return { kind: "prose", text: "" };
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    try {
+      const parsed: unknown = JSON.parse(trimmed);
+      const formatted = formatJsonLossless(trimmed);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        const record = parsed as Record<string, unknown>;
+        const keys = Object.keys(record);
+        const stageTag =
+          typeof record.stage === "string" && record.stage.trim()
+            ? record.stage.trim()
+            : null;
+        let summary: string | null = null;
+        for (const key of SUMMARY_KEYS) {
+          const candidate = record[key];
+          if (typeof candidate === "string" && candidate.trim()) {
+            summary = candidate.trim();
+            break;
+          }
+        }
+        return {
+          kind: "json",
+          stageTag,
+          summary,
+          keys,
+          formatted,
+          raw: trimmed,
+          truncated: false,
+        };
+      }
+      return {
+        kind: "json",
+        stageTag: null,
+        summary: Array.isArray(parsed)
+          ? `Structured list (${parsed.length} ${parsed.length === 1 ? "item" : "items"})`
+          : null,
+        keys: [],
+        formatted,
+        raw: trimmed,
+        truncated: false,
+      };
+    } catch {
+      // Truncated or partial JSON (e.g., mid-stream or server-bounded excerpt):
+      // recognize truncated objects/arrays even when stage/summary keys are absent.
+      if (looksLikeTruncatedJson(trimmed)) {
+        const stageMatch = /"stage"\s*:\s*"([^"]+)"/u.exec(trimmed);
+        const contractMatch =
+          /"(?:designContract|summary|message|rationale|verdict|finding|reason|headline|title|description)"\s*:\s*"((?:\\.|[^"\\]){12,})/u.exec(
+            trimmed,
+          );
+        const extracted = contractMatch
+          ? contractMatch[1].replace(/\\n/gu, " ").replace(/\\"/gu, '"').trim()
+          : null;
+        return {
+          kind: "json",
+          stageTag: stageMatch?.[1] ?? null,
+          summary: extracted,
+          keys: trimmed.startsWith("{") ? extractTruncatedKeys(trimmed) : [],
+          formatted: trimmed,
+          raw: trimmed,
+          truncated: true,
+        };
+      }
+    }
+  }
+  return { kind: "prose", text: raw };
+}

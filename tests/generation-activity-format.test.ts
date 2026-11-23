@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  actionChipText,
   activityProgress,
   activityStages,
   filterActivity,
@@ -8,6 +9,9 @@ import {
   groupActivity,
   heartbeatNotice,
   isOpenEntry,
+  modelDurationSeconds,
+  modelReasoningCount,
+  parseModelOutputPreview,
   recordingLabel,
 } from "../src/admin/generation-activity-format";
 import type {
@@ -298,5 +302,146 @@ describe("generation activity presentation", () => {
     expect(
       heartbeatNotice({ ...page, recording: "complete" }, 90_000),
     ).toBeNull();
+  });
+
+  it("extracts readable summaries from valid and truncated JSON model outputs while preserving prose", () => {
+    expect(parseModelOutputPreview("Plain visible prose.")).toEqual({
+      kind: "prose",
+      text: "Plain visible prose.",
+    });
+    expect(parseModelOutputPreview("{note} Keep spacing tight.")).toEqual({
+      kind: "prose",
+      text: "{note} Keep spacing tight.",
+    });
+    expect(parseModelOutputPreview("[1] Overview of studio work")).toEqual({
+      kind: "prose",
+      text: "[1] Overview of studio work",
+    });
+
+    const fullJson = parseModelOutputPreview(
+      JSON.stringify({
+        stage: "styles",
+        designContract: "Single stylesheet carrying the editorial system.",
+        routes: ["/", "/services"],
+      }),
+    );
+    expect(fullJson.kind).toBe("json");
+    if (fullJson.kind === "json") {
+      expect(fullJson.stageTag).toBe("styles");
+      expect(fullJson.summary).toBe(
+        "Single stylesheet carrying the editorial system.",
+      );
+      expect(fullJson.keys).toEqual(["stage", "designContract", "routes"]);
+      expect(fullJson.truncated).toBe(false);
+    }
+
+    // Large numeric identifiers beyond Number.MAX_SAFE_INTEGER must not round.
+    const bigIdRaw = '{"recordId":9007199254740993,"items":[]}';
+    const bigId = parseModelOutputPreview(bigIdRaw);
+    expect(bigId.kind).toBe("json");
+    if (bigId.kind === "json") {
+      expect(bigId.raw).toBe(bigIdRaw);
+      expect(bigId.formatted).toContain("9007199254740993");
+      expect(bigId.formatted).not.toContain("9007199254740992");
+    }
+
+    const truncatedJson = parseModelOutputPreview(
+      '{\n  "stage": "styles",\n  "designContract": "Single stylesheet carrying the full sanctuary index',
+    );
+    expect(truncatedJson.kind).toBe("json");
+    if (truncatedJson.kind === "json") {
+      expect(truncatedJson.stageTag).toBe("styles");
+      expect(truncatedJson.summary).toContain("Single stylesheet");
+      expect(truncatedJson.truncated).toBe(true);
+    }
+
+    // Truncated JSON without optional stage/summary keys still renders as structured output,
+    // and key extraction only surfaces top-level keys (not nested object keys).
+    const truncatedObjectNoSummary = parseModelOutputPreview(
+      '{"files":[{"path":"src/pages/index.astro","content":"<h1>Home',
+    );
+    expect(truncatedObjectNoSummary.kind).toBe("json");
+    if (truncatedObjectNoSummary.kind === "json") {
+      expect(truncatedObjectNoSummary.stageTag).toBeNull();
+      expect(truncatedObjectNoSummary.summary).toBeNull();
+      expect(truncatedObjectNoSummary.keys).toEqual(["files"]);
+      expect(truncatedObjectNoSummary.truncated).toBe(true);
+    }
+
+    const truncatedArray = parseModelOutputPreview(
+      '[{"path":"src/pages/index.astro","content":"<h1>Home',
+    );
+    expect(truncatedArray.kind).toBe("json");
+    if (truncatedArray.kind === "json") {
+      expect(truncatedArray.truncated).toBe(true);
+    }
+
+    const truncatedStringArray = parseModelOutputPreview('["first');
+    expect(truncatedStringArray.kind).toBe("json");
+    if (truncatedStringArray.kind === "json") {
+      expect(truncatedStringArray.truncated).toBe(true);
+    }
+
+    expect(parseModelOutputPreview('["quoted"] ordinary prose')).toEqual({
+      kind: "prose",
+      text: '["quoted"] ordinary prose',
+    });
+  });
+
+  it("computes recorded model timing, reasoning counts, and compact action chips", () => {
+    const timed = groupActivity([
+      stored(
+        {
+          sequence: 1,
+          kind: "model_started",
+          emittedAt: "2026-11-23T17:35:40.000Z",
+        },
+        1,
+      ),
+      stored(
+        {
+          sequence: 2,
+          eventId: "22222222-2222-4222-8222-222222222224",
+          kind: "model_finished",
+          emittedAt: "2026-11-23T17:35:54.200Z",
+          payload: { callId: BASE_CALL_ID, status: "completed" },
+        },
+        2,
+      ),
+      stored(
+        {
+          sequence: 3,
+          eventId: "33333333-3333-4333-8333-333333333334",
+          kind: "usage",
+          payload: {
+            callId: BASE_CALL_ID,
+            usage: { ...usage(), reasoningTokens: 420 },
+          },
+        },
+        3,
+      ),
+    ]);
+    expect(modelDurationSeconds(timed[0]!)).toBe(14.2);
+    expect(modelReasoningCount(timed[0]!)).toEqual({
+      tokens: 420,
+      kind: "reported",
+    });
+
+    const actionEntries = groupActivity([
+      stored(
+        {
+          sequence: 4,
+          eventId: "44444444-4444-4444-8444-444444444445",
+          kind: "action_started",
+          payload: {
+            actionId: "act:1",
+            name: "render_candidate",
+            input: { path: "src/pages/index.astro" },
+          },
+        },
+        4,
+      ),
+    ]);
+    expect(actionChipText(actionEntries[0]!)).toBe("src/pages/index.astro");
   });
 });

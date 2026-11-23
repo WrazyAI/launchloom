@@ -3583,6 +3583,99 @@ it("keeps the activity inspector inside the viewport at 390px", async () => {
   }
 });
 
+it("renders chat-style Agent runs with collapsible thinking traces, structured JSON output, stage filters, and a locked prompt composer", async () => {
+  activityEnabled = true;
+  const initial = activityPageFor("attempt-diagnostic");
+  const jsonOutput = JSON.stringify({
+    stage: "styles",
+    designContract:
+      "Single stylesheet carrying the editorial architecture system across home and services.",
+    routes: ["/", "/services"],
+  });
+  activityFixture = {
+    ...initial,
+    activity: {
+      ...initial.activity,
+      items: initial.activity.items.map((item) =>
+        item.kind === "output"
+          ? {
+              ...item,
+              payload: {
+                ...item.payload,
+                message: { kind: "text", text: jsonOutput },
+              },
+            }
+          : item,
+      ),
+    },
+  };
+  const { page, errors } = await openPage({
+    path: "/admin/onboarding-invites?view=generations&attempt=attempt-diagnostic",
+  });
+  try {
+    await waitForGenerations(page);
+    const inspector = page.getByRole("dialog", {
+      name: "Attempt attempt-diagnostic",
+    });
+    await visible(inspector);
+    await inspector
+      .getByRole("button", { name: "Agent runs", exact: true })
+      .click();
+    const activity = inspector.locator(".admin-activity");
+    await visible(activity);
+
+    // Structured JSON summary is shown cleanly instead of raw unformatted braces.
+    await visible(
+      activity
+        .locator(".admin-chat__prose")
+        .getByText(
+          "Single stylesheet carrying the editorial architecture system across home and services.",
+          { exact: true },
+        ),
+    );
+    const payloadDetails = activity.locator(".admin-chat__code-disclosure");
+    await visible(payloadDetails);
+    await payloadDetails.locator("summary").click();
+    await visible(activity.locator(".admin-chat__codeblock-pre"));
+
+    // Stage chip filters interactively narrow the feed and reset cleanly.
+    const stageBtn = activity.locator(".admin-activity__stage--button").first();
+    await visible(stageBtn);
+    await stageBtn.click();
+    expect(await stageBtn.getAttribute("aria-pressed")).toBe("true");
+    await visible(activity.locator(".admin-activity__stage--reset"));
+    await activity.locator(".admin-activity__stage--reset").click();
+    expect(await stageBtn.getAttribute("aria-pressed")).toBe("false");
+
+    // Thinking trace starts collapsed on completed calls and expands interactively.
+    const thinkingBtn = activity
+      .locator(".admin-chat__thinking-toggle")
+      .first();
+    await visible(thinkingBtn);
+    expect(await thinkingBtn.getAttribute("aria-expanded")).toBe("false");
+    await thinkingBtn.click();
+    expect(await thinkingBtn.getAttribute("aria-expanded")).toBe("true");
+    await visible(
+      activity.getByText(
+        /Private chain-of-thought text is withheld by policy/u,
+      ),
+    );
+
+    // Locked future prompt composer is present and disabled for recorded runs.
+    const composer = activity.locator(".admin-chat__composer");
+    await visible(composer);
+    await visible(composer.getByText("Read-only run trace"));
+    const input = composer.locator("textarea");
+    expect(await input.isDisabled()).toBe(true);
+    const sendBtn = composer.locator(".admin-chat__composer-send");
+    expect(await sendBtn.isDisabled()).toBe(true);
+
+    autoErrors(errors);
+  } finally {
+    await page.close();
+  }
+});
+
 it("explains context-only SEO evidence without presenting missing metrics as zero", async () => {
   seoDetail = JSON.stringify({
     mode: "context-only",
