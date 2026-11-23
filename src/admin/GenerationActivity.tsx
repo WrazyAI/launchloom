@@ -549,7 +549,14 @@ function ModelThinkingTrace({
 
 function ChatModelOutput({ rawText }: { rawText: string }) {
   const [copied, setCopied] = useState(false);
+  const copyTimer = useRef<number | null>(null);
   const parsed = useMemo(() => parseModelOutputPreview(rawText), [rawText]);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimer.current !== null) window.clearTimeout(copyTimer.current);
+    };
+  }, []);
 
   if (!rawText) return null;
 
@@ -563,15 +570,19 @@ function ChatModelOutput({ rawText }: { rawText: string }) {
     );
   }
 
-  const formattedPayload = parsed.formatted;
+  const rawPayload = parsed.raw;
 
   function copyPayload() {
     if (typeof navigator === "undefined" || !navigator.clipboard) return;
     navigator.clipboard
-      .writeText(formattedPayload)
+      .writeText(rawPayload)
       .then(() => {
         setCopied(true);
-        window.setTimeout(() => setCopied(false), 1500);
+        if (copyTimer.current !== null) window.clearTimeout(copyTimer.current);
+        copyTimer.current = window.setTimeout(() => {
+          setCopied(false);
+          copyTimer.current = null;
+        }, 1500);
       })
       .catch(() => {});
   }
@@ -594,7 +605,11 @@ function ChatModelOutput({ rawText }: { rawText: string }) {
       ) : null}
       <details className="admin-chat__code-disclosure">
         <summary>
-          <span>View recorded output payload</span>
+          <span>
+            {parsed.truncated
+              ? "View recorded output payload (truncated)"
+              : "View recorded output payload"}
+          </span>
           {parsed.keys.length ? (
             <span className="admin-chat__code-keys">
               {parsed.keys.slice(0, 4).join(", ")}
@@ -837,12 +852,10 @@ function EntryRow({
   entry,
   selected,
   onSelect,
-  active,
 }: {
   entry: ActivityEntry;
   selected: boolean;
   onSelect: (id: string) => void;
-  active: boolean;
 }) {
   const open = isOpenEntry(entry);
   const progress = entry.kind === "model" ? activityProgress(entry) : null;
@@ -884,11 +897,7 @@ function EntryRow({
             </span>
           ) : null}
         </span>
-        {open && active ? (
-          <span className="admin-activity__status admin-activity__status--live">
-            running
-          </span>
-        ) : open ? (
+        {open ? (
           <span className="admin-activity__status admin-activity__status--live">
             running
           </span>
@@ -902,10 +911,31 @@ function EntryRow({
 
 function LockedAgentComposer() {
   const [nudged, setNudged] = useState(false);
+  const [notice, setNotice] = useState(false);
+  const nudgeTimer = useRef<number | null>(null);
+  const noticeTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (nudgeTimer.current !== null) window.clearTimeout(nudgeTimer.current);
+      if (noticeTimer.current !== null)
+        window.clearTimeout(noticeTimer.current);
+    };
+  }, []);
 
   function notifyLocked() {
     setNudged(true);
-    window.setTimeout(() => setNudged(false), 260);
+    setNotice(true);
+    if (nudgeTimer.current !== null) window.clearTimeout(nudgeTimer.current);
+    if (noticeTimer.current !== null) window.clearTimeout(noticeTimer.current);
+    nudgeTimer.current = window.setTimeout(() => {
+      setNudged(false);
+      nudgeTimer.current = null;
+    }, 260);
+    noticeTimer.current = window.setTimeout(() => {
+      setNotice(false);
+      noticeTimer.current = null;
+    }, 2400);
   }
 
   return (
@@ -933,8 +963,14 @@ function LockedAgentComposer() {
           </svg>
           Read-only run trace
         </span>
-        <span className="admin-chat__composer-lock-hint">
-          Interactive agent messaging coming soon
+        <span
+          className="admin-chat__composer-lock-hint"
+          role="status"
+          aria-live="polite"
+        >
+          {notice
+            ? "Follow-up messaging is disabled on recorded runs for now."
+            : "Interactive agent messaging coming soon"}
         </span>
       </div>
       <div className="admin-chat__composer-surface">
@@ -1068,11 +1104,15 @@ export function GenerationActivity({
     () => activityStages(entries, active),
     [entries, active],
   );
+  const activeStageFilter =
+    stageFilter && stages.some((stage) => stage.stage === stageFilter)
+      ? stageFilter
+      : null;
   const visible = useMemo(() => {
     const byType = filterActivity(entries, filter);
-    if (!threaded || !stageFilter) return byType;
-    return byType.filter((entry) => entry.stage === stageFilter);
-  }, [entries, filter, threaded, stageFilter]);
+    if (!threaded || !activeStageFilter) return byType;
+    return byType.filter((entry) => entry.stage === activeStageFilter);
+  }, [entries, filter, threaded, activeStageFilter]);
   const recording = page ? recordingLabel(page.recording, active) : null;
   const notice = page ? heartbeatNotice(page, now) : null;
   const usage = page ? formatUsage(page.usage) : null;
@@ -1238,7 +1278,7 @@ export function GenerationActivity({
 
           {stages.length ? (
             <ol className="admin-activity__stages" aria-label="Activity stages">
-              {threaded && stageFilter ? (
+              {threaded && activeStageFilter ? (
                 <li>
                   <button
                     type="button"
@@ -1254,7 +1294,7 @@ export function GenerationActivity({
                   <li key={stage.stage}>
                     <button
                       type="button"
-                      aria-pressed={stageFilter === stage.stage}
+                      aria-pressed={activeStageFilter === stage.stage}
                       className={`admin-activity__stage admin-activity__stage--${stage.state} admin-activity__stage--button`}
                       onClick={() =>
                         setStageFilter((current) =>
@@ -1360,7 +1400,6 @@ export function GenerationActivity({
                         entry={entry}
                         selected={selectedKey === entry.key}
                         onSelect={select}
-                        active={active}
                       />
                     )}
                   </Fragment>

@@ -521,6 +521,8 @@ export type ParsedModelOutput =
       summary: string | null;
       keys: string[];
       formatted: string;
+      raw: string;
+      truncated: boolean;
     };
 
 const SUMMARY_KEYS = [
@@ -536,12 +538,112 @@ const SUMMARY_KEYS = [
   "description",
 ];
 
+/**
+ * Lossless JSON pretty-printer that preserves numeric literals (including
+ * 64-bit IDs beyond Number.MAX_SAFE_INTEGER) verbatim without JSON.parse/stringify rounding.
+ */
+export function formatJsonLossless(source: string): string {
+  let out = "";
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  const indent = (level: number) => "  ".repeat(level);
+
+  for (let i = 0; i < source.length; i += 1) {
+    const ch = source[i]!;
+    if (inString) {
+      out += ch;
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      out += ch;
+      continue;
+    }
+
+    if (ch === " " || ch === "\t" || ch === "\r" || ch === "\n") {
+      continue;
+    }
+
+    if (ch === "{" || ch === "[") {
+      // Peek ahead for empty container `{}` or `[]`.
+      let j = i + 1;
+      while (j < source.length && /\s/u.test(source[j]!)) j += 1;
+      const closing = ch === "{" ? "}" : "]";
+      if (source[j] === closing) {
+        out += `${ch}${closing}`;
+        i = j;
+        continue;
+      }
+      depth += 1;
+      out += `${ch}\n${indent(depth)}`;
+      continue;
+    }
+
+    if (ch === "}" || ch === "]") {
+      depth = Math.max(0, depth - 1);
+      out += `\n${indent(depth)}${ch}`;
+      continue;
+    }
+
+    if (ch === ",") {
+      out += `,\n${indent(depth)}`;
+      continue;
+    }
+
+    if (ch === ":") {
+      out += ": ";
+      continue;
+    }
+
+    out += ch;
+  }
+
+  return out;
+}
+
+function looksLikeTruncatedJson(trimmed: string): boolean {
+  if (/^\{\s*"(?:\\.|[^"\\])*"\s*:/u.test(trimmed)) return true;
+  if (
+    /^\[\s*(?:\{\s*"|\[|"(?:\\.|[^"\\])*"\s*(?:,|$)|(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null)\s*,)/u.test(
+      trimmed,
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function extractTruncatedKeys(trimmed: string): string[] {
+  const keys: string[] = [];
+  const seen = new Set<string>();
+  const re = /(?:[{,]\s*)"((?:\\.|[^"\\]){1,64})"\s*:/gu;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(trimmed)) !== null && keys.length < 8) {
+    const key = match[1]!;
+    if (!seen.has(key)) {
+      seen.add(key);
+      keys.push(key);
+    }
+  }
+  return keys;
+}
+
 export function parseModelOutputPreview(raw: string): ParsedModelOutput {
   const trimmed = raw.trim();
   if (!trimmed) return { kind: "prose", text: "" };
   if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
     try {
       const parsed: unknown = JSON.parse(trimmed);
+      const formatted = formatJsonLossless(trimmed);
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
         const record = parsed as Record<string, unknown>;
         const keys = Object.keys(record);
@@ -562,7 +664,9 @@ export function parseModelOutputPreview(raw: string): ParsedModelOutput {
           stageTag,
           summary,
           keys,
-          formatted: JSON.stringify(parsed, null, 2),
+          formatted,
+          raw: trimmed,
+          truncated: false,
         };
       }
       return {
@@ -572,17 +676,19 @@ export function parseModelOutputPreview(raw: string): ParsedModelOutput {
           ? `Structured list (${parsed.length} ${parsed.length === 1 ? "item" : "items"})`
           : null,
         keys: [],
-        formatted: JSON.stringify(parsed, null, 2),
+        formatted,
+        raw: trimmed,
+        truncated: false,
       };
     } catch {
       // Truncated or partial JSON (e.g., mid-stream or server-bounded excerpt):
-      // try extracting a clean readable field while still exposing the raw payload.
-      const stageMatch = /"stage"\s*:\s*"([^"]+)"/u.exec(trimmed);
-      const contractMatch =
-        /"(?:designContract|summary|message|rationale|reason)"\s*:\s*"((?:\\.|[^"\\]){12,})/u.exec(
-          trimmed,
-        );
-      if (stageMatch || contractMatch) {
+      // recognize truncated objects/arrays even when stage/summary keys are absent.
+      if (looksLikeTruncatedJson(trimmed)) {
+        const stageMatch = /"stage"\s*:\s*"([^"]+)"/u.exec(trimmed);
+        const contractMatch =
+          /"(?:designContract|summary|message|rationale|verdict|finding|reason|headline|title|description)"\s*:\s*"((?:\\.|[^"\\]){12,})/u.exec(
+            trimmed,
+          );
         const extracted = contractMatch
           ? contractMatch[1].replace(/\\n/gu, " ").replace(/\\"/gu, '"').trim()
           : null;
@@ -590,8 +696,10 @@ export function parseModelOutputPreview(raw: string): ParsedModelOutput {
           kind: "json",
           stageTag: stageMatch?.[1] ?? null,
           summary: extracted,
-          keys: [],
+          keys: trimmed.startsWith("{") ? extractTruncatedKeys(trimmed) : [],
           formatted: trimmed,
+          raw: trimmed,
+          truncated: true,
         };
       }
     }

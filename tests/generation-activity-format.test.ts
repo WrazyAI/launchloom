@@ -309,6 +309,14 @@ describe("generation activity presentation", () => {
       kind: "prose",
       text: "Plain visible prose.",
     });
+    expect(parseModelOutputPreview("{note} Keep spacing tight.")).toEqual({
+      kind: "prose",
+      text: "{note} Keep spacing tight.",
+    });
+    expect(parseModelOutputPreview("[1] Overview of studio work")).toEqual({
+      kind: "prose",
+      text: "[1] Overview of studio work",
+    });
 
     const fullJson = parseModelOutputPreview(
       JSON.stringify({
@@ -324,6 +332,17 @@ describe("generation activity presentation", () => {
         "Single stylesheet carrying the editorial system.",
       );
       expect(fullJson.keys).toEqual(["stage", "designContract", "routes"]);
+      expect(fullJson.truncated).toBe(false);
+    }
+
+    // Large numeric identifiers beyond Number.MAX_SAFE_INTEGER must not round.
+    const bigIdRaw = '{"recordId":9007199254740993,"items":[]}';
+    const bigId = parseModelOutputPreview(bigIdRaw);
+    expect(bigId.kind).toBe("json");
+    if (bigId.kind === "json") {
+      expect(bigId.raw).toBe(bigIdRaw);
+      expect(bigId.formatted).toContain("9007199254740993");
+      expect(bigId.formatted).not.toContain("9007199254740992");
     }
 
     const truncatedJson = parseModelOutputPreview(
@@ -333,6 +352,27 @@ describe("generation activity presentation", () => {
     if (truncatedJson.kind === "json") {
       expect(truncatedJson.stageTag).toBe("styles");
       expect(truncatedJson.summary).toContain("Single stylesheet");
+      expect(truncatedJson.truncated).toBe(true);
+    }
+
+    // Truncated JSON without optional stage/summary keys still renders as structured output.
+    const truncatedObjectNoSummary = parseModelOutputPreview(
+      '{"files":[{"path":"src/pages/index.astro","content":"<h1>Home',
+    );
+    expect(truncatedObjectNoSummary.kind).toBe("json");
+    if (truncatedObjectNoSummary.kind === "json") {
+      expect(truncatedObjectNoSummary.stageTag).toBeNull();
+      expect(truncatedObjectNoSummary.summary).toBeNull();
+      expect(truncatedObjectNoSummary.keys).toContain("files");
+      expect(truncatedObjectNoSummary.truncated).toBe(true);
+    }
+
+    const truncatedArray = parseModelOutputPreview(
+      '[{"path":"src/pages/index.astro","content":"<h1>Home',
+    );
+    expect(truncatedArray.kind).toBe("json");
+    if (truncatedArray.kind === "json") {
+      expect(truncatedArray.truncated).toBe(true);
     }
   });
 
