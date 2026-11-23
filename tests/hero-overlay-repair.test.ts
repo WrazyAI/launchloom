@@ -15,8 +15,17 @@ describe("hero overlay correction", () => {
     expect(css).toContain("[data-hero-copy]");
     expect(css).toContain("max-width: 34rem");
     expect(css).toContain("border: 0");
-    expect(css).toContain("background: #0b1511");
+    expect(css).toContain("background: transparent");
+    expect(css).toContain("linear-gradient");
     expect(css).toContain("@media (max-width: 767px)");
+  });
+
+  it("does not paint the copy group as an opaque plate", () => {
+    const css = heroOverlayRepairCss();
+    const start = css.indexOf("[data-hero-copy] {");
+    const copyRule = css.slice(start, css.indexOf("}", start) + 1);
+    expect(copyRule).not.toContain("background: #0b1511");
+    expect(css).toContain("[data-hero]::after");
   });
 
   it("replaces the managed block without duplicating it", () => {

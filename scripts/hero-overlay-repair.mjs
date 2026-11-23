@@ -36,14 +36,33 @@ body[data-ll-route="/"] [data-hero-media] video {
   object-fit: cover;
   object-position: center;
 }
+/* A scrim, not a card. Painting the copy group itself was the failure this
+   correction was meant to remove: the opaque plate covered 27% of the desktop
+   hero and 58% of mobile, so the gate reported the same large-card finding
+   after every repair round. Keep the text over the photograph's dark lower
+   band instead. */
+body[data-ll-route="/"] [data-hero]::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 1;
+  height: min(62%, 34rem);
+  background: linear-gradient(
+    to top,
+    rgba(6, 14, 11, 0.92) 0%,
+    rgba(6, 14, 11, 0.78) 45%,
+    rgba(6, 14, 11, 0) 100%
+  );
+  pointer-events: none;
+}
 body[data-ll-route="/"] [data-hero-copy] {
   position: relative;
   z-index: 2;
   width: min(34rem, calc(100% - 2 * var(--ll-creative-gutter, 24px)));
   max-width: 34rem;
   margin: 0 auto clamp(24px, 4vw, 48px);
-  padding: clamp(20px, 2.6vw, 32px);
-  background: #0b1511;
+  padding: 0;
+  background: transparent;
   border: 0;
   box-shadow: none;
   color: #f7f3e8;
@@ -90,7 +109,7 @@ body[data-ll-route="/"] [data-hero-copy] :is(a, button):focus-visible {
     width: calc(100% - 32px);
     max-width: none;
     margin: 0 auto 16px;
-    padding: 14px 16px;
+    padding: 0;
   }
   body[data-ll-route="/"] [data-hero-copy] h1 {
     font-size: clamp(1.5rem, 7vw, 1.9rem);
