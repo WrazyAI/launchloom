@@ -42,7 +42,8 @@ function mapQueryFromUrl(url) {
 
   for (const key of ["query", "q", "destination"]) {
     const query = (url.searchParams.get(key) || "").trim();
-    if (query && !/^https?:\/\//iu.test(query)) return query.slice(0, 300);
+    if (hasExactStreetAddress(query) || /^(?:place_id:[\w-]{3,256}|-?\d+(?:\.\d+)?,\s*-?\d+(?:\.\d+)?)$/u.test(query))
+      return query.slice(0, 300);
   }
 
   const placePath = url.pathname.match(/\/maps\/place\/([^/]+)/iu)?.[1];
@@ -58,36 +59,52 @@ function mapQueryFromUrl(url) {
   return coordinates ? `${coordinates[1]},${coordinates[2]}` : "";
 }
 
-/** Resolve map links from verified business location fields, never service areas. */
+/** Use a public business destination, or a clearly approximate public area. */
 export function resolveLocationMap({
   businessName = "",
   address = "",
   placeId = "",
   googleMapsUrl = "",
+  addressVisibility,
+  primaryCity = "",
+  serviceAreas = [],
 } = {}) {
+  if (addressVisibility === "private") {
+    address = "";
+    placeId = "";
+    googleMapsUrl = "";
+  }
   const placeValue = String(placeId || "").trim();
   const safePlaceId = /^[\w-]{3,256}$/u.test(placeValue)
     ? placeValue
     : "";
-  const safeAddress = String(address || "").trim();
+  const safeAddress = hasExactStreetAddress(address) ? String(address).trim() : "";
   const providedUrl = parseSafeGoogleMapsUrl(googleMapsUrl);
   const urlQuery = mapQueryFromUrl(providedUrl);
-  const shortLinkHasDestination = Boolean(
-    providedUrl &&
-      ((providedUrl.hostname === "maps.app.goo.gl" &&
-        /^\/[\w-]{6,}(?:\/)?$/u.test(providedUrl.pathname)) ||
-        (providedUrl.hostname === "goo.gl" &&
-          /^\/maps\/[\w-]{6,}(?:\/)?$/u.test(providedUrl.pathname))),
+  const publicAreas = [primaryCity, ...(Array.isArray(serviceAreas) ? serviceAreas : [])]
+    .map((value) => typeof value === "string" ? value.trim() : "")
+    .filter((value) =>
+      value.length <= 120 &&
+      /^\p{L}[\p{L}\p{M} .,'’()-]*$/u.test(value) &&
+      !/\b(?:example|sample|placeholder|remote|online|nationwide|worldwide|unknown|unspecified|unavailable|not provided|not applicable|not sure)\b/iu.test(value) &&
+      !/^(?:none|n\/a)$/iu.test(value),
+    );
+  const areaKey = (value) => value.toLowerCase().replace(/[^\p{L}\p{M}]/gu, "");
+  const urlArea = publicAreas.find((area) =>
+    [area, area.split(",")[0]].some((name) => areaKey(name) === areaKey(urlQuery)),
   );
   const mapQuery = safePlaceId
     ? `place_id:${safePlaceId}`
-    : hasExactStreetAddress(safeAddress)
+    : safeAddress
       ? safeAddress
-      : urlQuery;
-  const available = Boolean(mapQuery || shortLinkHasDestination);
+      : urlArea ? "" : urlQuery;
+  const waypoint = mapQuery ? "" : urlArea || publicAreas[0] || "";
+  const available = Boolean(mapQuery || waypoint);
 
   let directionsHref = "";
-  if (available && providedUrl) {
+  if (waypoint) {
+    directionsHref = `https://www.google.com/maps/search/?${new URLSearchParams({ api: "1", query: waypoint })}`;
+  } else if (providedUrl && urlQuery && !urlArea && !safePlaceId && !safeAddress) {
     directionsHref = providedUrl.href;
   } else if (available) {
     const params = new URLSearchParams({
@@ -98,12 +115,14 @@ export function resolveLocationMap({
     directionsHref = `https://www.google.com/maps/search/?${params.toString()}`;
   }
 
-  const embedHref = mapQuery
-    ? `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`
+  const embedHref = mapQuery || waypoint
+    ? `https://www.google.com/maps?q=${encodeURIComponent(mapQuery || waypoint)}&output=embed${waypoint ? "&z=11" : ""}`
     : "";
 
   return {
     available,
+    kind: waypoint ? "approximate" : available ? "exact" : "none",
+    waypoint,
     address: safeAddress,
     directionsHref,
     embedHref,

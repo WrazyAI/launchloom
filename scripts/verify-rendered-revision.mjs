@@ -2,6 +2,7 @@ import { verifyApprovedRoutes, diagnosticFormMode } from "./browser-route-verifi
 import { sanitizeVerificationReport } from "./route-verification-handoff.mjs";
 import { compileRouteInventory } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { hasTestOnlySite } from "../templates/client-site/src/lib/seo-readiness.mjs";
+import { resolveLocationMap } from "../templates/client-site/src/lib/location-map.mjs";
 import { contrastFailureMessages } from "./rendered-contrast.mjs";
 import fs from "node:fs/promises";
 import http from "node:http";
@@ -75,14 +76,11 @@ const address = server.address();
 const url = `http://127.0.0.1:${address.port}/`;
 const browser = await chromium.launch({ headless: true });
 const failures = [];
-const expectsLocationMap =
-  String(config.business?.primaryCta || "")
-    .trim()
-    .toLowerCase() === "get directions" &&
-  (Boolean(String(config.business?.placeId || "").trim()) ||
-    /(?:^|,\s*)\d+[a-z]?\s+[a-z]/i.test(
-      String(config.business?.address || ""),
-    ));
+const expectedMap = resolveLocationMap({
+  ...config.business,
+  businessName: config.business?.name,
+});
+const expectsLocationMap = expectedMap.available;
 
 const indexHtml = await fs.readFile(path.join(dist, "index.html"), "utf8");
 const sitemapXml = await fs
@@ -328,122 +326,29 @@ try {
         const interaction = quickAnswersInteraction(await readLauncherState());
         if (interaction === "invalid")
           failures.push(
-            "desktop: quick answers launcher was hidden without a proven collision.",
+            "desktop: quick answers launcher is not reachable.",
           );
-        let suppressedShells = null;
-        let readyForInteraction = interaction === "interact";
-        if (interaction === "suppressed") {
-          suppressedShells = await page.evaluate(() => {
-            const targets = [
-              ...document.querySelectorAll("header, main, .footer, footer"),
-            ];
-            return targets.map((element, index) => {
-              const key = `quick-answers-early-shell-${index}`;
-              const style = element.getAttribute("style");
-              element.setAttribute("data-quick-answers-early-shell", key);
-              element.style.visibility = "hidden";
-              return { key, style };
+        if (interaction === "interact") {
+          const launcher = quickAnswers.locator(".quick-answers__launcher");
+          await launcher.click();
+          if (!(await panel.isVisible()))
+            failures.push("desktop: quick answers did not open.");
+          await quickAnswers.locator("[data-answer]").first().click();
+          if (!(await quickAnswers.locator(".quick-answers__answer").isVisible()))
+            failures.push("desktop: quick answer content did not become visible.");
+          else
+            await page.screenshot({
+              path: path.join(screenshotDir, "desktop-quick-answers.png"),
             });
-          });
-          await page.evaluate(() => {
-            window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-            window.dispatchEvent(new Event("resize"));
-          });
-          const exposed = await page
-            .waitForFunction(
-              () => {
-                const root = document.querySelector(".quick-answers");
-                const launcher = root?.querySelector(
-                  ".quick-answers__launcher",
-                );
-                if (!root || !launcher || root.inert) return false;
-                const style = getComputedStyle(root);
-                const rect = launcher.getBoundingClientRect();
-                return (
-                  style.visibility === "visible" &&
-                  Number(style.opacity) > 0 &&
-                  rect.width > 0 &&
-                  rect.height > 0
-                );
-              },
-              null,
-              { timeout: 1000 },
-            )
-            .then(() => true)
-            .catch(() => false);
-          readyForInteraction = exposed;
-          if (!exposed)
-            failures.push(
-              "desktop: a proven collision suppression could not be exposed for the functional check.",
-            );
-        }
-        try {
-          if (readyForInteraction) {
-            await quickAnswers.locator(".quick-answers__launcher").click();
-            if (!(await panel.isVisible()))
-              failures.push("desktop: quick answers did not open.");
-            const choice = quickAnswers.locator("[data-answer]").first();
-            await choice.click();
-            if (
-              !(await quickAnswers
-                .locator(".quick-answers__answer")
-                .isVisible())
-            )
-              failures.push(
-                "desktop: quick answer content did not become visible.",
-              );
-            else
-              await page.screenshot({
-                path: path.join(
-                  screenshotDir,
-                  suppressedShells
-                    ? "desktop-quick-answers-suppressed.png"
-                    : "desktop-quick-answers.png",
-                ),
-              });
-            await page.keyboard.press("Escape");
-            if (await panel.isVisible()) {
-              failures.push("desktop: Escape did not close quick answers.");
-            } else {
-              const closeFocus = await quickAnswers.evaluate((root) => {
-                const launcher = root.querySelector(".quick-answers__launcher");
-                const main = document.querySelector("main");
-                return {
-                  inert: root.inert,
-                  launcherFocused: document.activeElement === launcher,
-                  mainFocused: document.activeElement === main,
-                };
-              });
-              if (
-                closeFocus.inert
-                  ? !closeFocus.mainFocused
-                  : !closeFocus.launcherFocused
-              )
-                failures.push(
-                  `desktop: closing quick answers did not restore safe focus: ${JSON.stringify(closeFocus)}.`,
-                );
-            }
-          }
-        } finally {
-          if (suppressedShells) {
-            await page.evaluate((hidden) => {
-              for (const item of hidden) {
-                const element = document.querySelector(
-                  `[data-quick-answers-early-shell=\"${item.key}\"]`,
-                );
-                if (!element) continue;
-                if (item.style === null) element.removeAttribute("style");
-                else element.setAttribute("style", item.style);
-                element.removeAttribute("data-quick-answers-early-shell");
-              }
-              window.dispatchEvent(new Event("resize"));
-            }, suppressedShells);
-            await page.waitForTimeout(100);
-          }
+          await page.keyboard.press("Escape");
+          if (await panel.isVisible())
+            failures.push("desktop: Escape did not close quick answers.");
+          else if (!(await launcher.evaluate((element) => element === document.activeElement)))
+            failures.push("desktop: closing quick answers did not restore launcher focus.");
         }
 
         // Add a contact/footer region after the shared assistant has mounted.
-        // It must move to a clear slot or suppress itself instead of covering
+        // It must move to a clear in-flow slot instead of covering
         // the late-rendered copy and control.
         const hiddenShell = await page.evaluate(() => {
           const targets = [
@@ -527,7 +432,8 @@ try {
                   style.visibility === "hidden" ||
                   Number(style.opacity) === 0
                 )
-                  return true;
+                  return false;
+                if (style.position !== "fixed") return true;
                 const rect = launcher.getBoundingClientRect();
                 const collides = (other) =>
                   rect.left < other.right &&
@@ -640,31 +546,28 @@ try {
           await quickAnswers.locator(".quick-answers__close").click();
           const blockedClose = await page
             .waitForFunction(
-              () => document.querySelector(".quick-answers")?.inert,
+              () => {
+                const root = document.querySelector(".quick-answers");
+                return root && !root.inert && getComputedStyle(root).position === "static";
+              },
               null,
               { timeout: 1500 },
             )
             .then(() =>
               page.evaluate(() => {
                 const root = document.querySelector(".quick-answers");
-                const main = document.querySelector("main");
                 return {
                   inert: root?.inert,
-                  focusInsideAssistant: Boolean(
-                    root?.contains(document.activeElement),
-                  ),
-                  mainFocused: document.activeElement === main,
+                  launcherFocused: document.activeElement === root?.querySelector(".quick-answers__launcher"),
                 };
               }),
             )
             .catch(() => null);
           if (
-            !blockedClose?.inert ||
-            blockedClose.focusInsideAssistant ||
-            !blockedClose.mainFocused
+            !blockedClose || blockedClose.inert || !blockedClose.launcherFocused
           )
             failures.push(
-              `desktop: closing an assistant that must become inert did not move focus to page content: ${JSON.stringify(blockedClose)}.`,
+              `desktop: closing inline quick answers did not restore launcher focus: ${JSON.stringify(blockedClose)}.`,
             );
           await page.evaluate(() => {
             document
@@ -834,9 +737,7 @@ try {
         '[data-conversion-feature="location-map"]',
       );
       const mapFrame = locationMap?.querySelector("iframe");
-      const directionsLink = locationMap?.querySelector(
-        'a[href*="google.com/maps"]',
-      );
+      const directionsLink = locationMap?.querySelector("a.cta[href]");
       const serviceOrdinals = [
         ...document.querySelectorAll(".service-card > span"),
       ]
@@ -888,6 +789,10 @@ try {
         ),
         locationMap: locationMap
           ? {
+              count: document.querySelectorAll('[data-conversion-feature="location-map"], [data-location-integration="full"]').length,
+              anchorCount: document.querySelectorAll("#location").length,
+              kind: locationMap.getAttribute("data-location-kind"),
+              heading: locationMap.querySelector("h2")?.textContent?.trim() || "",
               visible: visible(locationMap),
               frameVisible: mapFrame ? visible(mapFrame) : false,
               frameSource: mapFrame?.getAttribute("src") || "",
@@ -1002,13 +907,16 @@ try {
         `${viewport.name}: assistant launcher is not labeled Got questions?.`,
       );
     if (expectsLocationMap) {
-      if (!state.locationMap?.visible || !state.locationMap.frameVisible)
+      if (!state.locationMap?.visible || state.locationMap.count !== 1 || state.locationMap.anchorCount !== 1)
         failures.push(
-          `${viewport.name}: Get directions is missing its visible location map.`,
+          `${viewport.name}: expected one visible location map and a unique #location anchor.`,
         );
       if (
-        !state.locationMap?.frameSource.includes("google.com/maps") ||
-        !state.locationMap?.directionsHref.includes("google.com/maps")
+        state.locationMap?.kind !== expectedMap.kind ||
+        state.locationMap?.directionsHref !== expectedMap.directionsHref ||
+        state.locationMap?.frameSource !== expectedMap.embedHref ||
+        (expectedMap.embedHref && !state.locationMap?.frameVisible) ||
+        (expectedMap.waypoint && !state.locationMap?.heading.includes(expectedMap.waypoint))
       )
         failures.push(
           `${viewport.name}: location map or directions link is invalid.`,

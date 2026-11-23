@@ -140,6 +140,8 @@ export type ExperienceContent = Readonly<{
   locations: readonly SiteConfig["locations"][number][];
   locationMap: {
     available: boolean;
+    kind: "exact" | "approximate" | "none";
+    waypoint: string;
     address: string;
     hours: string;
     directionsHref: string;
@@ -977,10 +979,8 @@ function contentFor(site: SiteConfig): ExperienceContent {
     ? site.creativeAssets?.[site.design.experience.routeId]
     : undefined;
   const locationMap = resolveLocationMap({
+    ...site.business,
     businessName: site.business.name,
-    address: site.business.address,
-    placeId: site.business.placeId,
-    googleMapsUrl: site.business.googleMapsUrl,
   });
   return {
     brand: {
@@ -1040,9 +1040,7 @@ function contentFor(site: SiteConfig): ExperienceContent {
         : "Share the address you have in mind so the team can confirm service for your location.",
     copy,
     businessDescription: site.business.description,
-    showLocationMap:
-      site.business.primaryCta.trim().toLowerCase() === "get directions" &&
-      locationMap.available,
+    showLocationMap: locationMap.available,
     hasSocialProof:
       socialProofPoints.length > 0 ||
       fallbackProofPoints.length > 0 ||

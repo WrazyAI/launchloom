@@ -1,5 +1,6 @@
 import { compilePageBriefs } from "../templates/client-site/src/lib/page-briefs.mjs";
 import { redactPrivateLocation } from "../templates/client-site/src/lib/business-facts.mjs";
+import { resolveLocationMap } from "../templates/client-site/src/lib/location-map.mjs";
 import { findUnsupportedBusinessClaimMatches } from "./business-copy-claims.mjs";
 import { stripBoundedCorrections } from "./bounded-corrections.mjs";
 import { routeLinkedContent } from "../templates/client-site/src/lib/route-inventory.mjs";
@@ -487,14 +488,7 @@ function contentShape(site, route) {
     locations: dedupeLocations(site.locations),
     copy,
     businessDescription: String(business.description || ""),
-    showLocationMap:
-      String(business.primaryCta || "")
-        .trim()
-        .toLowerCase() === "get directions" &&
-      (Boolean(String(business.placeId || "").trim()) ||
-        /(?:^|,\s*)\d+[a-z]?\s+[a-z]/i.test(
-          String(business.address || "").trim(),
-        )),
+    showLocationMap: resolveLocationMap(business).available,
     hasSocialProof:
       socialProofPoints.length > 0 ||
       fallbackProofPoints.length > 0 ||
@@ -3764,6 +3758,7 @@ function authorRules() {
     REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
     VERIFIED_CLIENT_PERSONNEL_CONTRACT,
     "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
+    "The host renders the location map and owns the #location anchor. Never add a custom element with that ID; an eligible map may be linked at #location.",
     "Render exactly one meaningful H1 inside the page's single <main> landmark. The main landmark must contain the hero heading and unique page content; keep the H1 out of sibling headers or sections. Use semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
     "At 390px, recombine every navigation row so the wordmark, all navigation links, and the primary action fit within the viewport; allow a deliberate second row or stack instead of a fixed non-wrapping min-content row. At all viewports, hero copy, image and CTA must remain inside the hero's visible bounds; prefer content-driven sizing and never clip text with a fixed-height overflow-hidden box. If the reference requires a fixed opening composition, prove every element fits it.",
     `Keep every individual authored source file at or below ${MAX_REPAIR_FILE_SOURCE_CHARS} characters so the safe bounded repair path can represent it. Prefer concise markup and avoid repeated CSS rules; simplify an oversized file without changing the assigned composition.`,

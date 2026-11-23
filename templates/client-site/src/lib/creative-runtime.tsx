@@ -40,6 +40,7 @@ export type CreativeContent = {
   locations: readonly { name: string; description?: string }[];
   locationMap: {
     available: boolean;
+    kind?: "exact" | "approximate" | "none";
     address: string;
     hours: string;
     directionsHref: string;
@@ -48,6 +49,7 @@ export type CreativeContent = {
   copy: Record<string, string | undefined>;
   businessDescription: string;
   showLocationMap: boolean;
+  sharedLocationMap?: boolean;
   hasSocialProof: boolean;
   socialProof: {
     source: string;
@@ -286,6 +288,8 @@ export function LocationMap({
   const location = content.locationMap;
   const offlineEvidence = import.meta.env.PUBLIC_CREATIVE_JUDGE === "true";
   if (!location?.available) return null;
+  if (variant === "full" && content.sharedLocationMap) return null;
+  if (location.kind === "approximate") return null;
 
   if (variant === "compact")
     return (

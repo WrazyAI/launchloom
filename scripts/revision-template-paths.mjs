@@ -19,6 +19,12 @@ export function revisionTemplatePaths(config) {
   const files = new Set([
     "components/LeadForm.astro",
     "components/ReviewBanner.astro",
+    "components/LocationMap.astro",
+    "components/QuickAnswers.astro",
+    "lib/location-map.mjs",
+    "lib/location-map.d.mts",
+    "lib/quick-answers-layout.mjs",
+    "lib/quick-answers-layout.d.mts",
     "lib/seo-readiness.mjs",
     "lib/seo-readiness.d.mts",
     "lib/business-facts.mjs",
@@ -53,6 +59,15 @@ export function revisionTemplatePaths(config) {
     "pages/robots.txt.ts",
     "pages/sitemap.xml.ts",
   ]);
+  if (config.design?.experience?.renderer === "foundation") {
+    files.add("components/FoundationExperience.astro");
+    files.add("lib/experience-pack.ts");
+  }
+  if (config.design?.experience?.renderer === "creative-candidate") {
+    files.add("components/CreativeExperience.astro");
+    files.add("lib/creative-palette-bindings.mjs");
+    files.add("lib/experience-pack.ts");
+  }
   if (config.routePolicy !== undefined) files.add("layouts/SiteLayout.astro");
   if (config.design?.experience?.packId) {
     for (const relative of [
@@ -67,7 +82,6 @@ export function revisionTemplatePaths(config) {
       "components/experiences/ReferencePackCredit.astro",
       "components/Header.astro",
       "components/Footer.astro",
-      "components/LocationMap.astro",
       "components/SocialProof.astro",
       "pages/index.astro",
       "pages/services/[slug].astro",
@@ -84,11 +98,7 @@ export function revisionTemplatePaths(config) {
       .toLowerCase() === "get directions"
   ) {
     for (const relative of [
-      "components/LocationMap.astro",
       "components/PageSections.astro",
-      "components/QuickAnswers.astro",
-      "lib/quick-answers-layout.mjs",
-      "lib/quick-answers-layout.d.mts",
       "components/ExitOffer.astro",
       "components/Footer.astro",
       "lib/site.ts",
@@ -124,18 +134,8 @@ export function revisionTemplatePaths(config) {
       "pages/locations/[slug].astro",
     ])
       files.add(relative);
-  if (
-    config.design?.experience?.renderer === "creative-candidate" &&
-    kinds.has("set_color_palette")
-  ) {
-    files.add("components/CreativeExperience.astro");
-    files.add("lib/creative-palette-bindings.mjs");
-  }
   if (kinds.has("set_conversion_feature"))
     for (const relative of [
-      "components/QuickAnswers.astro",
-      "lib/quick-answers-layout.mjs",
-      "lib/quick-answers-layout.d.mts",
       "components/ExitOffer.astro",
       "layouts/SiteLayout.astro",
       "lib/page-recipe.ts",

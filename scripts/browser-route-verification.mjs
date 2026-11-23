@@ -11,6 +11,7 @@ import {
   pageBriefExpectedContent,
 } from "../templates/client-site/src/lib/page-briefs.mjs";
 import { redactPrivateLocation } from "../templates/client-site/src/lib/business-facts.mjs";
+import { resolveLocationMap } from "../templates/client-site/src/lib/location-map.mjs";
 import {
   hasPipelineTest,
   hasTestOnlySite,
@@ -406,6 +407,7 @@ export async function verifyApprovedRoutes({
   const isLocalStatic =
     target.hostname === "127.0.0.1" || target.hostname === "localhost";
   const waitUntil = isLocalStatic ? "load" : "networkidle";
+  const expectedMapEmbed = resolveLocationMap(config.business).embedHref;
   const inventory = compileRouteInventory(config);
   const records = approvedRoutes(inventory, {
     production: mode === "production",
@@ -490,6 +492,21 @@ export async function verifyApprovedRoutes({
           if (formMode === "test-preview" && phase.value === "preview-submit") {
             network.push("Diagnostic submission attempted a network request.");
             await intercepted.abort();
+            return;
+          }
+          // Exercise the site's embed without letting the third-party frame's
+          // own telemetry POSTs look like client-site mutations.
+          if (
+            expectedMapEmbed &&
+            req.url() === expectedMapEmbed &&
+            req.method() === "GET" &&
+            req.isNavigationRequest() &&
+            req.frame().parentFrame()
+          ) {
+            await intercepted.fulfill({
+              contentType: "text/html; charset=utf-8",
+              body: "<!doctype html><title>Map provider fixture</title>",
+            });
             return;
           }
           if (req.method() === "GET" || req.method() === "HEAD") {

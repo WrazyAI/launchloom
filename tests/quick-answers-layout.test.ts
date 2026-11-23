@@ -19,15 +19,10 @@ beforeAll(async () => {
 });
 
 function browserLayoutSource() {
-  return layoutSource
-    .replace(
-      "export function installQuickAnswersLayout",
-      "window.installQuickAnswersLayout = function",
-    )
-    .replace(
-      "export function focusQuickAnswersFallback(focusWasInside)",
-      "window.focusQuickAnswersFallback = function (focusWasInside)",
-    );
+  return layoutSource.replace(
+    "export function installQuickAnswersLayout",
+    "window.installQuickAnswersLayout = function",
+  );
 }
 
 afterAll(async () => {
@@ -203,7 +198,7 @@ describe("quick-answer desktop anchoring", () => {
     }
   });
 
-  it("suppresses instead of moving when page content fills the corner", async () => {
+  it("keeps the assistant in flow when page content fills the corner", async () => {
     const page = await browser.newPage({
       viewport: { width: 1440, height: 900 },
     });
@@ -233,13 +228,15 @@ describe("quick-answer desktop anchoring", () => {
         return {
           colliding: root.classList.contains("is-colliding"),
           inert: root.inert,
+          position: getComputedStyle(root).position,
           inlineBottom: root.style.getPropertyValue("bottom"),
           inlineInset: root.getAttribute("style") || "",
         };
       });
       expect(state).toMatchObject({
         colliding: true,
-        inert: true,
+        inert: false,
+        position: "static",
         inlineBottom: "",
       });
       expect(state.inlineInset).not.toContain("600px");
@@ -248,7 +245,7 @@ describe("quick-answer desktop anchoring", () => {
     }
   });
 
-  it("suppresses when fixed chrome covers the corner", async () => {
+  it("allows keyboard access when fixed chrome covers the corner", async () => {
     const page = await browser.newPage({
       viewport: { width: 1440, height: 900 },
     });
@@ -278,13 +275,16 @@ describe("quick-answer desktop anchoring", () => {
           inert: root.inert,
         };
       });
-      expect(state).toEqual({ colliding: true, inert: true });
+      expect(state).toEqual({ colliding: true, inert: false });
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Tab");
+      expect(await page.evaluate(() => document.activeElement?.textContent)).toBe("Got questions?");
     } finally {
       await page.close();
     }
   });
 
-  it("suppresses for a fixed panel whose surface covers the corner", async () => {
+  it("moves into flow when a fixed panel surface covers the corner", async () => {
     const page = await browser.newPage({
       viewport: { width: 1440, height: 900 },
     });
@@ -314,7 +314,7 @@ describe("quick-answer desktop anchoring", () => {
           inert: root.inert,
         };
       });
-      expect(state).toEqual({ colliding: true, inert: true });
+      expect(state).toEqual({ colliding: true, inert: false });
     } finally {
       await page.close();
     }
@@ -322,7 +322,7 @@ describe("quick-answer desktop anchoring", () => {
 });
 
 describe("quick-answer close focus", () => {
-  it("moves focus to page content before a colliding assistant becomes inert", async () => {
+  it("restores launcher focus when a collision blocks the floating position on close", async () => {
     const page = await browser.newPage({
       viewport: { width: 1440, height: 900 },
     });
@@ -356,8 +356,8 @@ describe("quick-answer close focus", () => {
         const focusWasInside = root.contains(document.activeElement);
         panel.hidden = true;
         root.classList.remove("is-open");
-        (window as any).focusQuickAnswersFallback(focusWasInside);
         layout.refresh();
+        if (focusWasInside && !root.inert) root.querySelector("button")?.focus();
         return {
           inert: root.inert,
           focusInsideAssistant: root.contains(document.activeElement),
@@ -365,9 +365,9 @@ describe("quick-answer close focus", () => {
         };
       });
       expect(state).toEqual({
-        inert: true,
-        focusInsideAssistant: false,
-        mainFocused: true,
+        inert: false,
+        focusInsideAssistant: true,
+        mainFocused: false,
       });
     } finally {
       await page.close();

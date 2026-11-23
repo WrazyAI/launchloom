@@ -5,6 +5,64 @@ import { LocationMap, type CreativeContent } from "../templates/client-site/src/
 import { resolveLocationMap } from "../templates/client-site/src/lib/location-map.mjs";
 
 describe("creative location map", () => {
+  it("maps a named public area without implying a verified business address", () => {
+    const location = resolveLocationMap({
+      businessName: "Mobile Care",
+      primaryCity: "Asheville, NC",
+    });
+    expect(location).toMatchObject({
+      available: true,
+      kind: "approximate",
+      waypoint: "Asheville, NC",
+      address: "",
+    });
+    expect(new URL(location.embedHref).searchParams.get("q")).toBe("Asheville, NC");
+    expect(new URL(location.directionsHref).searchParams.get("query")).toBe("Asheville, NC");
+  });
+
+  it.each([
+    "https://maps.app.goo.gl/ShortDestination",
+    "https://www.google.com/maps?q=Asheville+NC",
+    "https://www.google.com/maps?q=Asheville",
+  ])("uses an approximate embed when %s does not supply a precise map query", (googleMapsUrl) => {
+    const location = resolveLocationMap({ primaryCity: "Asheville, NC", googleMapsUrl });
+    expect(location.kind).toBe("approximate");
+    expect(new URL(location.embedHref).searchParams.get("q")).toBe("Asheville, NC");
+  });
+
+  it("skips missing-value waypoint labels in favor of an actual public area", () => {
+    expect(resolveLocationMap({
+      addressVisibility: "private", primaryCity: "Not provided", serviceAreas: ["Asheville, NC"],
+    }).waypoint).toBe("Asheville, NC");
+    expect(resolveLocationMap({ primaryCity: "Unknown" }).available).toBe(false);
+  });
+
+  it("uses the same public Place ID for the iframe and the directions link", () => {
+    const location = resolveLocationMap({
+      placeId: "ApprovedPlaceId",
+      googleMapsUrl: "https://maps.app.goo.gl/OldDestination",
+    });
+    expect(new URL(location.embedHref).searchParams.get("q")).toBe("place_id:ApprovedPlaceId");
+    expect(new URL(location.directionsHref).searchParams.get("query_place_id")).toBe("ApprovedPlaceId");
+  });
+
+  it("does not use private street details, pins or coordinates for a waypoint", () => {
+    const location = resolveLocationMap({
+      addressVisibility: "private",
+      address: "12 Hidden Road, Asheville, NC",
+      placeId: "PrivatePlaceId",
+      googleMapsUrl: "https://www.google.com/maps?q=35.12,-82.34",
+      serviceAreas: ["12 Hidden Road", "Asheville, NC"],
+    });
+    expect(location).toMatchObject({ kind: "approximate", waypoint: "Asheville, NC", address: "" });
+    expect(new URL(location.embedHref).searchParams.get("q")).toBe("Asheville, NC");
+    expect(resolveLocationMap({
+      addressVisibility: "private",
+      address: "12 Hidden Road, Asheville, NC",
+      placeId: "PrivatePlaceId",
+    }).available).toBe(false);
+  });
+
   it("makes a verified physical address mappable regardless of the primary CTA", () => {
     const location = resolveLocationMap({
       businessName: "Northline Garage Door Co.",
@@ -64,7 +122,6 @@ describe("creative location map", () => {
     const location = resolveLocationMap({
       businessName: "Mobile Care",
       address: "Portland, Beaverton, and Lake Oswego",
-      serviceAreas: ["Portland", "Beaverton"],
       googleMapsUrl: "javascript:alert(1)",
     });
 
@@ -79,7 +136,6 @@ describe("creative location map", () => {
         businessName: "Mobile Care",
         address: "Portland, OR",
         placeId: null as unknown as string,
-        serviceAreas: ["Portland", "Beaverton"],
         googleMapsUrl: "https://www.google.com/maps",
       }).available,
     ).toBe(false);

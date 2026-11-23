@@ -1,15 +1,41 @@
 {
   "version": 1,
-  "source": "LaunchLoom main 849ca939cef734fc19114dba1746669470cdb1f3; exact generated template bytes before creative palette bindings; also exact Stage 2 template bytes at 7e3992cc5a745d8465193023596a25ddaa72df46; exact Stage 3 main template bytes at 0ad1400 for Stage 4 metadata migration; exact Stage 4 main template bytes at 0c3ed90 before static homepage contrast repairs",
+  "source": "LaunchLoom main 849ca939cef734fc19114dba1746669470cdb1f3; exact generated template bytes before creative palette bindings; also exact Stage 2 template bytes at 7e3992cc5a745d8465193023596a25ddaa72df46; exact Stage 3 main template bytes at 0ad1400 for Stage 4 metadata migration; exact Stage 4 main template bytes at 0c3ed90 before static homepage contrast repairs; exact widget template bytes at 40207a95 before the map and Quick Answers repair",
   "files": {
     "src/lib/site.ts": [
       "5ef2cba26110bbc8ca3c0d2e6ee49d33751dfa2ce7a62622392b11d4ba4775a1",
       "dc200324f3dabeffc5f5eb921d0cf987e060310243d1455dc783c7a3a6b74e8d",
       "0944b27fde1d8651f31e798c7a08db8ff56124618ded4d60792fc83fdc1cb367",
-      "ab6496822b5297a7c4cb8c62887907727944c1ed1f183d4c994eea83e92271df"
+      "ab6496822b5297a7c4cb8c62887907727944c1ed1f183d4c994eea83e92271df",
+      "a88c3eebf1f9231a55f9aba39615d426862146e104281847de2a332ed84fb59b"
     ],
     "src/components/CreativeExperience.astro": [
-      "b5db51a1854afee5c2a7f22b55479ae48b691b56d702439aeed95504ef1d10af"
+      "b5db51a1854afee5c2a7f22b55479ae48b691b56d702439aeed95504ef1d10af",
+      "be81aace6796fc100ff4bbf9fe0b85f834cddc57b1d018adf7ee3a3e6b3d736a"
+    ],
+    "src/components/FoundationExperience.astro": [
+      "864c29ee47d0d317db955dc25edb494624f17120a20ef685196b0496cc2b3dad"
+    ],
+    "src/components/LocationMap.astro": [
+      "6d9e4257305a9ff349ad22932f2118e9422dc823c7cedb348ad9ab3513ad0f8f"
+    ],
+    "src/components/QuickAnswers.astro": [
+      "b06c9e4a7d3010f8c7ab9d1f1e0aaa8d2af7eb9c78de414d5cd1e7d3909cf533"
+    ],
+    "src/lib/experience-pack.ts": [
+      "99eb840af5b1ed8e152660acee0c601c84cc93aea7953494774deed2fad9ada6"
+    ],
+    "src/lib/location-map.mjs": [
+      "74dbf4f3238a93e66c06f80eefc9c9ba5ead6155072c40f9b65f5898287f7fec"
+    ],
+    "src/lib/location-map.d.mts": [
+      "ded9c19ecbe8903887906862988525b3ffd29fe00cae4f1e0b811e9e6a75c33d"
+    ],
+    "src/lib/quick-answers-layout.mjs": [
+      "e4e56dd7f7d0188b5b1646f28fd251ddc328db9cea519424b7e89cda23c7a6b8"
+    ],
+    "src/lib/quick-answers-layout.d.mts": [
+      "9d1a1ea9db5cc04f71381bfb66283e0dd75ebc4096b6e285f7f08f7dfdda2c15"
     ],
     "src/layouts/SiteLayout.astro": [
       "ebc4d007ef8dfcbd8edbdd6004755a65336fe8a07f73f1b85b56396a4d673c28",
@@ -55,7 +81,8 @@
     "src/styles/site.css": [
       "2f1f4d5e8f4a74d2849ed6110041261771e5864b5aeb35d66dd3491c03589810",
       "73815783054281ba9964b9b2a4fd76e39d78392fc6fd860c1f89150774eadf27",
-      "bfff9dc6a1a716de94f945f661fe17874e385a7986082f2694dae5139f86989e"
+      "bfff9dc6a1a716de94f945f661fe17874e385a7986082f2694dae5139f86989e",
+      "a9bbd905db4f3c32ed2465110ca57cd458d8d034361949e0aa41676daae0cae2"
     ],
     "src/lib/seo-readiness.mjs": [
       "a23d9ab8359a20c7b0218064297c755e8719968e87e04da408f19e6c8ef6b4a9",
@@ -90,7 +117,8 @@
       "cc37b6a33071c52c62946afd25870bba44588d8b98287d5c78b65b36af634db4"
     ],
     "src/lib/creative-runtime.tsx": [
-      "5ee864d7423afe21bab2cf6b06370be75f5cadec5e7792eb8bc42c96d248d511"
+      "5ee864d7423afe21bab2cf6b06370be75f5cadec5e7792eb8bc42c96d248d511",
+      "94be865a9fb1627508e924d286e286f454e2430a36e7c2bd9d1e13655ab2b03e"
     ],
     "src/pages/[support].astro": [
       "7cabeaaf02dfb44daf30ca6b785c39be92cae9825e17b5c04970ead2feb83abc"

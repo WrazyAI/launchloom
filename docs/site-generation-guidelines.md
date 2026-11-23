@@ -298,8 +298,8 @@ inspection. In a diagnostic preview the form carries
 `data-lead-preview="true"` and a visible developer-preview note, and it
 submits nothing: it exists so the developer can review the client-facing form
 before publication. Location maps render from the same sealed content as
-production, so a verified address or place ID shows the map in the preview
-too. Live lead forms remain rejected by the diagnostic verifier; only forms
+production, including a labeled approximate waypoint where eligible. Live
+lead forms remain rejected by the diagnostic verifier; only forms
 without the preview marker may deliver.
 
 ## Conversion tools
@@ -318,8 +318,9 @@ engagement. Suppress floating conversion offers after a lead starts, on small
 screens, and during developer or client review. Keep the quick-answer launcher
 in document flow on small screens, and expand its panel in document flow at
 every size without an internal height clip. A collapsed desktop launcher may
-float only in a slot that avoids visible text and controls; hide it when no
-clear slot exists. Only one overlay may be open at a time.
+float only in a slot that avoids visible text and controls; keep it reachable
+in document flow when the floating slot is blocked. Only one overlay may be
+open at a time.
 
 ## Care and consultation language
 
@@ -393,12 +394,13 @@ near-duplicates after shared shell content is excluded. SEO metric readiness
 and route-copy readiness are reported separately, and both remain required at
 the production release gate.
 
-When the submitted primary action is `Get directions`, add a dedicated map
-section only if the verified intake contains a retained Place ID or a
-street-level address. The primary action should move the visitor to that
-section, and the section must include a separate Google Maps directions link.
-Do not embed a map for a city, service area, remote business, or inferred
-location. A map is location context, not evidence of a storefront.
+Show the location map regardless of the primary action. Use an exact public
+location when the intake supplies usable location evidence. Otherwise, use a
+publicly supplied city or coverage area as a labeled approximate waypoint,
+without suggesting there is an office there or linking to business directions.
+Never use private location details for either map. If no usable public
+location or area exists, omit the map. A `Get directions` primary action can
+jump to the location section; other primary actions retain their behavior.
 
 ## Initial generation and revisions
 

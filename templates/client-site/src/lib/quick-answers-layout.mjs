@@ -1,27 +1,7 @@
 /**
- * Move focus outside the assistant before a close recalculates collision state.
- * @param {boolean} focusWasInside
- */
-export function focusQuickAnswersFallback(focusWasInside) {
-  if (!focusWasInside) return;
-  const main = document.querySelector("main");
-  const mainStyle = main && getComputedStyle(main);
-  const mainIsAvailable =
-    main &&
-    !main.closest("[hidden], [inert], [aria-hidden='true']") &&
-    mainStyle?.display !== "none" &&
-    mainStyle?.visibility !== "hidden" &&
-    Number(mainStyle?.opacity) !== 0;
-  const focusTarget = mainIsAvailable ? main : document.body;
-  if (!focusTarget.hasAttribute("tabindex"))
-    focusTarget.setAttribute("tabindex", "-1");
-  focusTarget.focus({ preventScroll: true });
-}
-
-/**
  * Keep the collapsed desktop assistant at its bottom-left anchor. If visible
- * copy, controls, or fixed chrome would occupy that corner, suppress it instead
- * of moving it to an arbitrary mid-page slot.
+ * copy, controls, or fixed chrome would occupy that corner, use the assistant's
+ * normal document position instead.
  * @param {HTMLElement} root
  * @returns {{refresh: () => void}}
  */
@@ -105,7 +85,8 @@ export function installQuickAnswersLayout(root) {
       root.hidden ||
       !panel.hidden ||
       window.matchMedia("(max-width: 760px)").matches ||
-      getComputedStyle(root).position !== "fixed"
+      (!root.classList.contains("is-colliding") &&
+        getComputedStyle(root).position !== "fixed")
     ) {
       clearPosition();
       root.classList.remove("is-colliding");
@@ -135,9 +116,10 @@ export function installQuickAnswersLayout(root) {
     if (collides) {
       clearPosition();
       root.classList.add("is-colliding");
-      root.inert = true;
       return;
     }
+    if (root.classList.contains("is-colliding") && root.contains(document.activeElement))
+      return;
     root.style.setProperty("left", `${margin}px`, "important");
     root.style.setProperty("right", "auto", "important");
     root.style.setProperty("bottom", `${margin}px`, "important");
@@ -156,6 +138,7 @@ export function installQuickAnswersLayout(root) {
 
   window.addEventListener("scroll", schedule, { passive: true });
   window.addEventListener("resize", schedule, { passive: true });
+  root.addEventListener("focusout", schedule);
   document.fonts?.ready.then(schedule).catch(() => {});
   if ("ResizeObserver" in window)
     new ResizeObserver(schedule).observe(document.body);
