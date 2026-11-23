@@ -613,7 +613,7 @@ export function formatJsonLossless(source: string): string {
 function looksLikeTruncatedJson(trimmed: string): boolean {
   if (/^\{\s*"(?:\\.|[^"\\])*"\s*:/u.test(trimmed)) return true;
   if (
-    /^\[\s*(?:\{\s*"|\[|"(?:\\.|[^"\\])*"\s*(?:,|$)|(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null)\s*,)/u.test(
+    /^\[\s*(?:\{\s*"|\[|"(?:\\.|[^"\\])*(?:$|"\s*(?:,|$))|(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null)\s*,)/u.test(
       trimmed,
     )
   ) {
@@ -625,13 +625,61 @@ function looksLikeTruncatedJson(trimmed: string): boolean {
 function extractTruncatedKeys(trimmed: string): string[] {
   const keys: string[] = [];
   const seen = new Set<string>();
-  const re = /(?:[{,]\s*)"((?:\\.|[^"\\]){1,64})"\s*:/gu;
-  let match: RegExpExecArray | null;
-  while ((match = re.exec(trimmed)) !== null && keys.length < 8) {
-    const key = match[1]!;
-    if (!seen.has(key)) {
-      seen.add(key);
-      keys.push(key);
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  let expectKey = false;
+  let currentKey = "";
+  let capturingKey = false;
+
+  for (let i = 0; i < trimmed.length && keys.length < 8; i += 1) {
+    const ch = trimmed[i]!;
+    if (inString) {
+      if (escaped) {
+        if (capturingKey) currentKey += ch;
+        escaped = false;
+      } else if (ch === "\\") {
+        if (capturingKey) currentKey += ch;
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+        if (capturingKey) {
+          capturingKey = false;
+          // Only record if followed by optional whitespace and `:`.
+          let j = i + 1;
+          while (j < trimmed.length && /\s/u.test(trimmed[j]!)) j += 1;
+          if (trimmed[j] === ":" && currentKey && !seen.has(currentKey)) {
+            seen.add(currentKey);
+            keys.push(currentKey);
+          }
+          currentKey = "";
+          expectKey = false;
+        }
+      } else if (capturingKey) {
+        currentKey += ch;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      if (depth === 1 && expectKey) {
+        capturingKey = true;
+        currentKey = "";
+      }
+      continue;
+    }
+
+    if (ch === "{") {
+      depth += 1;
+      if (depth === 1) expectKey = true;
+    } else if (ch === "[") {
+      depth += 1;
+    } else if (ch === "}" || ch === "]") {
+      depth = Math.max(0, depth - 1);
+      if (depth === 1) expectKey = false;
+    } else if (ch === "," && depth === 1) {
+      expectKey = true;
     }
   }
   return keys;

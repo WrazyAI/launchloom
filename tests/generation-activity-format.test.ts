@@ -355,7 +355,8 @@ describe("generation activity presentation", () => {
       expect(truncatedJson.truncated).toBe(true);
     }
 
-    // Truncated JSON without optional stage/summary keys still renders as structured output.
+    // Truncated JSON without optional stage/summary keys still renders as structured output,
+    // and key extraction only surfaces top-level keys (not nested object keys).
     const truncatedObjectNoSummary = parseModelOutputPreview(
       '{"files":[{"path":"src/pages/index.astro","content":"<h1>Home',
     );
@@ -363,7 +364,7 @@ describe("generation activity presentation", () => {
     if (truncatedObjectNoSummary.kind === "json") {
       expect(truncatedObjectNoSummary.stageTag).toBeNull();
       expect(truncatedObjectNoSummary.summary).toBeNull();
-      expect(truncatedObjectNoSummary.keys).toContain("files");
+      expect(truncatedObjectNoSummary.keys).toEqual(["files"]);
       expect(truncatedObjectNoSummary.truncated).toBe(true);
     }
 
@@ -374,6 +375,17 @@ describe("generation activity presentation", () => {
     if (truncatedArray.kind === "json") {
       expect(truncatedArray.truncated).toBe(true);
     }
+
+    const truncatedStringArray = parseModelOutputPreview('["first');
+    expect(truncatedStringArray.kind).toBe("json");
+    if (truncatedStringArray.kind === "json") {
+      expect(truncatedStringArray.truncated).toBe(true);
+    }
+
+    expect(parseModelOutputPreview('["quoted"] ordinary prose')).toEqual({
+      kind: "prose",
+      text: '["quoted"] ordinary prose',
+    });
   });
 
   it("computes recorded model timing, reasoning counts, and compact action chips", () => {
