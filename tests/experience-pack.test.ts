@@ -862,3 +862,20 @@ it("retains preview-only service cards in review and diagnostic builds but exclu
     vi.unstubAllEnvs();
   }
 });
+
+it("neutralizes leftover creative styles before a pack or foundation build", () => {
+  const workflow = readFileSync(
+    ".github/workflows/generate-client.yml",
+    "utf8",
+  );
+  const guard =
+    'printf \'/* creative candidate styles are not used by this renderer */\\n\' > src/generated-experiences/selected/styles.css';
+  expect(workflow.split(guard)).toHaveLength(3);
+  const packStart = workflow.indexOf('if [ "$GENERATION_RENDERER" = "pack" ]; then');
+  expect(packStart).toBeGreaterThan(-1);
+  expect(workflow.indexOf(guard, packStart)).toBeGreaterThan(packStart);
+  expect(workflow.indexOf(guard, packStart)).toBeLessThan(
+    workflow.indexOf("npm run build", packStart),
+  );
+  expect(workflow).toContain("trap 'cp \"$STYLE_BACKUP\" src/generated-experiences/selected/styles.css' EXIT");
+});
