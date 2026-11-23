@@ -12,14 +12,22 @@ describe("quick answers verification mode", () => {
     ).toBe("interact");
   });
 
-  it("accepts a launcher suppressed by a proven collision", () => {
+  it("rejects a launcher that disappears even when the corner is blocked", () => {
     expect(
       quickAnswersInteraction({
         launcherVisible: false,
         inert: true,
         colliding: true,
       }),
-    ).toBe("suppressed");
+    ).toBe("invalid");
+  });
+
+  it("interacts with the inline fallback when the corner is blocked", () => {
+    expect(quickAnswersInteraction({
+      launcherVisible: true,
+      inert: false,
+      colliding: true,
+    })).toBe("interact");
   });
 
   it.each([

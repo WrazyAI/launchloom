@@ -563,8 +563,12 @@ h2 {
   font-family: var(--font-body, Inter, Arial, sans-serif);
 }
 .quick-answers.is-colliding {
-  visibility: hidden;
-  pointer-events: none;
+  position: static;
+  inset: auto;
+  width: fit-content;
+  max-width: calc(100% - 32px);
+  margin: 16px 16px 24px auto;
+  background: transparent;
 }
 .quick-answers.is-suppressed {
   pointer-events: none;

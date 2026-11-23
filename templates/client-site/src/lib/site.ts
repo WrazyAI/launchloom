@@ -6,6 +6,7 @@ import {
   productionRouteMode,
 } from "./route-inventory.mjs";
 import { publicBusiness } from "./business-facts.mjs";
+import { hasExactStreetAddress, resolveLocationMap } from "./location-map.mjs";
 import config from "../site.config.json";
 
 export type Service = {
@@ -510,15 +511,16 @@ export const phoneHref = (phone: string) =>
 export const isDirectionsPrimary = () =>
   site.business.primaryCta.trim().toLowerCase() === "get directions";
 
-export const hasExactStreetAddress = (address: string) =>
-  /(?:^|,\s*)\d+[a-z]?\s+[a-z]/i.test(address.trim());
+export { hasExactStreetAddress };
 
-export const hasExactBusinessLocation = () =>
-  Boolean(site.business.placeId?.trim()) ||
-  hasExactStreetAddress(site.business.address);
+export const locationMap = resolveLocationMap({
+  ...site.business,
+  businessName: site.business.name,
+});
 
-export const shouldShowLocationMap = () =>
-  isDirectionsPrimary() && hasExactBusinessLocation();
+export const hasExactBusinessLocation = () => locationMap.kind === "exact";
+
+export const shouldShowLocationMap = () => locationMap.available;
 
 export const contactSectionHref = (pathname = "/") => {
   const id =
@@ -530,7 +532,7 @@ export const contactSectionHref = (pathname = "/") => {
 };
 
 export const primaryCtaHref = (pathname = "/") => {
-  if (shouldShowLocationMap())
+  if (isDirectionsPrimary() && shouldShowLocationMap())
     return pathname === "/" ? "#location" : "/#location";
   if (isDirectionsPrimary() && site.business.address.trim())
     return directionsHref();
@@ -538,6 +540,7 @@ export const primaryCtaHref = (pathname = "/") => {
 };
 
 export const directionsHref = () => {
+  if (locationMap.directionsHref) return locationMap.directionsHref;
   const params = new URLSearchParams({
     api: "1",
     query:
@@ -548,9 +551,4 @@ export const directionsHref = () => {
   return `https://www.google.com/maps/search/?${params.toString()}`;
 };
 
-export const mapEmbedHref = () => {
-  const query =
-    site.business.address.trim() ||
-    `place_id:${site.business.placeId?.trim() || ""}`;
-  return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
-};
+export const mapEmbedHref = () => locationMap.embedHref;

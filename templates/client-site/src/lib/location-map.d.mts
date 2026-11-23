@@ -1,5 +1,7 @@
 export type ResolvedLocationMap = {
   available: boolean;
+  kind: "exact" | "approximate" | "none";
+  waypoint: string;
   address: string;
   directionsHref: string;
   embedHref: string;
@@ -13,4 +15,6 @@ export function resolveLocationMap(input?: {
   googleMapsUrl?: string;
   serviceAreas?: readonly string[];
   primaryCta?: string;
+  primaryCity?: string;
+  addressVisibility?: string;
 }): ResolvedLocationMap;

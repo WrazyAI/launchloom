@@ -21,12 +21,27 @@ it("includes every shared template write destination without granting directory 
     expect.arrayContaining([
       "src/components/LeadForm.astro",
       "src/components/ReviewBanner.astro",
+      "src/components/LocationMap.astro",
+      "src/lib/location-map.mjs",
+      "src/lib/location-map.d.mts",
+      "src/components/QuickAnswers.astro",
+      "src/lib/quick-answers-layout.mjs",
       "src/pages/robots.txt.ts",
       "src/pages/sitemap.xml.ts",
     ]),
   );
   expect(paths.some((entry) => /[*?]/u.test(entry))).toBe(false);
   expect(paths.some((entry) => entry.endsWith("/**"))).toBe(false);
+});
+
+it.each([
+  [{ renderer: "foundation", foundationId: "season-wheel" }, "FoundationExperience"],
+  [{ renderer: "creative-candidate", candidateId: "selected" }, "CreativeExperience"],
+])("syncs the map owner with the existing renderer instead of replacing authored pages", (experience, component) => {
+  const paths = revisionTemplatePaths({ design: { experience } });
+  expect(paths).toContain(`src/components/${component}.astro`);
+  expect(paths).toContain("src/lib/experience-pack.ts");
+  expect(paths).not.toContain("src/pages/index.astro");
 });
 
 it("syncs the quick-answer layout runtime with conversion-feature revisions", () => {
