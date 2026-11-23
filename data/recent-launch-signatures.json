@@ -1,43 +1,7 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-20T21:09:50.362Z",
+  "updatedAt": "2026-11-23T16:48:45.988Z",
   "launches": [
-    {
-      "id": "2026-10-01-pine-plumb-painting-co-attempt-92-run-36794315141-attempt-1",
-      "launchedAt": "2026-10-01T00:08:44.423Z",
-      "stage": "attempt",
-      "reservationKey": "92-run-36794315141-attempt-1",
-      "businessName": "Pine & Plumb Painting Co.",
-      "businessKind": "painting",
-      "recipe": "local-trades",
-      "packId": "kinetic-poster",
-      "variantId": "standard",
-      "layoutFingerprint": "kinetic-poster|standard|command-bar|poster-split|quick-request|diagnostic-list|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/coverage/process/social-proof/faq/location-map/contact",
-      "creativeFamilyId": "",
-      "referenceFamilyId": "",
-      "routeFamilyIds": [
-        "archive-rail",
-        "editorial-monument",
-        "typographic-poster",
-        "web-painting-av",
-        "web-painting-house-doctor",
-        "web-painting-southern"
-      ],
-      "heroArchetypes": [
-        "image-overlay",
-        "split-form"
-      ],
-      "referenceIds": [
-        "web-painting-av",
-        "web-painting-house-doctor",
-        "web-painting-southern"
-      ],
-      "routeSignatures": [
-        "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
-        "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
-        "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
-      ]
-    },
     {
       "id": "2026-10-01-willowbridge-community-clinic-fictional-canary-attempt-104-run-36795941269-attempt-1",
       "launchedAt": "2026-10-01T00:25:52.979Z",
@@ -1788,82 +1752,44 @@
         "Fine uppercase navigation and a monogram-like mark rest over a light, low-profil|An immersive warm interior opening with small centered serif copy gives way to a|Explain interior design and procurement in one considered editorial chapter, the|Small elegant serif headings and uppercase labels, with narrow calm paragraphs a|immersive opening photograph -> introductory statement band -> studio split -> s|Full-height residential interiors alternate with copy and a three-image project",
         "micro-wordmark-and-restrained-anchors|graphic-opening-field-before-practice-statement|type-led-service-index-after-project-collage|expressive-grotesk-with-editorial-accents|graphic-open-to-practice-to-asymmetric-projects-to-services-to-dark-close|asymmetric-project-collage-with-line-drawing-notes"
       ]
+    },
+    {
+      "id": "2026-11-23-silt-line-architecture-studio-attempt-314-run-45219949012-attempt-1",
+      "launchedAt": "2026-11-23T16:48:45.986Z",
+      "stage": "attempt",
+      "reservationKey": "314-run-45219949012-attempt-1",
+      "businessName": "Silt & Line Architecture Studio",
+      "businessKind": "architecture",
+      "recipe": "general-editorial",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "architecture-bottom-anchored-serif-image-title",
+        "editorial-monument",
+        "lapa-mcalpine-sanctuary",
+        "lapa-mesh-architects-editorial",
+        "market-collage"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "text-led-editorial"
+      ],
+      "referenceIds": [
+        "lapa-mcalpine-sanctuary",
+        "lapa-mesh-architects-editorial",
+        "web-architecture-studio-peake"
+      ],
+      "routeSignatures": [
+        "A small emblem on the left and compact uppercase portfolio, studio, shop, news a|A full-width interior photograph carries a very large white serif studio title a|Lead with photographic discipline gateways, then explain the approach through a |Expressive high-contrast serif display and section titles paired with small, mea|room photograph and oversized title -> cream craft statement -> three-image disc|Immersive furnished-room photographs, three adjacent feature images, a maker por",
+        "micro-wordmark-and-restrained-anchors|graphic-opening-field-before-practice-statement|type-led-service-index-after-project-collage|expressive-grotesk-with-editorial-accents|graphic-open-to-practice-to-asymmetric-projects-to-services-to-dark-close|asymmetric-project-collage-with-line-drawing-notes",
+        "minimal-corner-menu|full-bleed-image-with-oversized-wordmark|vertical-serif-project-and-service-index|high-contrast-editorial-serif|architectural-image-to-film-frame-to-vertical-index-to-dark-footer|architectural-texture-and-cinematic-presentation-frame"
+      ]
     }
   ],
   "launchesByBusinessKind": {
-    "legal-services": [
-      {
-        "id": "2026-09-30-juniper-grove-estate-law-attempt-93",
-        "launchedAt": "2026-09-30T18:31:11.235Z",
-        "stage": "attempt",
-        "businessName": "Juniper Grove Estate Law",
-        "businessKind": "legal-services",
-        "recipe": "general-editorial",
-        "packId": "bold-utility",
-        "variantId": "standard",
-        "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "cinematic-stage",
-          "colorlib-caseworth-legal-ledger",
-          "direct-robins-kaplan-law",
-          "editorial-monument",
-          "guided-conversation",
-          "legal-coral-and-photo-split-opening"
-        ],
-        "heroArchetypes": [
-          "image-overlay",
-          "split-form",
-          "split-media-copy"
-        ],
-        "referenceIds": [
-          "colorlib-caseworth-legal-ledger",
-          "direct-robins-kaplan-law",
-          "web-legal-flip-family-law"
-        ],
-        "routeSignatures": [
-          "White nameplate navigation with slim gold and coral utility buttons before the m|A coral text half and London building photograph half create a strict split hero|Organize services by the visitor's family-law problem in a dark contrast band, w|Soft serif narrative type paired with direct small sans labels and dark navy pra|split introduction and dual action -> navy issue/service matrix -> recommendatio|Architecture, team and editorial insight photographs punctuate large typography",
-          "clean-professional-navigation-with-search-action|angled-city-image-with-editorial-practice-statement|headline-led-practice-index-with-feature-story|large-clean-grotesk-with-editorial-serif-accent|city-hero-to-practice-index-to-feature-to-proof-to-contact|cityscape-and-editorial-portrait-crops",
-          "utility-strip-and-restrained-practice-navigation|editorial-professional-statement-beside-portrait-image|two-column-ruled-practice-area-ledger|refined-serif-with-humanist-sans|positioning-to-practices-to-people-to-fees-to-enquiry|portrait-and-professional-detail-crops"
-        ]
-      },
-      {
-        "id": "2026-10-07-juniper-grove-estate-law-attempt-93-run-37613635991-attempt-1",
-        "launchedAt": "2026-10-07T11:25:47.241Z",
-        "stage": "attempt",
-        "reservationKey": "93-run-37613635991-attempt-1",
-        "businessName": "Juniper Grove Estate Law",
-        "businessKind": "legal-services",
-        "recipe": "general-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "editorial-monument",
-          "legal-dark-illustrated-statement-hero",
-          "legal-three-part-reassurance-strip",
-          "spicer-law-firm-results-ledger",
-          "utility-diagnostic"
-        ],
-        "heroArchetypes": [
-          "split-media-copy",
-          "text-led-editorial"
-        ],
-        "referenceIds": [
-          "spicer-law-firm-results-ledger",
-          "web-legal-chaudhry-law",
-          "web-legal-valemus-law"
-        ],
-        "routeSignatures": [
-          "Narrow white row with small firm emblem, subdued legal-topic links, contact rout|A wide cityscape banner with centered firm introduction leads into three slim va|Use image-and-copy splits for practice areas and people so a visitor can tell ex|Compact uppercase sans section labels, restrained gray body copy and centered ch|firm navigation -> cityscape introduction -> three-value overview -> charcoal ne|Cityscape first, then legal-work and meeting photographs beside text; brochure m",
-          "Oversized firm identity on the left, utility email above and a practice/team/awa|A two-tier white header fronts a deep illustrated hero; a centered all-caps decl|Keep practice-area navigation direct and do not inflate a short homepage into a |Strong uppercase sans display, readable serif supporting statement, and compact |identity and utility navigation -> illustrated centered hero -> firm mission on |A dark justice illustration supplies atmosphere; below it, logo-like recognition",
-          "thin-availability-line-with-square-corner-practice-nav|dark-practice-statement-balanced-with-results-ledger|numbered-practice-rows-followed-by-auditable-outcomes-table|measured-legal-serif-with-neutral-sans|utility-to-promise-to-practices-to-results-to-team-to-process-to-consultation|typographic-proof-and-geometric-monogram-plates"
-        ]
-      }
-    ],
     "painting": [
       {
         "id": "2026-10-01-pine-plumb-painting-co-attempt-92-run-36794315141-attempt-1",
@@ -3119,6 +3045,79 @@
         ]
       }
     ],
+    "legal-services": [
+      {
+        "id": "2026-10-07-juniper-grove-estate-law-attempt-93-run-37613635991-attempt-1",
+        "launchedAt": "2026-10-07T11:25:47.241Z",
+        "stage": "attempt",
+        "reservationKey": "93-run-37613635991-attempt-1",
+        "businessName": "Juniper Grove Estate Law",
+        "businessKind": "legal-services",
+        "recipe": "general-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "editorial-monument",
+          "legal-dark-illustrated-statement-hero",
+          "legal-three-part-reassurance-strip",
+          "spicer-law-firm-results-ledger",
+          "utility-diagnostic"
+        ],
+        "heroArchetypes": [
+          "split-media-copy",
+          "text-led-editorial"
+        ],
+        "referenceIds": [
+          "spicer-law-firm-results-ledger",
+          "web-legal-chaudhry-law",
+          "web-legal-valemus-law"
+        ],
+        "routeSignatures": [
+          "Narrow white row with small firm emblem, subdued legal-topic links, contact rout|A wide cityscape banner with centered firm introduction leads into three slim va|Use image-and-copy splits for practice areas and people so a visitor can tell ex|Compact uppercase sans section labels, restrained gray body copy and centered ch|firm navigation -> cityscape introduction -> three-value overview -> charcoal ne|Cityscape first, then legal-work and meeting photographs beside text; brochure m",
+          "Oversized firm identity on the left, utility email above and a practice/team/awa|A two-tier white header fronts a deep illustrated hero; a centered all-caps decl|Keep practice-area navigation direct and do not inflate a short homepage into a |Strong uppercase sans display, readable serif supporting statement, and compact |identity and utility navigation -> illustrated centered hero -> firm mission on |A dark justice illustration supplies atmosphere; below it, logo-like recognition",
+          "thin-availability-line-with-square-corner-practice-nav|dark-practice-statement-balanced-with-results-ledger|numbered-practice-rows-followed-by-auditable-outcomes-table|measured-legal-serif-with-neutral-sans|utility-to-promise-to-practices-to-results-to-team-to-process-to-consultation|typographic-proof-and-geometric-monogram-plates"
+        ]
+      },
+      {
+        "id": "2026-09-30-juniper-grove-estate-law-attempt-93",
+        "launchedAt": "2026-09-30T18:31:11.235Z",
+        "stage": "attempt",
+        "businessName": "Juniper Grove Estate Law",
+        "businessKind": "legal-services",
+        "recipe": "general-editorial",
+        "packId": "bold-utility",
+        "variantId": "standard",
+        "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "cinematic-stage",
+          "colorlib-caseworth-legal-ledger",
+          "direct-robins-kaplan-law",
+          "editorial-monument",
+          "guided-conversation",
+          "legal-coral-and-photo-split-opening"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-form",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "colorlib-caseworth-legal-ledger",
+          "direct-robins-kaplan-law",
+          "web-legal-flip-family-law"
+        ],
+        "routeSignatures": [
+          "White nameplate navigation with slim gold and coral utility buttons before the m|A coral text half and London building photograph half create a strict split hero|Organize services by the visitor's family-law problem in a dark contrast band, w|Soft serif narrative type paired with direct small sans labels and dark navy pra|split introduction and dual action -> navy issue/service matrix -> recommendatio|Architecture, team and editorial insight photographs punctuate large typography",
+          "clean-professional-navigation-with-search-action|angled-city-image-with-editorial-practice-statement|headline-led-practice-index-with-feature-story|large-clean-grotesk-with-editorial-serif-accent|city-hero-to-practice-index-to-feature-to-proof-to-contact|cityscape-and-editorial-portrait-crops",
+          "utility-strip-and-restrained-practice-navigation|editorial-professional-statement-beside-portrait-image|two-column-ruled-practice-area-ledger|refined-serif-with-humanist-sans|positioning-to-practices-to-people-to-fees-to-enquiry|portrait-and-professional-detail-crops"
+        ]
+      }
+    ],
     "home-services": [
       {
         "id": "2026-10-09-harbor-glow-plumbing-attempt-158-run-37981560267-attempt-1",
@@ -3654,6 +3653,41 @@
           "A compact wordmark and thin, widely spaced project, studio, services and contact|A large, uncaptioned interior photograph leads, followed by a left-aligned studi|Use a vertical, editorial service stack for the studio's disciplines, not unifor|Restrained modern sans; modest but confident headings, narrow body measure and g|image-led opening -> studio promise and work action -> integrated process split |Large architectural photographs alternate with quiet text blocks; a low, horizon",
           "Fine uppercase navigation and a monogram-like mark rest over a light, low-profil|An immersive warm interior opening with small centered serif copy gives way to a|Explain interior design and procurement in one considered editorial chapter, the|Small elegant serif headings and uppercase labels, with narrow calm paragraphs a|immersive opening photograph -> introductory statement band -> studio split -> s|Full-height residential interiors alternate with copy and a three-image project",
           "micro-wordmark-and-restrained-anchors|graphic-opening-field-before-practice-statement|type-led-service-index-after-project-collage|expressive-grotesk-with-editorial-accents|graphic-open-to-practice-to-asymmetric-projects-to-services-to-dark-close|asymmetric-project-collage-with-line-drawing-notes"
+        ]
+      },
+      {
+        "id": "2026-11-23-silt-line-architecture-studio-attempt-314-run-45219949012-attempt-1",
+        "launchedAt": "2026-11-23T16:48:45.986Z",
+        "stage": "attempt",
+        "reservationKey": "314-run-45219949012-attempt-1",
+        "businessName": "Silt & Line Architecture Studio",
+        "businessKind": "architecture",
+        "recipe": "general-editorial",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "architecture-bottom-anchored-serif-image-title",
+          "editorial-monument",
+          "lapa-mcalpine-sanctuary",
+          "lapa-mesh-architects-editorial",
+          "market-collage"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "text-led-editorial"
+        ],
+        "referenceIds": [
+          "lapa-mcalpine-sanctuary",
+          "lapa-mesh-architects-editorial",
+          "web-architecture-studio-peake"
+        ],
+        "routeSignatures": [
+          "A small emblem on the left and compact uppercase portfolio, studio, shop, news a|A full-width interior photograph carries a very large white serif studio title a|Lead with photographic discipline gateways, then explain the approach through a |Expressive high-contrast serif display and section titles paired with small, mea|room photograph and oversized title -> cream craft statement -> three-image disc|Immersive furnished-room photographs, three adjacent feature images, a maker por",
+          "micro-wordmark-and-restrained-anchors|graphic-opening-field-before-practice-statement|type-led-service-index-after-project-collage|expressive-grotesk-with-editorial-accents|graphic-open-to-practice-to-asymmetric-projects-to-services-to-dark-close|asymmetric-project-collage-with-line-drawing-notes",
+          "minimal-corner-menu|full-bleed-image-with-oversized-wordmark|vertical-serif-project-and-service-index|high-contrast-editorial-serif|architectural-image-to-film-frame-to-vertical-index-to-dark-footer|architectural-texture-and-cinematic-presentation-frame"
         ]
       }
     ]
