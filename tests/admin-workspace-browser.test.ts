@@ -3395,7 +3395,18 @@ it("renders model calls, actions, usage and inspectable evidence in a dedicated 
     );
     const activity = inspector.locator(".admin-activity");
     await visible(activity);
-    await visible(inspector.getByText("Stage timeline"));
+    const viewTimelineBtn = inspector.getByRole("button", {
+      name: /View timeline/u,
+    });
+    await visible(viewTimelineBtn);
+    await viewTimelineBtn.click();
+    const timelineDrawer = inspector.locator("#attempt-stage-timeline-drawer");
+    await visible(timelineDrawer);
+    await visible(timelineDrawer.getByText("Stage timeline"));
+    await timelineDrawer
+      .getByRole("button", { name: "Close stage timeline" })
+      .click();
+    await expect.poll(() => timelineDrawer.count()).toBe(0);
     await expect
       .poll(() => activity.locator(".admin-activity__entry").count())
       .toBeGreaterThanOrEqual(4);
@@ -3687,8 +3698,11 @@ it("renders chat-style Agent runs with collapsible thinking traces, structured J
       ),
     );
 
-    // Locked future prompt composer is present and disabled for recorded runs.
-    const composer = activity.locator(".admin-chat__composer");
+    // Locked future prompt composer is anchored to the bottom of the drawer,
+    // with the "View timeline" trigger directly beneath it.
+    const dock = activity.locator(".admin-chat__dock");
+    await visible(dock);
+    const composer = dock.locator(".admin-chat__composer");
     await visible(composer);
     await visible(composer.getByText("Read-only run trace"));
     const input = composer.locator("textarea");
@@ -3696,18 +3710,58 @@ it("renders chat-style Agent runs with collapsible thinking traces, structured J
     const sendBtn = composer.locator(".admin-chat__composer-send");
     expect(await sendBtn.isDisabled()).toBe(true);
 
+    const viewTimeline = dock.getByRole("button", { name: /View timeline/u });
+    await visible(viewTimeline);
+    const [inspectorBox, dockBox, composerBox, triggerBox] = await Promise.all([
+      inspector.boundingBox(),
+      dock.boundingBox(),
+      composer.boundingBox(),
+      viewTimeline.boundingBox(),
+    ]);
+    expect(inspectorBox).not.toBeNull();
+    expect(dockBox).not.toBeNull();
+    expect(composerBox).not.toBeNull();
+    expect(triggerBox).not.toBeNull();
+    expect(
+      Math.abs(
+        dockBox!.y + dockBox!.height - (inspectorBox!.y + inspectorBox!.height),
+      ),
+    ).toBeLessThanOrEqual(2);
+    expect(triggerBox!.y).toBeGreaterThanOrEqual(
+      composerBox!.y + composerBox!.height - 1,
+    );
+
     if (process.env.ADMIN_DESIGN_CAPTURE_DIR) {
-      await page.setViewportSize({ width: 1512, height: 1080 });
+      await page.setViewportSize({ width: 1512, height: 960 });
       await page.waitForTimeout(250);
       await page.screenshot({
-        path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-agent-runs-chat-full-1512.png`,
-      });
-      await composer.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(200);
-      await page.screenshot({
-        path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-agent-runs-composer-1512.png`,
+        path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-agent-runs-anchored-1512.png`,
       });
     }
+
+    // Opening "View timeline" reveals the compact vertical Stage timeline drawer
+    // and Escape dismisses only the timeline drawer without closing the inspector.
+    await viewTimeline.click();
+    const timelineDrawer = inspector.locator("#attempt-stage-timeline-drawer");
+    await visible(timelineDrawer);
+    await visible(timelineDrawer.getByText("Stage timeline"));
+    const panelBox = await timelineDrawer
+      .locator(".admin-timeline-drawer__panel")
+      .boundingBox();
+    expect(panelBox).not.toBeNull();
+    expect(panelBox!.width).toBeLessThanOrEqual(380);
+
+    if (process.env.ADMIN_DESIGN_CAPTURE_DIR) {
+      await page.waitForTimeout(260);
+      await page.screenshot({
+        path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-agent-runs-timeline-drawer-1512.png`,
+      });
+    }
+
+    await page.keyboard.press("Escape");
+    await expect.poll(() => timelineDrawer.count()).toBe(0);
+    await visible(inspector);
+    await focused(viewTimeline);
 
     autoErrors(errors);
   } finally {

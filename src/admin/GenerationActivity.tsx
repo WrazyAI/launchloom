@@ -1,4 +1,11 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type {
   GenerationActivityCoverageEntry,
   StoredTraceEvent,
@@ -1055,12 +1062,16 @@ export function GenerationActivity({
   active,
   enabled,
   threaded = false,
+  topBanner,
+  dockFooter,
 }: {
   api: AdminApi;
   identity: TraceIdentity;
   active: boolean;
   enabled: boolean;
   threaded?: boolean;
+  topBanner?: ReactNode;
+  dockFooter?: ReactNode;
 }) {
   const activityIdentity = useMemo(
     () => ({ namespace: identity.namespace, attemptId: identity.attemptId }),
@@ -1188,12 +1199,9 @@ export function GenerationActivity({
             ? "Waiting for the first activity event..."
             : "The run ended without further activity events.";
 
-  return (
-    <section
-      className={`admin-activity${threaded ? " admin-activity--thread" : ""}`}
-      aria-labelledby="generation-activity-title"
-      data-activity-connection={connection}
-    >
+  const threadMainContent = (
+    <>
+      {topBanner}
       <header className="admin-activity__head">
         <div>
           {threaded ? (
@@ -1445,8 +1453,6 @@ export function GenerationActivity({
             ) : null}
           </div>
 
-          {threaded ? <LockedAgentComposer /> : null}
-
           <footer className="admin-activity__foot">
             <div className="admin-activity__foot-left">
               {hasOlder ? (
@@ -1482,12 +1488,32 @@ export function GenerationActivity({
           </footer>
         </>
       )}
+    </>
+  );
+
+  return (
+    <section
+      className={`admin-activity${threaded ? " admin-activity--thread" : ""}`}
+      aria-labelledby="generation-activity-title"
+      data-activity-connection={connection}
+    >
       {threaded ? (
-        <p className="admin-activity__note">
-          Only recorded actions and visible output are shown. Private reasoning
-          is not recorded.
-        </p>
-      ) : null}
+        <>
+          <div className="admin-chat__scroll">{threadMainContent}</div>
+          <div className="admin-chat__dock">
+            <LockedAgentComposer />
+            <div className="admin-chat__dock-bar">
+              <p className="admin-chat__dock-note">
+                Only recorded actions and visible output are shown. Private
+                reasoning is not recorded.
+              </p>
+              {dockFooter}
+            </div>
+          </div>
+        </>
+      ) : (
+        threadMainContent
+      )}
     </section>
   );
 }

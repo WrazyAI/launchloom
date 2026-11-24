@@ -130,6 +130,7 @@ function EventTimeline({
   loading,
   error,
   onLoadMore,
+  drawer = false,
 }: {
   events: AttemptEventRecord[];
   nextCursor: string | null;
@@ -137,21 +138,44 @@ function EventTimeline({
   loading: boolean;
   error: string | null;
   onLoadMore: () => void;
+  drawer?: boolean;
 }) {
   return (
     <section
-      className="admin-inspector__block"
-      aria-labelledby="attempt-events-title"
+      className={
+        drawer
+          ? "admin-inspector__block admin-inspector__block--drawer"
+          : "admin-inspector__block"
+      }
+      aria-labelledby={drawer ? undefined : "attempt-events-title"}
     >
-      <div className="admin-inspector__block-head">
-        <h3 id="attempt-events-title">Stage timeline</h3>
-        <span className="admin-muted">{eventCount} events</span>
-      </div>
+      {drawer ? null : (
+        <div className="admin-inspector__block-head">
+          <h3 id="attempt-events-title">Stage timeline</h3>
+          <span className="admin-muted">{eventCount} events</span>
+        </div>
+      )}
       {events.length ? (
-        <ol className="admin-timeline">
+        <ol
+          className={
+            drawer ? "admin-timeline admin-timeline--drawer" : "admin-timeline"
+          }
+        >
           {events.map((event) => {
+            const statusTone =
+              event.status === "completed" || event.status === "succeeded"
+                ? "success"
+                : event.status === "failed" || event.status === "error"
+                  ? "failure"
+                  : event.status === "running" || event.status === "in_progress"
+                    ? "running"
+                    : "neutral";
             return (
-              <li key={event.eventKey} className="admin-timeline__item">
+              <li
+                key={event.eventKey}
+                className="admin-timeline__item"
+                data-status-tone={statusTone}
+              >
                 <div className="admin-timeline__head">
                   <span className="admin-timeline__stage">
                     {activityStageLabel(event.stage)}
@@ -239,7 +263,13 @@ export function AttemptInspector({
 }: AttemptInspectorProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const timelineTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const timelineCloseRef = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
+  const [timelineState, setTimelineState] = useState<{
+    attemptId: string;
+    open: boolean;
+  }>({ attemptId: "", open: false });
   const [selection, setSelection] = useState<{
     attemptId: string;
     view: InspectorView;
@@ -250,6 +280,24 @@ export function AttemptInspector({
     (selection.view !== "activity" || activityEnabled)
       ? selection.view
       : "overview";
+  const timelineOpen =
+    view === "activity" &&
+    Boolean(attempt?.attemptId) &&
+    timelineState.attemptId === attempt?.attemptId &&
+    timelineState.open;
+
+  function openTimeline() {
+    if (!attempt) return;
+    setTimelineState({ attemptId: attempt.attemptId, open: true });
+    window.requestAnimationFrame(() => timelineCloseRef.current?.focus());
+  }
+
+  function closeTimeline(restoreFocus = true) {
+    setTimelineState((current) => ({ ...current, open: false }));
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => timelineTriggerRef.current?.focus());
+    }
+  }
   const focused = attempt ? !isSiteGeneration(attempt) : false;
   const attemptSiteUrl = attempt ? safeSiteUrl(attempt.siteUrl) : null;
   const previewUrl =
@@ -300,6 +348,29 @@ export function AttemptInspector({
     null,
   );
 
+  const statusNotices = (
+    <>
+      {attempt?.stale ? (
+        <p className="admin-notice admin-notice--attention" role="status">
+          This attempt is marked stale. Its recorded outcome may be incomplete.
+        </p>
+      ) : null}
+      {attempt?.deliveryStatus === "diagnostic" ? (
+        <p className="admin-notice admin-notice--attention">
+          Diagnostic delivery is for review only, not production approval.
+        </p>
+      ) : null}
+      {attempt?.deliveryStatus === "attention" ? (
+        <p className="admin-notice admin-notice--attention">
+          Delivery has open review warnings. The preview is usable, but the
+          listed findings are unresolved.
+        </p>
+      ) : null}
+    </>
+  );
+
+  const isActivityView = Boolean(attempt && view === "activity");
+
   const body = (
     <>
       <div className="admin-sheet__header">
@@ -345,6 +416,9 @@ export function AttemptInspector({
               aria-controls="attempt-inspector-content"
               onClick={() => {
                 if (view === option.id) return;
+                setTimelineState((current) =>
+                  current.open ? { ...current, open: false } : current,
+                );
                 setSelection({ attemptId: attempt.attemptId, view: option.id });
                 if (scrollRef.current) scrollRef.current.scrollTop = 0;
               }}
@@ -357,7 +431,7 @@ export function AttemptInspector({
       ) : null}
 
       <div
-        className="admin-sheet__body"
+        className={`admin-sheet__body${isActivityView ? " admin-sheet__body--activity" : ""}`}
         id="attempt-inspector-content"
         ref={scrollRef}
       >
@@ -376,23 +450,7 @@ export function AttemptInspector({
           </div>
         ) : null}
 
-        {attempt?.stale ? (
-          <p className="admin-notice admin-notice--attention" role="status">
-            This attempt is marked stale. Its recorded outcome may be
-            incomplete.
-          </p>
-        ) : null}
-        {attempt?.deliveryStatus === "diagnostic" ? (
-          <p className="admin-notice admin-notice--attention">
-            Diagnostic delivery is for review only, not production approval.
-          </p>
-        ) : null}
-        {attempt?.deliveryStatus === "attention" ? (
-          <p className="admin-notice admin-notice--attention">
-            Delivery has open review warnings. The preview is usable, but the
-            listed findings are unresolved.
-          </p>
-        ) : null}
+        {!isActivityView ? statusNotices : null}
 
         {attempt && view === "workflow" ? (
           <WorkflowRunPanel
@@ -416,15 +474,83 @@ export function AttemptInspector({
               }
               enabled={activityEnabled}
               threaded
+              topBanner={statusNotices}
+              dockFooter={
+                <button
+                  ref={timelineTriggerRef}
+                  type="button"
+                  className="admin-timeline-trigger"
+                  aria-expanded={timelineOpen}
+                  aria-controls="attempt-stage-timeline-drawer"
+                  onClick={() =>
+                    timelineOpen ? closeTimeline(false) : openTimeline()
+                  }
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="6" cy="6" r="2" />
+                    <circle cx="6" cy="12" r="2" />
+                    <circle cx="6" cy="18" r="2" />
+                    <path d="M6 8v2M6 14v2M11 6h8M11 12h8M11 18h6" />
+                  </svg>
+                  <span>View timeline</span>
+                  <span className="admin-timeline-trigger__count">
+                    {eventCount}
+                  </span>
+                </button>
+              }
             />
-            <EventTimeline
-              events={events}
-              nextCursor={eventsNextCursor}
-              eventCount={eventCount}
-              loading={eventsLoading}
-              error={eventsError}
-              onLoadMore={onLoadMoreEvents}
-            />
+            {timelineOpen ? (
+              <div
+                id="attempt-stage-timeline-drawer"
+                className="admin-timeline-drawer"
+                role="region"
+                aria-labelledby="attempt-timeline-drawer-title"
+              >
+                <div
+                  className="admin-timeline-drawer__scrim"
+                  aria-hidden="true"
+                  onClick={() => closeTimeline(true)}
+                />
+                <aside className="admin-timeline-drawer__panel">
+                  <header className="admin-timeline-drawer__head">
+                    <div className="admin-timeline-drawer__title-group">
+                      <h3 id="attempt-timeline-drawer-title">Stage timeline</h3>
+                      <span className="admin-timeline-drawer__count">
+                        {eventCount} {eventCount === 1 ? "event" : "events"}
+                      </span>
+                    </div>
+                    <button
+                      ref={timelineCloseRef}
+                      type="button"
+                      className="admin-icon-button admin-timeline-drawer__close"
+                      aria-label="Close stage timeline"
+                      onClick={() => closeTimeline(true)}
+                    >
+                      <AdminIcon name="close" />
+                    </button>
+                  </header>
+                  <div className="admin-timeline-drawer__body">
+                    <EventTimeline
+                      events={events}
+                      nextCursor={eventsNextCursor}
+                      eventCount={eventCount}
+                      loading={eventsLoading}
+                      error={eventsError}
+                      onLoadMore={onLoadMoreEvents}
+                      drawer
+                    />
+                  </div>
+                </aside>
+              </div>
+            ) : null}
           </>
         ) : null}
 
@@ -737,6 +863,10 @@ export function AttemptInspector({
       aria-busy={loading || eventsLoading}
       onCancel={(event) => {
         event.preventDefault();
+        if (timelineOpen) {
+          closeTimeline(true);
+          return;
+        }
         onClose();
       }}
       onClick={(event) => {
