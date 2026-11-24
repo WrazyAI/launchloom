@@ -13,6 +13,14 @@ export const AUTHORING_STAGE_BUDGETS = Object.freeze({
 
 export const CREATIVE_REPAIR_MAX_COMPLETION_TOKENS = 48_000;
 
+export const CREATIVE_HOMEPAGE_MEDIA_LINK_CONTRACT = [
+  "HOMEPAGE MEDIA AND SERVICE LINKS",
+  'Import { CreativeImage, ServiceLink } from "@launchloom/runtime". Use these helpers for homepage image slots and service-detail links instead of writing src or href expressions.',
+  'For artwork use <CreativeImage content={content} slot="hero" alt="Plain description" className="hero-image" />. Slots are hero, secondary, tertiary, and logo. Missing assets are omitted automatically; no URL expressions or fallback to the hero are needed. Use alt="" only for decorative or redundant media.',
+  "For a service card link, use content.services.map((service, index) => <ServiceLink key={service.name} content={content} index={index}>{service.name}</ServiceLink>). The helper builds the internal URL from that approved service.",
+  "Use the entry's content parameter directly for both helpers. Pass only the demonstrated props; do not pass href, src, other URL props, or spreads. Use wrappers and classes for layout and reference markers.",
+].join("\n");
+
 export const SERVICE_PAGE_DIRECT_BINDING_CONTRACT = [
   "DIRECT SERVICE SUPPORT BINDINGS",
   "Render the three decision-support blocks as direct JSX bindings to service.support.scope, service.support.preparation, and service.support.nextStep.",

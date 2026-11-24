@@ -1082,7 +1082,7 @@ export default function Experience`,
     ).toBe(true);
     expect(
       requests.every((request) =>
-        request.rules.includes("The sealed hero image tokens may be empty"),
+        request.rules.includes("When using raw <img> markup, guard each optional image"),
       ),
     ).toBe(true);
     expect(
@@ -2503,7 +2503,7 @@ export default function Experience`,
     }
   });
 
-  it("teaches every authoring stage the validator-approved sealed service link form", async () => {
+  it("teaches every authoring stage to use sealed homepage helpers without relaxing raw image rules", async () => {
     const requests: AuthorStageRequest[] = [];
     await authorExperienceCandidates({
       site,
@@ -2519,9 +2519,8 @@ export default function Experience`,
     expect(requests.length).toBeGreaterThan(0);
     expect(
       requests.every((request) =>
-        request.rules.includes(
-          "For service-page links, the only accepted form is {content.services.map((service) => <a href={`/services/${service.slug}/`}>...</a>)} inside a direct map over a sealed service list. Do not search for a selected service, bind its slug into a computed href, concatenate arbitrary path parts, or derive href values from unsealed input.",
-        ),
+        request.rules.includes('<CreativeImage content={content} slot="hero"') &&
+        request.rules.includes("<ServiceLink key={service.name} content={content} index={index}>"),
       ),
     ).toBe(true);
     expect(
@@ -3754,6 +3753,17 @@ export default function Experience`,
       safeStage({ ...request, stage: "service" }).content || "",
     );
     expect(() => validateServicePage(valid, route, {})).not.toThrow();
+
+    const sealedHelpers = valid
+      .replace(
+        'import { LeadForm } from "@launchloom/runtime";',
+        'import { CreativeImage, LeadForm, ServiceLink } from "@launchloom/runtime";',
+      )
+      .replace(
+        "</main>",
+        '<CreativeImage content={content} slot="hero" alt="Service context" /><ServiceLink content={content} index={0} /></main>',
+      );
+    expect(() => validateServicePage(sealedHelpers, route, {})).not.toThrow();
 
     const missingRuntime = valid.replace(
       'import { LeadForm } from "@launchloom/runtime";\n',

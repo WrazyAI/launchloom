@@ -48,9 +48,14 @@ it.each([
           ? { renderer: "creative-candidate", candidateId: "selected", packId: "stage-index" }
           : { renderer: "pack", packId: "stage-index" },
     };
-    if (renderer === "creative")
+    if (renderer === "creative") {
+      config.images.hero = "/images/widget-test-sash.svg";
+      await fs.mkdir(path.join(root, "public/images"), { recursive: true });
+      await fs.writeFile(path.join(root, "public/images/widget-test-sash.svg"),
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="#314b40"/></svg>');
       await fs.writeFile(path.join(root, "src/generated-experiences/selected/Experience.jsx"),
-        'import { LocationMap } from "../../lib/creative-runtime";\nexport default function Experience({ content }) { return <main><h1>{content.hero.heading}</h1><LocationMap content={content} /></main>; }');
+        'import { LocationMap, CreativeImage, ServiceLink } from "@launchloom/runtime";\nexport default function Experience({ content }) { return <main><h1>{content.hero.heading}</h1><CreativeImage content={content} slot="hero" alt="Synthetic sash illustration" /><ServiceLink content={content} index={0} /><LocationMap content={content} /></main>; }');
+    }
     await fs.writeFile(configPath, JSON.stringify(config));
     execFileSync(process.execPath, [
       path.join(repository, "node_modules/astro/bin/astro.mjs"), "build",
@@ -61,8 +66,9 @@ it.each([
     server = http.createServer(async (req, res) => {
       const name = new URL(req.url || "/", "http://localhost").pathname;
       try {
-        const body = await fs.readFile(path.join(root, "dist", name === "/" ? "index.html" : name));
-        res.setHeader("content-type", name.endsWith(".js") ? "text/javascript" : name.endsWith(".css") ? "text/css" : "text/html");
+        const file = name.endsWith("/") ? `${name}index.html` : name;
+        const body = await fs.readFile(path.join(root, "dist", file));
+        res.setHeader("content-type", name.endsWith(".js") ? "text/javascript" : name.endsWith(".css") ? "text/css" : name.endsWith(".svg") ? "image/svg+xml" : "text/html");
         res.end(body);
       } catch {
         res.writeHead(404).end();
@@ -77,6 +83,15 @@ it.each([
         await page.route("**/*", (route) => route.request().url().startsWith(`http://127.0.0.1:${port}/`)
           ? route.continue() : route.fulfill({ body: "" }));
         await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: "load" });
+        if (renderer === "creative") {
+          const image = page.getByRole("img", { name: "Synthetic sash illustration" });
+          await image.evaluate(async (node: HTMLImageElement) => node.decode(), undefined, { timeout: 3000 });
+          const service = config.services[0];
+          expect(await page.locator("main").getByRole("link", { name: service.name, exact: true })
+            .getAttribute("href", { timeout: 3000 }))
+            .toBe(`/services/${service.slug}/`);
+          expect((await page.request.get(`http://127.0.0.1:${port}/services/${service.slug}/`)).ok()).toBe(true);
+        }
         const map = page.locator("#location");
         expect(await map.count()).toBe(kind === "none" ? 0 : 1);
         if (renderer === "pack")

@@ -1,6 +1,7 @@
 import ts from "typescript";
 import postcss from "postcss";
 import { validateReferenceDna } from "./reference-dna.mjs";
+import { creativeImageSlots } from "../templates/client-site/src/lib/creative-image-policy.mjs";
 
 const slug = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, "");
 
@@ -101,12 +102,14 @@ function outputContentPaths(source) {
   const entryNames = new Set(["Experience"]);
   for (const statement of file.statements) {
     if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier) || statement.moduleSpecifier.text !== "@launchloom/runtime") continue;
-    const bindings = statement.importClause?.namedBindings;
+    const clause = statement.importClause;
+    if (clause?.name) runtimeNamespaces.add(clause.name.text);
+    const bindings = clause?.namedBindings;
     if (bindings && ts.isNamespaceImport(bindings)) runtimeNamespaces.add(bindings.name.text);
     else if (bindings && ts.isNamedImports(bindings))
       for (const specifier of bindings.elements) {
         const importedName = specifier.propertyName?.text || specifier.name.text;
-        if (importedName === "FAQList") runtimeComponentNames.set(specifier.name.text, importedName);
+        if (["FAQList", "CreativeImage"].includes(importedName)) runtimeComponentNames.set(specifier.name.text, importedName);
       }
   }
   for (const statement of file.statements)
@@ -204,7 +207,7 @@ function outputContentPaths(source) {
     const tag = opening?.tagName;
     if (tag && ts.isIdentifier(tag)) return runtimeComponentNames.get(tag.text) || "";
     if (tag && ts.isPropertyAccessExpression(tag) && ts.isIdentifier(tag.expression) && ts.isIdentifier(tag.name) &&
-      runtimeNamespaces.has(tag.expression.text) && tag.name.text === "FAQList") return "FAQList";
+      runtimeNamespaces.has(tag.expression.text) && ["FAQList", "CreativeImage"].includes(tag.name.text)) return tag.name.text;
     return "";
   };
   const hasDirectSealedContentProp = (node) => {
@@ -258,6 +261,14 @@ function outputContentPaths(source) {
   };
   const componentPaths = (node, parentOverrides) => {
     if (runtimeHelperName(node) === "FAQList" && hasDirectSealedContentProp(node) && isInsideFaqSection(node)) return ["content.faqs"];
+    if (runtimeHelperName(node) === "CreativeImage" && hasDirectSealedContentProp(node)) {
+      const opening = node.openingElement || node;
+      const slot = opening.attributes.properties.find((attribute) =>
+        ts.isJsxAttribute(attribute) && ts.isIdentifier(attribute.name) && attribute.name.text === "slot"
+      )?.initializer;
+      if (slot && ts.isStringLiteral(slot) && Object.hasOwn(creativeImageSlots, slot.text))
+        return [`content.${creativeImageSlots[slot.text].join(".")}`];
+    }
     const name = componentName(node.openingElement || node);
     const definition = componentDefinitions.get(name);
     if (!definition || activeComponents.has(definition)) return [];

@@ -35,6 +35,7 @@ export function revisionTemplatePaths(config) {
     "lib/font-catalog.d.mts",
     "components/PageBriefSections.tsx",
     "lib/creative-runtime.tsx",
+    "lib/creative-image-policy.mjs",
     "styles/site.css",
     "components/ServiceCandidateHost.tsx",
     "components/LocationCandidateHost.tsx",

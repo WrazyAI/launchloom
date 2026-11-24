@@ -20,6 +20,7 @@ import {
   CLIENT_TYPOGRAPHY_CONTRACT,
   CREATIVE_REPAIR_MAX_COMPLETION_TOKENS,
   EARLY_CONVERSION_OUTPUT_CONTRACT,
+  CREATIVE_HOMEPAGE_MEDIA_LINK_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
   VERIFIED_CLIENT_PERSONNEL_CONTRACT,
   appendReferencePersonnelCue,
@@ -1038,7 +1039,8 @@ ${VERIFIED_CLIENT_PERSONNEL_CONTRACT}
 ${EARLY_CONVERSION_OUTPUT_CONTRACT}
 
 TRUSTED @launchloom/runtime HELPERS
-LeadForm, FAQList, ContactLinks, LocationMap, ChatLauncher, SocialProof, resolveAsset, useReducedMotion.
+LeadForm, FAQList, ContactLinks, CreativeImage, LocationMap, ServiceLink, ChatLauncher, SocialProof, resolveAsset, useReducedMotion.
+${CREATIVE_HOMEPAGE_MEDIA_LINK_CONTRACT}
 Content-bound helper contract: FAQList, ContactLinks, LocationMap, and SocialProof must always receive the sealed object exactly as content={content}. Use <FAQList content={content} />, <ContactLinks content={content} />, <LocationMap content={content} />, and <SocialProof content={content} runtime={runtime} />. SocialProof is the only supported way for candidate code to present signed live Google reviews; it falls back to verified proof points.
 Use these helpers instead of inventing network calls or duplicating platform behavior. SocialProof is the only supported way for candidate code to present signed live Google reviews; it falls back to verified proof points.`,
     },
