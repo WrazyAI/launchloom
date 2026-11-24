@@ -3866,7 +3866,7 @@ function authorRules() {
     HERO_MEDIA_FOCUS_CONTRACT,
     REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
     VERIFIED_CLIENT_PERSONNEL_CONTRACT,
-    "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
+    "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, CreativeImage, LocationMap, ServiceLink, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
     "The host renders the location map and owns the #location anchor. Never add a custom element with that ID; an eligible map may be linked at #location.",
     CREATIVE_HOMEPAGE_MEDIA_LINK_CONTRACT,
     "Render exactly one meaningful H1 inside the page's single <main> landmark. The main landmark must contain the hero heading and unique page content; keep the H1 out of sibling headers or sections. Use semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
