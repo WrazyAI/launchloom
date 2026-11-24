@@ -220,11 +220,16 @@ function outputContentPaths(source) {
       ? content.initializer.expression
       : null;
     if (!expression || !ts.isIdentifier(expression) || expression.text !== "content") return false;
-    return paths(expression).some((path) =>
-      path === requiredPath ||
-      requiredPath.startsWith(`${path}.`) ||
-      path.startsWith(`${requiredPath}.`),
-    );
+    let functionOwner = null;
+    for (let ancestor = opening.parent; ancestor; ancestor = ancestor.parent) {
+      if (ts.isFunctionLike(ancestor)) {
+        functionOwner = ancestor;
+        break;
+      }
+    }
+    if (!lookup(scopes.get(expression), "content") && functionOwner && !isEntryFunction(functionOwner))
+      return false;
+    return paths(expression).some((path) => requiredPath.startsWith(`${path}.`));
   };
   const isInsideFaqSection = (node) => {
     for (let current = node?.parent; current; current = current.parent) {

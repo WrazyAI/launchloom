@@ -220,6 +220,13 @@ export default function Experience({ content }) { return <main data-mobile-recom
       motionSource: validMotion,
     });
     expect(partial.findings).toContainEqual(missingHero);
+    const freeContent = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: `import { CreativeImage as Art } from "@launchloom/runtime";\nfunction Hero() { return <Art content={content} slot="hero" alt="Window" />; }\n${validExperience.replace('<img src={content.hero.image} />', "<Hero />")}`,
+      stylesSource: validStyles,
+      motionSource: validMotion,
+    });
+    expect(freeContent.findings).toContainEqual(missingHero);
   });
 
   it("does not count FAQList as output when it is outside the semantic FAQs section", () => {
