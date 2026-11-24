@@ -210,7 +210,7 @@ function outputContentPaths(source) {
       runtimeNamespaces.has(tag.expression.text) && ["FAQList", "CreativeImage"].includes(tag.name.text)) return tag.name.text;
     return "";
   };
-  const hasDirectSealedContentProp = (node) => {
+  const hasDirectSealedContentProp = (node, requiredPath) => {
     const opening = node?.openingElement || node;
     if (!opening?.attributes?.properties) return false;
     const content = opening.attributes.properties.find((attribute) =>
@@ -219,8 +219,12 @@ function outputContentPaths(source) {
     const expression = content?.initializer && ts.isJsxExpression(content.initializer)
       ? content.initializer.expression
       : null;
-    return Boolean(expression && ts.isIdentifier(expression) && expression.text === "content" &&
-      paths(expression).some((path) => path === "content" || path.startsWith("content.")));
+    if (!expression || !ts.isIdentifier(expression) || expression.text !== "content") return false;
+    return paths(expression).some((path) =>
+      path === requiredPath ||
+      requiredPath.startsWith(`${path}.`) ||
+      path.startsWith(`${requiredPath}.`),
+    );
   };
   const isInsideFaqSection = (node) => {
     for (let current = node?.parent; current; current = current.parent) {
@@ -263,15 +267,18 @@ function outputContentPaths(source) {
     return bindings;
   };
   const componentPaths = (node, parentOverrides) => {
-    if (runtimeHelperName(node) === "FAQList" && hasDirectSealedContentProp(node) && isInsideFaqSection(node)) return ["content.faqs"];
-    if (runtimeHelperName(node) === "CreativeImage" && hasDirectSealedContentProp(node)) {
+    const helper = runtimeHelperName(node);
+    if (helper === "CreativeImage") {
       const opening = node.openingElement || node;
       const slot = opening.attributes.properties.find((attribute) =>
         ts.isJsxAttribute(attribute) && ts.isIdentifier(attribute.name) && attribute.name.text === "slot"
       )?.initializer;
-      if (slot && ts.isStringLiteral(slot) && Object.hasOwn(creativeImageSlots, slot.text))
-        return [`content.${creativeImageSlots[slot.text].join(".")}`];
+      if (slot && ts.isStringLiteral(slot) && Object.hasOwn(creativeImageSlots, slot.text)) {
+        const path = `content.${creativeImageSlots[slot.text].join(".")}`;
+        if (hasDirectSealedContentProp(node, path)) return [path];
+      }
     }
+    if (helper === "FAQList" && hasDirectSealedContentProp(node, "content.faqs") && isInsideFaqSection(node)) return ["content.faqs"];
     const name = componentName(node.openingElement || node);
     const definition = componentDefinitions.get(name);
     if (!definition || activeComponents.has(definition)) return [];

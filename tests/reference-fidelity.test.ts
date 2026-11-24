@@ -213,6 +213,13 @@ export default function Experience({ content }) { return <main data-mobile-recom
       motionSource: validMotion,
     });
     expect(sealed.findings).not.toContainEqual(missingHero);
+    const partial = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: source.replace("<Hero />", "<Hero content={content.services} />"),
+      stylesSource: validStyles,
+      motionSource: validMotion,
+    });
+    expect(partial.findings).toContainEqual(missingHero);
   });
 
   it("does not count FAQList as output when it is outside the semantic FAQs section", () => {
