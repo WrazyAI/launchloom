@@ -2,6 +2,9 @@ export type AdminIconName =
   | "operations"
   | "history"
   | "generations"
+  | "sites"
+  | "ledger"
+  | "gallery"
   | "clients"
   | "invitations"
   | "team"
@@ -50,6 +53,28 @@ export function AdminIcon({
         <svg {...common} {...STROKE}>
           <path d="M12 3.5 21 8l-9 4.5L3 8l9-4.5Z" />
           <path d="m3 12 9 4.5 9-4.5M3 16l9 4.5 9-4.5" />
+        </svg>
+      );
+    case "sites":
+      return (
+        <svg {...common} {...STROKE}>
+          <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+          <path d="M3.5 9h17M9 9v10.5" />
+        </svg>
+      );
+    case "ledger":
+      return (
+        <svg {...common} {...STROKE}>
+          <path d="M4 7h16M4 12h16M4 17h11" />
+        </svg>
+      );
+    case "gallery":
+      return (
+        <svg {...common} {...STROKE}>
+          <rect x="3.5" y="4" width="7" height="7" rx="1.2" />
+          <rect x="13.5" y="4" width="7" height="7" rx="1.2" />
+          <rect x="3.5" y="13.5" width="7" height="6.5" rx="1.2" />
+          <rect x="13.5" y="13.5" width="7" height="6.5" rx="1.2" />
         </svg>
       );
     case "clients":

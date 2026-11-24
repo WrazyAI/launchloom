@@ -2150,11 +2150,11 @@ describe("real admin workspace browser behavior", () => {
         return {
           background: style.backgroundColor,
           color: style.color,
-          border: style.borderTopColor,
+          shadow: style.boxShadow,
         };
       });
-      expect(tone.background).toBe("rgb(217, 233, 223)");
-      expect(relativeLuminance(tone.background)).toBeGreaterThan(0.5);
+      expect(tone.background).toBe("rgb(27, 59, 50)");
+      expect(tone.shadow).toContain("rgb(217, 240, 107)");
       expect(contrastRatio(tone.color, tone.background)).toBeGreaterThanOrEqual(
         4.5,
       );
@@ -2218,6 +2218,32 @@ describe("real admin workspace browser behavior", () => {
         /^https:\/\/business-\d+\.pages\.dev\/$/u,
       );
       expect(await viewSite.getAttribute("target")).toBe("_blank");
+      expect(
+        await viewSite.evaluate(
+          (element) => getComputedStyle(element).textDecorationLine,
+        ),
+      ).toBe("none");
+      const proofFrame = page.locator(".admin-site-proof__frame").first();
+      await visible(proofFrame);
+      const proofBox = await proofFrame.boundingBox();
+      expect(proofBox).not.toBeNull();
+      expect(proofBox!.width).toBeGreaterThanOrEqual(200);
+      expect(proofBox!.height).toBeGreaterThanOrEqual(120);
+      const readyPill = page.locator(".admin-site-status--ready").first();
+      if (await readyPill.count()) {
+        await visible(readyPill);
+        expect(
+          await readyPill.evaluate(
+            (element) => getComputedStyle(element).color,
+          ),
+        ).toBe("rgb(18, 88, 97)");
+      }
+      const proofButton = page.locator(".admin-site-proof").first();
+      await proofButton.click();
+      await visible(page.locator("#attempt-inspector"));
+      await page.keyboard.press("Escape");
+      await expect.poll(() => page.getByRole("dialog").count()).toBe(0);
+      await focused(proofButton);
       const openClient = page
         .getByRole("button", { name: "Open client" })
         .first();
@@ -3369,7 +3395,18 @@ it("renders model calls, actions, usage and inspectable evidence in a dedicated 
     );
     const activity = inspector.locator(".admin-activity");
     await visible(activity);
-    await visible(inspector.getByText("Stage timeline"));
+    const viewTimelineBtn = inspector.getByRole("button", {
+      name: /View timeline/u,
+    });
+    await visible(viewTimelineBtn);
+    await viewTimelineBtn.click();
+    const timelineDrawer = inspector.locator("#attempt-stage-timeline-drawer");
+    await visible(timelineDrawer);
+    await visible(timelineDrawer.getByText("Stage timeline"));
+    await timelineDrawer
+      .getByRole("button", { name: "Close stage timeline" })
+      .click();
+    await expect.poll(() => timelineDrawer.count()).toBe(0);
     await expect
       .poll(() => activity.locator(".admin-activity__entry").count())
       .toBeGreaterThanOrEqual(4);
@@ -3386,9 +3423,11 @@ it("renders model calls, actions, usage and inspectable evidence in a dedicated 
         activity.locator(".admin-activity__coverage summary").textContent(),
       )
       .toContain("Coverage: 1 instrumented");
-    await visible(
-      activity.getByText(/Token totals cover completed calls only/u),
-    );
+    await expect
+      .poll(() =>
+        activity.locator(".admin-activity__summary").getAttribute("title"),
+      )
+      .toContain("Token totals cover completed calls only");
 
     await activity.getByRole("button", { name: /Model request/u }).click();
     const evidence = activity.locator(
@@ -3661,14 +3700,117 @@ it("renders chat-style Agent runs with collapsible thinking traces, structured J
       ),
     );
 
-    // Locked future prompt composer is present and disabled for recorded runs.
-    const composer = activity.locator(".admin-chat__composer");
+    // Filters, inline stage tags, and the Collapse/Expand thinking button
+    // share one single horizontal toolbar row on desktop.
+    const filtersGroup = activity.getByRole("group", {
+      name: "Activity filters",
+    });
+    const thinkingToolbarBtn = activity.locator(".admin-chat__thinking-btn");
+    await visible(thinkingToolbarBtn);
+    expect(
+      await thinkingToolbarBtn.evaluate(
+        (element) => getComputedStyle(element).textDecorationLine,
+      ),
+    ).toBe("none");
+    const [filtersBox, stageBox, thinkingBtnBox] = await Promise.all([
+      filtersGroup.boundingBox(),
+      stageBtn.boundingBox(),
+      thinkingToolbarBtn.boundingBox(),
+    ]);
+    expect(filtersBox).not.toBeNull();
+    expect(stageBox).not.toBeNull();
+    expect(thinkingBtnBox).not.toBeNull();
+    const filtersMid = filtersBox!.y + filtersBox!.height / 2;
+    const stageMid = stageBox!.y + stageBox!.height / 2;
+    const thinkingMid = thinkingBtnBox!.y + thinkingBtnBox!.height / 2;
+    expect(Math.abs(filtersMid - stageMid)).toBeLessThanOrEqual(6);
+    expect(Math.abs(filtersMid - thinkingMid)).toBeLessThanOrEqual(6);
+
+    // Locked future prompt composer is anchored to the bottom of the drawer,
+    // with the "View timeline" trigger directly beneath it.
+    const dock = activity.locator(".admin-chat__dock");
+    await visible(dock);
+    const composer = dock.locator(".admin-chat__composer");
     await visible(composer);
     await visible(composer.getByText("Read-only run trace"));
     const input = composer.locator("textarea");
     expect(await input.isDisabled()).toBe(true);
     const sendBtn = composer.locator(".admin-chat__composer-send");
     expect(await sendBtn.isDisabled()).toBe(true);
+
+    const viewTimeline = dock.getByRole("button", { name: /View timeline/u });
+    await visible(viewTimeline);
+    const [inspectorBox, dockBox, composerBox, triggerBox] = await Promise.all([
+      inspector.boundingBox(),
+      dock.boundingBox(),
+      composer.boundingBox(),
+      viewTimeline.boundingBox(),
+    ]);
+    expect(inspectorBox).not.toBeNull();
+    expect(dockBox).not.toBeNull();
+    expect(composerBox).not.toBeNull();
+    expect(triggerBox).not.toBeNull();
+    expect(
+      Math.abs(
+        dockBox!.y + dockBox!.height - (inspectorBox!.y + inspectorBox!.height),
+      ),
+    ).toBeLessThanOrEqual(2);
+    expect(triggerBox!.y).toBeGreaterThanOrEqual(
+      composerBox!.y + composerBox!.height - 1,
+    );
+
+    // Scrolling up shows the icon-only "Jump to latest" button anchored above
+    // the input bar; clicking it returns to the bottom and hides the button.
+    const scroller = activity.locator(".admin-chat__scroll");
+    await scroller.evaluate((element) => {
+      element.scrollTop = 0;
+      element.dispatchEvent(new Event("scroll"));
+    });
+    const jumpBtn = dock.getByRole("button", { name: "Jump to latest" });
+    await visible(jumpBtn);
+    expect((await jumpBtn.textContent())?.trim() || "").toBe("");
+    const jumpBox = await jumpBtn.boundingBox();
+    expect(jumpBox).not.toBeNull();
+    expect(jumpBox!.y + jumpBox!.height).toBeLessThanOrEqual(dockBox!.y + 1);
+
+    if (process.env.ADMIN_DESIGN_CAPTURE_DIR) {
+      await page.setViewportSize({ width: 1512, height: 960 });
+      await scroller.evaluate((element) => {
+        element.scrollTop = 120;
+        element.dispatchEvent(new Event("scroll"));
+      });
+      await page.waitForTimeout(250);
+      await page.screenshot({
+        path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-agent-runs-anchored-1512.png`,
+      });
+    }
+
+    await jumpBtn.click();
+    await expect.poll(() => jumpBtn.count()).toBe(0);
+
+    // Opening "View timeline" reveals the compact vertical Stage timeline drawer
+    // and Escape dismisses only the timeline drawer without closing the inspector.
+    await viewTimeline.click();
+    const timelineDrawer = inspector.locator("#attempt-stage-timeline-drawer");
+    await visible(timelineDrawer);
+    await visible(timelineDrawer.getByText("Stage timeline"));
+    const panelBox = await timelineDrawer
+      .locator(".admin-timeline-drawer__panel")
+      .boundingBox();
+    expect(panelBox).not.toBeNull();
+    expect(panelBox!.width).toBeLessThanOrEqual(380);
+
+    if (process.env.ADMIN_DESIGN_CAPTURE_DIR) {
+      await page.waitForTimeout(260);
+      await page.screenshot({
+        path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-agent-runs-timeline-drawer-1512.png`,
+      });
+    }
+
+    await page.keyboard.press("Escape");
+    await expect.poll(() => timelineDrawer.count()).toBe(0);
+    await visible(inspector);
+    await focused(viewTimeline);
 
     autoErrors(errors);
   } finally {
@@ -3871,6 +4013,11 @@ it.each([1512, 390])(
         await drawer.screenshot({
           path: `/tmp/opencode/run-inspector-${slug}-${width}.png`,
         });
+        if (process.env.ADMIN_DESIGN_CAPTURE_DIR && slug === "agent") {
+          await page.screenshot({
+            path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-sites-agent-runs-${width}.png`,
+          });
+        }
       }
       await drawer
         .getByRole("button", { name: "Overview", exact: true })

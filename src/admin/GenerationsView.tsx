@@ -610,19 +610,16 @@ export function GenerationsView({
       data-route="generations"
       data-record-source="legacy"
     >
-      <div
-        className="admin-overview"
-        aria-label="Workspace summary"
-        data-attention-summary
-        data-attention-total={
-          attentionCount === null ? "loading" : String(attentionCount)
-        }
-      >
-        <div className="admin-overview__metric">
-          <span className="admin-overview__icon">
-            <AdminIcon name="clients" />
-          </span>
-          <span>
+      <div className="admin-overview-bar">
+        <div
+          className="admin-overview"
+          aria-label="Workspace summary"
+          data-attention-summary
+          data-attention-total={
+            attentionCount === null ? "loading" : String(attentionCount)
+          }
+        >
+          <div className="admin-overview__metric">
             <span className="admin-overview__label">
               {viewMode === "sites" ? "Sites in view" : "Attempts in view"}
             </span>
@@ -633,57 +630,44 @@ export function GenerationsView({
                   ? siteCount
                   : attempts.length}
             </strong>
-            <span className="admin-overview__hint">
-              {viewMode === "sites"
-                ? "Grouped by client business"
-                : "On this page of results"}
-            </span>
-          </span>
-        </div>
-        <div className="admin-overview__metric admin-overview__metric--attention">
-          <span className="admin-overview__icon">
-            <AdminIcon name="history" />
-          </span>
-          <span>
+          </div>
+          <div className="admin-overview__metric admin-overview__metric--running">
+            <span className="admin-overview__label">Running attempts</span>
+            <strong className="admin-overview__value">
+              {(counts?.running ?? 0) > 0 ? (
+                <span className="admin-overview__live-dot" aria-hidden="true" />
+              ) : null}
+              {countLabel(counts?.running)}
+            </strong>
+          </div>
+          <div className="admin-overview__metric admin-overview__metric--attention">
             <span className="admin-overview__label">
               Attempts need attention
             </span>
-            <strong className="admin-overview__value">
-              {attentionCount === null ? "–" : attentionCount}
-            </strong>
-            <button
-              type="button"
-              onClick={applyAttentionFilter}
-              disabled={loading}
-            >
-              Review attention
-            </button>
-          </span>
-        </div>
-        <div className="admin-overview__metric">
-          <span className="admin-overview__icon">
-            <AdminIcon name="generations" />
-          </span>
-          <span>
-            <span className="admin-overview__label">Running attempts</span>
-            <strong className="admin-overview__value">
-              {countLabel(counts?.running)}
-            </strong>
-            <span className="admin-overview__hint">
-              In the current filter scope
+            <span className="admin-overview__attention-row">
+              <strong className="admin-overview__value">
+                {attentionCount === null ? "–" : attentionCount}
+              </strong>
+              <button
+                type="button"
+                onClick={applyAttentionFilter}
+                disabled={loading}
+              >
+                Review attention
+              </button>
             </span>
-          </span>
+          </div>
         </div>
-      </div>
-      <div
-        className="admin-sync-line"
-        title={
-          updatedAt ? new Date(updatedAt).toLocaleString() : "Not loaded yet"
-        }
-      >
-        <span className="admin-sync-line__dot" aria-hidden="true" />
-        <span>Updated {formatRelativeTime(updatedAt, now)}</span>
-        {hasActiveRun ? <span>Auto-refreshing active runs</span> : null}
+        <div
+          className={`admin-sync-line${hasActiveRun ? " admin-sync-line--active" : ""}`}
+          title={
+            updatedAt ? new Date(updatedAt).toLocaleString() : "Not loaded yet"
+          }
+        >
+          <span className="admin-sync-line__dot" aria-hidden="true" />
+          <span>Updated {formatRelativeTime(updatedAt, now)}</span>
+          {hasActiveRun ? <span>Auto-refreshing active runs</span> : null}
+        </div>
       </div>
 
       <form onSubmit={applyFilters} aria-label="Generation filters">
@@ -764,7 +748,7 @@ export function GenerationsView({
                 aria-pressed={viewMode === "sites"}
                 onClick={() => setViewMode("sites")}
               >
-                <AdminIcon name="clients" />
+                <AdminIcon name="sites" />
                 Sites
               </button>
               <button
@@ -772,7 +756,7 @@ export function GenerationsView({
                 aria-pressed={viewMode === "ledger"}
                 onClick={() => setViewMode("ledger")}
               >
-                <AdminIcon name="generations" />
+                <AdminIcon name="ledger" />
                 Ledger
               </button>
               <button
@@ -780,7 +764,7 @@ export function GenerationsView({
                 aria-pressed={viewMode === "gallery"}
                 onClick={() => setViewMode("gallery")}
               >
-                <AdminIcon name="clients" />
+                <AdminIcon name="gallery" />
                 Gallery
               </button>
             </div>
@@ -788,7 +772,10 @@ export function GenerationsView({
         </div>
 
         <details className="admin-filter-disclosure">
-          <summary>More filters</summary>
+          <summary>
+            <AdminIcon name="filters" />
+            <span>More filters</span>
+          </summary>
           <div className="admin-filters">
             <label className="admin-field">
               <span>Execution status</span>

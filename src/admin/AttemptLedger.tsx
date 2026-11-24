@@ -4,12 +4,12 @@ import type {
   ExecutionStatus,
 } from "../lib/admin-contracts";
 import { groupBySite, siteStatus } from "./site-groups";
-import { GenerationPreview } from "./GenerationPreview";
+import { GenerationPreview, generationCaptureSrc } from "./GenerationPreview";
 import { describeAttempt, formatProfile } from "./format";
 import type { KeyboardEvent, MouseEvent } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-type Tone = "success" | "running" | "failure" | "warning" | "neutral";
+type Tone = "success" | "ready" | "running" | "failure" | "warning" | "neutral";
 
 const TONE: Record<ExecutionStatus, Tone> = {
   queued: "neutral",
@@ -25,7 +25,7 @@ const DELIVERY_TONE: Record<DeliveryStatus, Tone> = {
   none: "neutral",
   diagnostic: "warning",
   attention: "failure",
-  preview_ready: "running",
+  preview_ready: "ready",
   published: "success",
 };
 
@@ -89,6 +89,107 @@ function clientName(attempt: AttemptSummary) {
 
 function actorName(attempt: AttemptSummary) {
   return attempt.initiator.email || attempt.initiator.name || "Not recorded";
+}
+
+function siteInitiatorLabel(attempt: AttemptSummary) {
+  const direct = attempt.initiator.name || attempt.initiator.email;
+  if (direct) return direct;
+  const source = attempt.initiator.source?.trim().toLowerCase();
+  if (source === "github") return "GitHub Actions";
+  if (source === "worker") return "Worker";
+  if (source === "system") return "System";
+  if (source === "admin") return "Admin";
+  return "Not recorded";
+}
+
+function attemptRunRef(attempt: AttemptSummary) {
+  if (attempt.runId) return `Run #${attempt.runId}`;
+  return attempt.attemptId.slice(0, 12);
+}
+
+function siteHostLabel(url: string | null) {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
+  }
+}
+
+function SiteProofFrame({
+  groupName,
+  proofAttempt,
+  siteUrl,
+  isRunning,
+  onSelect,
+}: {
+  groupName: string;
+  proofAttempt: AttemptSummary;
+  siteUrl: string | null;
+  isRunning: boolean;
+  onSelect: (attempt: AttemptSummary, trigger: HTMLButtonElement) => void;
+}) {
+  const src = generationCaptureSrc(proofAttempt);
+  const [captureState, setCaptureState] = useState<
+    "loading" | "loaded" | "missing"
+  >(src ? "loading" : "missing");
+
+  useEffect(() => {
+    setCaptureState(src ? "loading" : "missing");
+  }, [src]);
+
+  const proofHost = siteHostLabel(siteUrl);
+  const showBuilding = isRunning && captureState === "missing";
+  const viewportLabel =
+    captureState === "loaded"
+      ? "1440w"
+      : isRunning
+        ? "Building"
+        : captureState === "missing"
+          ? "Pending"
+          : "Proof";
+
+  return (
+    <button
+      type="button"
+      className="admin-site-proof"
+      aria-label={`Inspect ${groupName} preview`}
+      onClick={(event) => onSelect(proofAttempt, event.currentTarget)}
+    >
+      <span className="admin-site-proof__frame">
+        <span className="admin-site-proof__bar">
+          <span className="admin-site-proof__host">
+            {proofHost || (isRunning ? "Live build pipeline" : "Site proof")}
+          </span>
+          <span className="admin-site-proof__viewport">{viewportLabel}</span>
+        </span>
+        <span className="admin-site-proof__canvas">
+          {showBuilding ? (
+            <span className="admin-site-proof__building">
+              <span className="admin-site-proof__building-badge">
+                <span
+                  className="admin-status__dot admin-status__dot--running"
+                  aria-hidden="true"
+                />
+                Generating
+              </span>
+              <span className="admin-site-proof__building-note">
+                Preview captures after build
+              </span>
+            </span>
+          ) : (
+            <GenerationPreview
+              attempt={proofAttempt}
+              className="admin-site-proof__img"
+              onCaptureLoad={(loadedSrc) =>
+                setCaptureState(loadedSrc ? "loaded" : "missing")
+              }
+            />
+          )}
+        </span>
+      </span>
+    </button>
+  );
 }
 
 function select(
@@ -391,16 +492,30 @@ export function SiteTimeline({
                 : status.deliveryStatus === "diagnostic"
                   ? "Diagnostic preview"
                   : describeAttempt(status).executionLabel;
-        const tone =
+        const tone: Tone =
           status.deliveryStatus === "published"
             ? "success"
             : status.deliveryStatus === "preview_ready"
-              ? "running"
+              ? "ready"
               : status.deliveryStatus === "attention"
                 ? "failure"
                 : status.deliveryStatus === "diagnostic"
                   ? "warning"
                   : TONE[status.executionStatus] || "neutral";
+        const proofAttempt =
+          group.attempts.find(
+            (item) =>
+              (item.deliveryStatus === "published" ||
+                item.deliveryStatus === "preview_ready" ||
+                item.deliveryStatus === "diagnostic" ||
+                item.executionStatus === "succeeded") &&
+              Boolean(generationCaptureSrc(item)),
+          ) ||
+          group.attempts.find((item) => Boolean(generationCaptureSrc(item))) ||
+          status;
+        const isRunningGroup =
+          latest.executionStatus === "running" ||
+          status.executionStatus === "running";
         return (
           <section
             key={group.key}
@@ -408,156 +523,182 @@ export function SiteTimeline({
             aria-label={`${group.name} generations`}
             data-site-key={group.key}
           >
-            <header className="admin-site-head">
-              <div className="admin-site-identity">
-                <h2 className="admin-site-name">{group.name}</h2>
-                <p className="admin-site-meta">
-                  {group.attempts.length}{" "}
-                  {group.attempts.length === 1 ? "generation" : "generations"}
-                  {" · last activity "}
-                  {dayLabel(latest.createdAt)} {localTime(latest.createdAt)}
-                  {group.issues.length && showIssueSuffix ? (
-                    <>
-                      {" · "}
-                      {group.issues.length === 1 ? "Intake " : "Intakes "}
-                      {group.issues.map((issue, index) => (
-                        <span key={issue}>
-                          {index ? ", " : ""}
-                          {repository ? (
-                            <a
-                              href={`https://github.com/${repository}/issues/${issue}`}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              #{issue}
-                            </a>
-                          ) : (
-                            `#${issue}`
-                          )}
+            <div className="admin-site-band">
+              <SiteProofFrame
+                groupName={group.name}
+                proofAttempt={proofAttempt}
+                siteUrl={siteUrl}
+                isRunning={isRunningGroup}
+                onSelect={onSelect}
+              />
+
+              <div className="admin-site-content">
+                <header className="admin-site-head">
+                  <div className="admin-site-identity">
+                    <h2 className="admin-site-name">{group.name}</h2>
+                    <p className="admin-site-meta">
+                      <span>
+                        {group.attempts.length}{" "}
+                        {group.attempts.length === 1
+                          ? "generation"
+                          : "generations"}
+                      </span>
+                      <span>
+                        Updated {dayLabel(latest.createdAt)}{" "}
+                        {localTime(latest.createdAt)}
+                      </span>
+                      {group.issues.length && showIssueSuffix ? (
+                        <span>
+                          {group.issues.length === 1 ? "Intake " : "Intakes "}
+                          {group.issues.map((issue, index) => (
+                            <span key={issue}>
+                              {index ? ", " : ""}
+                              {repository ? (
+                                <a
+                                  href={`https://github.com/${repository}/issues/${issue}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  #{issue}
+                                </a>
+                              ) : (
+                                `#${issue}`
+                              )}
+                            </span>
+                          ))}
                         </span>
-                      ))}
-                    </>
-                  ) : null}
-                </p>
-              </div>
-              <div className="admin-site-head__actions">
-                <span
-                  className={`admin-site-status admin-site-status--${tone}`}
-                >
-                  {statusLabel}
-                </span>
-                {siteUrl ? (
-                  <a
-                    className="admin-button admin-button--quiet admin-site-open"
-                    href={siteUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    View site
-                  </a>
-                ) : group.clients.length === 1 && onOpenClient ? (
+                      ) : null}
+                    </p>
+                  </div>
+                  <div className="admin-site-head__actions">
+                    <span
+                      className={`admin-site-status admin-site-status--${tone}`}
+                    >
+                      {statusLabel}
+                    </span>
+                    {siteUrl ? (
+                      <a
+                        className="admin-button admin-button--quiet admin-site-open"
+                        href={siteUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        View site
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <path d="M15 5h4v4M19 5l-9 9" />
+                        </svg>
+                      </a>
+                    ) : group.clients.length === 1 && onOpenClient ? (
+                      <button
+                        type="button"
+                        className="admin-button admin-button--quiet admin-site-open"
+                        onClick={() => onOpenClient(group.clients[0].clientId)}
+                      >
+                        Open client
+                      </button>
+                    ) : group.clients.length > 1 && onOpenClient ? (
+                      <details className="admin-site-clients">
+                        <summary className="admin-button admin-button--quiet admin-site-open">
+                          Open client
+                        </summary>
+                        <ul>
+                          {group.clients.map((client) => (
+                            <li key={client.clientId}>
+                              <button
+                                type="button"
+                                className="admin-link-button"
+                                onClick={() => onOpenClient(client.clientId)}
+                              >
+                                {client.issueNumber
+                                  ? `Intake #${client.issueNumber}`
+                                  : "Client record"}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    ) : null}
+                  </div>
+                </header>
+                <ol className="admin-site-timeline">
+                  {visibleAttempts.map((attempt) => {
+                    const { executionLabel, deliveryLabel } =
+                      describeAttempt(attempt);
+                    const itemTone = TONE[attempt.executionStatus] || "neutral";
+                    const deliveryFailed =
+                      attempt.executionStatus === "failed" ||
+                      attempt.deliveryStatus === "attention";
+                    const finished = attempt.completedAt || attempt.updatedAt;
+                    return (
+                      <li
+                        key={attempt.attemptId}
+                        className="admin-site-timeline__item"
+                      >
+                        <button
+                          type="button"
+                          className="admin-site-timeline__row"
+                          aria-pressed={selectedId === attempt.attemptId}
+                          aria-label={`Open attempt ${attempt.attemptId} for ${group.name}`}
+                          onClick={(event) =>
+                            onSelect(attempt, event.currentTarget)
+                          }
+                        >
+                          <span className="admin-site-timeline__when">
+                            <strong>{dayLabel(attempt.createdAt)}</strong>
+                            <span>{localTime(attempt.createdAt)}</span>
+                          </span>
+                          <span className="admin-site-timeline__what">
+                            <strong>{formatProfile(attempt.profile)}</strong>
+                            <span>
+                              {siteInitiatorLabel(attempt)},{" "}
+                              {attemptRunRef(attempt)}
+                            </span>
+                          </span>
+                          <span className="admin-site-timeline__status">
+                            <span className="admin-status">
+                              <span
+                                className={`admin-status__dot admin-status__dot--${itemTone}`}
+                              />
+                              {executionLabel}
+                            </span>
+                            <span
+                              className={`admin-gen-substatus${deliveryFailed ? " admin-gen-substatus--attention" : ""}`}
+                            >
+                              {attempt.deliveryStatus === "none"
+                                ? "No delivery"
+                                : deliveryLabel}
+                            </span>
+                          </span>
+                          <span className="admin-site-timeline__time">
+                            {finished ? localTime(finished) : "No timestamp"}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ol>
+                {group.attempts.length > 3 ? (
                   <button
                     type="button"
-                    className="admin-button admin-button--quiet admin-site-open"
-                    onClick={() => onOpenClient(group.clients[0].clientId)}
+                    className="admin-site-expand"
+                    aria-expanded={showAll}
+                    onClick={() => toggleExpanded(group.key)}
                   >
-                    Open client
+                    {showAll
+                      ? "Show latest 3"
+                      : `Show all ${group.attempts.length} generations`}
                   </button>
-                ) : group.clients.length > 1 && onOpenClient ? (
-                  <details className="admin-site-clients">
-                    <summary className="admin-button admin-button--quiet admin-site-open">
-                      Open client
-                    </summary>
-                    <ul>
-                      {group.clients.map((client) => (
-                        <li key={client.clientId}>
-                          <button
-                            type="button"
-                            className="admin-link-button"
-                            onClick={() => onOpenClient(client.clientId)}
-                          >
-                            {client.issueNumber
-                              ? `Intake #${client.issueNumber}`
-                              : "Client record"}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
                 ) : null}
               </div>
-            </header>
-            <ol className="admin-site-timeline">
-              {visibleAttempts.map((attempt) => {
-                const { executionLabel, deliveryLabel } =
-                  describeAttempt(attempt);
-                const itemTone = TONE[attempt.executionStatus] || "neutral";
-                const finished = attempt.completedAt || attempt.updatedAt;
-                return (
-                  <li
-                    key={attempt.attemptId}
-                    className="admin-site-timeline__item"
-                  >
-                    <button
-                      type="button"
-                      className="admin-site-timeline__row"
-                      aria-pressed={selectedId === attempt.attemptId}
-                      aria-label={`Open attempt ${attempt.attemptId} for ${group.name}`}
-                      onClick={(event) =>
-                        onSelect(attempt, event.currentTarget)
-                      }
-                    >
-                      <span
-                        className={`admin-site-timeline__dot admin-site-timeline__dot--${itemTone}`}
-                        aria-hidden="true"
-                      />
-                      <span className="admin-site-timeline__when">
-                        <strong>{dayLabel(attempt.createdAt)}</strong>
-                        <span>{localTime(attempt.createdAt)}</span>
-                      </span>
-                      <span className="admin-site-timeline__what">
-                        <strong>{formatProfile(attempt.profile)}</strong>
-                        <span>
-                          {actorName(attempt)} ·{" "}
-                          {attempt.attemptId.slice(0, 12)}
-                        </span>
-                      </span>
-                      <span className="admin-site-timeline__status">
-                        <span className="admin-status">
-                          <span
-                            className={`admin-status__dot admin-status__dot--${itemTone}`}
-                          />
-                          {executionLabel}
-                        </span>
-                        <span className="admin-gen-substatus">
-                          {attempt.deliveryStatus === "none"
-                            ? "No delivery"
-                            : deliveryLabel}
-                        </span>
-                      </span>
-                      <span className="admin-preview admin-site-timeline__preview">
-                        <GenerationPreview attempt={attempt} />
-                      </span>
-                      <span className="admin-site-timeline__time">
-                        {finished ? localTime(finished) : "No timestamp"}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
-            {group.attempts.length > 3 ? (
-              <button
-                type="button"
-                className="admin-site-expand"
-                aria-expanded={showAll}
-                onClick={() => toggleExpanded(group.key)}
-              >
-                {showAll
-                  ? "Show latest 3"
-                  : `Show all ${group.attempts.length} generations`}
-              </button>
-            ) : null}
+            </div>
           </section>
         );
       })}

@@ -1,4 +1,11 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type {
   GenerationActivityCoverageEntry,
   StoredTraceEvent,
@@ -1055,12 +1062,16 @@ export function GenerationActivity({
   active,
   enabled,
   threaded = false,
+  topBanner,
+  dockFooter,
 }: {
   api: AdminApi;
   identity: TraceIdentity;
   active: boolean;
   enabled: boolean;
   threaded?: boolean;
+  topBanner?: ReactNode;
+  dockFooter?: ReactNode;
 }) {
   const activityIdentity = useMemo(
     () => ({ namespace: identity.namespace, attemptId: identity.attemptId }),
@@ -1073,8 +1084,10 @@ export function GenerationActivity({
     {},
   );
   const [now, setNow] = useState(() => Date.now());
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const follow = useRef(true);
   const feedRef = useRef<HTMLOListElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const {
     page,
     events,
@@ -1157,6 +1170,48 @@ export function GenerationActivity({
     feed.scrollTop = feed.scrollHeight;
   }, [threaded, visible.length]);
 
+  function syncThreadScroll() {
+    if (!threaded) return;
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+    const distanceFromBottom =
+      scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+    const atBottom = distanceFromBottom <= 28;
+    follow.current = atBottom;
+    setShowJumpToLatest(!atBottom);
+  }
+
+  useEffect(() => {
+    if (!threaded) return;
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+    const update = () => {
+      const distanceFromBottom =
+        scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+      const atBottom = distanceFromBottom <= 28;
+      follow.current = atBottom;
+      setShowJumpToLatest(!atBottom);
+    };
+    const frame = window.requestAnimationFrame(update);
+    if (typeof ResizeObserver === "undefined") {
+      return () => window.cancelAnimationFrame(frame);
+    }
+    const observer = new ResizeObserver(update);
+    observer.observe(scroller);
+    if (feedRef.current) observer.observe(feedRef.current);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [
+    threaded,
+    visible.length,
+    selectedKey,
+    thinkingState,
+    activeStageFilter,
+    filter,
+  ]);
+
   function select(key: string) {
     setSelectedKey((current) => (threaded && current === key ? null : key));
     follow.current = false;
@@ -1166,14 +1221,22 @@ export function GenerationActivity({
 
   function jumpToLatest() {
     follow.current = true;
-    const feed = feedRef.current;
     if (threaded) {
-      const last = feed?.lastElementChild;
-      last?.scrollIntoView({ block: "nearest" });
-      last
-        ?.querySelector<HTMLButtonElement>("button")
-        ?.focus({ preventScroll: true });
-    } else if (feed) feed.scrollTop = feed.scrollHeight;
+      const scroller = scrollRef.current;
+      if (scroller) {
+        const reduced =
+          typeof window !== "undefined" &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        scroller.scrollTo({
+          top: scroller.scrollHeight,
+          behavior: reduced ? "auto" : "smooth",
+        });
+      }
+      setShowJumpToLatest(false);
+      return;
+    }
+    const feed = feedRef.current;
+    if (feed) feed.scrollTop = feed.scrollHeight;
   }
 
   const emptyMessage = !page
@@ -1188,55 +1251,88 @@ export function GenerationActivity({
             ? "Waiting for the first activity event..."
             : "The run ended without further activity events.";
 
-  return (
-    <section
-      className={`admin-activity${threaded ? " admin-activity--thread" : ""}`}
-      aria-labelledby="generation-activity-title"
-      data-activity-connection={connection}
-    >
-      <header className="admin-activity__head">
-        <div>
-          {threaded ? (
-            <p className="admin-view-kicker">Execution trace</p>
-          ) : null}
-          <h3 id="generation-activity-title">
-            {threaded ? "Agent runs" : "Live activity"}
+  const threadMainContent = (
+    <>
+      {topBanner}
+      {threaded ? (
+        <header className="admin-chat__meta-strip">
+          <h3 id="generation-activity-title" className="admin-visually-hidden">
+            Agent runs
           </h3>
-          {threaded ? (
-            <p className="admin-activity__intro">
-              Follow recorded agent turns, collapsible reasoning traces, tool
-              calls, and model outputs.
+          <div className="admin-chat__meta-left">
+            {usage ? (
+              <div
+                className="admin-activity__summary"
+                title="Token totals cover completed calls only, not live token growth. Streaming rows are labeled as estimates."
+              >
+                <span>{usage.responses}</span>
+                <span>{usage.tokens}</span>
+                <span>{usage.cost}</span>
+              </div>
+            ) : null}
+            <span className="admin-activity__meta">
+              {page
+                ? `Updated ${formatRelativeTime(page.observedAt, now)} · UTC`
+                : "No activity snapshot yet"}
+            </span>
+          </div>
+          <div className="admin-activity__pills">
+            {connection === "disconnected" ? (
+              <span className="admin-activity__status admin-activity__status--bad">
+                Connection lost
+              </span>
+            ) : null}
+            {recording ? (
+              <span
+                className={`admin-activity__status admin-activity__status--${
+                  recording.tone === "live"
+                    ? "live"
+                    : recording.tone === "warning"
+                      ? "warn"
+                      : recording.tone === "error"
+                        ? "bad"
+                        : "muted"
+                }`}
+              >
+                {recording.label}
+              </span>
+            ) : null}
+          </div>
+        </header>
+      ) : (
+        <header className="admin-activity__head">
+          <div>
+            <h3 id="generation-activity-title">Live activity</h3>
+            <p className="admin-activity__meta">
+              {page
+                ? `Updated ${formatRelativeTime(page.observedAt, now)} · times in UTC`
+                : "No activity snapshot yet"}
             </p>
-          ) : null}
-          <p className="admin-activity__meta">
-            {page
-              ? `Updated ${formatRelativeTime(page.observedAt, now)} · times in UTC`
-              : "No activity snapshot yet"}
-          </p>
-        </div>
-        <div className="admin-activity__pills">
-          {connection === "disconnected" ? (
-            <span className="admin-activity__status admin-activity__status--bad">
-              Connection lost
-            </span>
-          ) : null}
-          {recording ? (
-            <span
-              className={`admin-activity__status admin-activity__status--${
-                recording.tone === "live"
-                  ? "live"
-                  : recording.tone === "warning"
-                    ? "warn"
-                    : recording.tone === "error"
-                      ? "bad"
-                      : "muted"
-              }`}
-            >
-              {recording.label}
-            </span>
-          ) : null}
-        </div>
-      </header>
+          </div>
+          <div className="admin-activity__pills">
+            {connection === "disconnected" ? (
+              <span className="admin-activity__status admin-activity__status--bad">
+                Connection lost
+              </span>
+            ) : null}
+            {recording ? (
+              <span
+                className={`admin-activity__status admin-activity__status--${
+                  recording.tone === "live"
+                    ? "live"
+                    : recording.tone === "warning"
+                      ? "warn"
+                      : recording.tone === "error"
+                        ? "bad"
+                        : "muted"
+                }`}
+              >
+                {recording.label}
+              </span>
+            ) : null}
+          </div>
+        </header>
+      )}
 
       {!enabled ? (
         <p className="admin-activity__empty">
@@ -1244,7 +1340,7 @@ export function GenerationActivity({
         </p>
       ) : (
         <>
-          {usage ? (
+          {usage && !threaded ? (
             <>
               <div className="admin-activity__summary">
                 <span>{usage.responses}</span>
@@ -1276,50 +1372,27 @@ export function GenerationActivity({
             </div>
           ) : null}
 
-          {stages.length ? (
+          {!threaded && stages.length ? (
             <ol className="admin-activity__stages" aria-label="Activity stages">
-              {threaded && activeStageFilter ? (
-                <li>
-                  <button
-                    type="button"
-                    className="admin-activity__stage admin-activity__stage--reset"
-                    onClick={() => setStageFilter(null)}
-                  >
-                    All stages
-                  </button>
+              {stages.map((stage) => (
+                <li
+                  key={stage.stage}
+                  className={`admin-activity__stage admin-activity__stage--${stage.state}`}
+                >
+                  <span>{stage.label}</span>
+                  <small>{stage.entries}</small>
                 </li>
-              ) : null}
-              {stages.map((stage) =>
-                threaded ? (
-                  <li key={stage.stage}>
-                    <button
-                      type="button"
-                      aria-pressed={activeStageFilter === stage.stage}
-                      className={`admin-activity__stage admin-activity__stage--${stage.state} admin-activity__stage--button`}
-                      onClick={() =>
-                        setStageFilter((current) =>
-                          current === stage.stage ? null : stage.stage,
-                        )
-                      }
-                    >
-                      <span>{stage.label}</span>
-                      <small>{stage.entries}</small>
-                    </button>
-                  </li>
-                ) : (
-                  <li
-                    key={stage.stage}
-                    className={`admin-activity__stage admin-activity__stage--${stage.state}`}
-                  >
-                    <span>{stage.label}</span>
-                    <small>{stage.entries}</small>
-                  </li>
-                ),
-              )}
+              ))}
             </ol>
           ) : null}
 
-          <div className="admin-activity__toolbar">
+          <div
+            className={
+              threaded
+                ? "admin-activity__toolbar admin-activity__toolbar--unified"
+                : "admin-activity__toolbar"
+            }
+          >
             <div
               className="admin-activity__filters"
               role="group"
@@ -1336,25 +1409,80 @@ export function GenerationActivity({
                 </button>
               ))}
             </div>
-            <div className="admin-activity__toolbar-actions">
-              {threaded && modelEntries.length > 0 ? (
+            {threaded && stages.length ? (
+              <ol
+                className="admin-activity__stages admin-activity__stages--inline"
+                aria-label="Activity stages"
+              >
+                {activeStageFilter ? (
+                  <li>
+                    <button
+                      type="button"
+                      className="admin-activity__stage admin-activity__stage--reset"
+                      onClick={() => setStageFilter(null)}
+                    >
+                      All stages
+                    </button>
+                  </li>
+                ) : null}
+                {stages.map((stage) => (
+                  <li key={stage.stage}>
+                    <button
+                      type="button"
+                      aria-pressed={activeStageFilter === stage.stage}
+                      className={`admin-activity__stage admin-activity__stage--${stage.state} admin-activity__stage--button`}
+                      onClick={() =>
+                        setStageFilter((current) =>
+                          current === stage.stage ? null : stage.stage,
+                        )
+                      }
+                    >
+                      <span>{stage.label}</span>
+                      <small>{stage.entries}</small>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            ) : null}
+            {threaded ? (
+              modelEntries.length > 0 ? (
+                <button
+                  type="button"
+                  className="admin-chat__thinking-btn"
+                  aria-pressed={allThinkingOpen}
+                  onClick={toggleAllThinking}
+                >
+                  <svg
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    {allThinkingOpen ? (
+                      <path d="M4.5 6.5 8 3.5l3.5 3M4.5 12.5 8 9.5l3.5 3" />
+                    ) : (
+                      <path d="M4.5 3.5 8 6.5l3.5-3M4.5 9.5 8 12.5l3.5-3" />
+                    )}
+                  </svg>
+                  <span>
+                    {allThinkingOpen ? "Collapse thinking" : "Expand thinking"}
+                  </span>
+                </button>
+              ) : null
+            ) : (
+              <div className="admin-activity__toolbar-actions">
                 <button
                   type="button"
                   className="admin-link-button"
-                  onClick={toggleAllThinking}
+                  onClick={jumpToLatest}
                 >
-                  {allThinkingOpen ? "Collapse thinking" : "Expand thinking"}
+                  Jump to latest
                 </button>
-              ) : null}
-              <button
-                type="button"
-                className="admin-link-button"
-                onClick={jumpToLatest}
-                disabled={threaded && !visible.length}
-              >
-                Jump to latest
-              </button>
-            </div>
+              </div>
+            )}
           </div>
 
           <div className="admin-activity__layout">
@@ -1445,8 +1573,6 @@ export function GenerationActivity({
             ) : null}
           </div>
 
-          {threaded ? <LockedAgentComposer /> : null}
-
           <footer className="admin-activity__foot">
             <div className="admin-activity__foot-left">
               {hasOlder ? (
@@ -1482,12 +1608,59 @@ export function GenerationActivity({
           </footer>
         </>
       )}
+    </>
+  );
+
+  return (
+    <section
+      className={`admin-activity${threaded ? " admin-activity--thread" : ""}`}
+      aria-labelledby="generation-activity-title"
+      data-activity-connection={connection}
+    >
       {threaded ? (
-        <p className="admin-activity__note">
-          Only recorded actions and visible output are shown. Private reasoning
-          is not recorded.
-        </p>
-      ) : null}
+        <>
+          <div
+            ref={scrollRef}
+            className="admin-chat__scroll"
+            onScroll={syncThreadScroll}
+          >
+            {threadMainContent}
+          </div>
+          <div className="admin-chat__dock">
+            {showJumpToLatest && visible.length > 0 ? (
+              <button
+                type="button"
+                className="admin-chat__jump-btn"
+                aria-label="Jump to latest"
+                title="Jump to latest"
+                onClick={jumpToLatest}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 5v14M6 13l6 6 6-6" />
+                </svg>
+              </button>
+            ) : null}
+            <LockedAgentComposer />
+            <div className="admin-chat__dock-bar">
+              <p className="admin-chat__dock-note">
+                Only recorded actions and visible output are shown. Private
+                reasoning is not recorded.
+              </p>
+              {dockFooter}
+            </div>
+          </div>
+        </>
+      ) : (
+        threadMainContent
+      )}
     </section>
   );
 }
