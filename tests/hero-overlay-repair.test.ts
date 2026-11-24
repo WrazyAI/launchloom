@@ -28,6 +28,14 @@ describe("hero overlay correction", () => {
     expect(css).toContain("[data-hero]::after");
   });
 
+  it("clears the media caption that contains the copy group", () => {
+    const css = heroOverlayRepairCss();
+    expect(css).toContain(
+      "[data-hero-media] figcaption:has([data-hero-copy])",
+    );
+    expect(css).toContain("background-color: transparent");
+  });
+
   it("replaces the managed block without duplicating it", () => {
     const first = withHeroOverlayCorrection("body { color: #111; }");
     const second = withHeroOverlayCorrection(first);
