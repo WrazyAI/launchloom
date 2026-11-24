@@ -1,43 +1,7 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-24T18:08:09.204Z",
+  "updatedAt": "2026-11-24T18:37:06.750Z",
   "launches": [
-    {
-      "id": "2026-10-01-cedarbrook-family-dental-fictional-seo-canary-attempt-115-run-36881384874-attempt-1",
-      "launchedAt": "2026-10-01T15:06:15.255Z",
-      "stage": "attempt",
-      "reservationKey": "115-run-36881384874-attempt-1",
-      "businessName": "Cedarbrook Family Dental - Fictional SEO Canary",
-      "businessKind": "dental",
-      "recipe": "care-editorial",
-      "packId": "kinetic-poster",
-      "variantId": "full-bleed",
-      "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-      "creativeFamilyId": "",
-      "referenceFamilyId": "",
-      "routeFamilyIds": [
-        "attested-omp-dental-editorial",
-        "cinematic-stage",
-        "editorial-monument",
-        "guided-conversation",
-        "html5up-dimension-clinic",
-        "web-dental-glint-austin-family"
-      ],
-      "heroArchetypes": [
-        "image-overlay",
-        "split-media-copy"
-      ],
-      "referenceIds": [
-        "attested-one-manor-place-dental",
-        "html5up-dental-dimension",
-        "web-dental-glint-austin"
-      ],
-      "routeSignatures": [
-        "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
-        "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
-        "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
-      ]
-    },
     {
       "id": "2026-10-01-cedarbrook-family-dental-fictional-seo-canary-attempt-115-run-36883592916-attempt-1",
       "launchedAt": "2026-10-01T15:25:11.040Z",
@@ -1783,46 +1747,45 @@
         "Fine uppercase navigation and a monogram-like mark rest over a light, low-profil|An immersive warm interior opening with small centered serif copy gives way to a|Explain interior design and procurement in one considered editorial chapter, the|Small elegant serif headings and uppercase labels, with narrow calm paragraphs a|immersive opening photograph -> introductory statement band -> studio split -> s|Full-height residential interiors alternate with copy and a three-image project",
         "minimal-corner-menu|full-bleed-image-with-oversized-wordmark|vertical-serif-project-and-service-index|high-contrast-editorial-serif|architectural-image-to-film-frame-to-vertical-index-to-dark-footer|architectural-texture-and-cinematic-presentation-frame"
       ]
+    },
+    {
+      "id": "2026-11-24-silt-line-architecture-studio-attempt-314-run-45460687463-attempt-1",
+      "launchedAt": "2026-11-24T18:37:06.747Z",
+      "stage": "attempt",
+      "reservationKey": "314-run-45460687463-attempt-1",
+      "businessName": "Silt & Line Architecture Studio",
+      "businessKind": "architecture",
+      "recipe": "general-editorial",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "architecture-bottom-anchored-serif-image-title",
+        "architecture-uncaptioned-room-image-opening",
+        "archive-rail",
+        "colorlib-drafthouse-atlas",
+        "guided-conversation",
+        "market-collage"
+      ],
+      "heroArchetypes": [
+        "image-overlay"
+      ],
+      "referenceIds": [
+        "colorlib-drafthouse-atlas",
+        "web-architecture-simpson-studio",
+        "web-architecture-studio-peake"
+      ],
+      "routeSignatures": [
+        "A compact wordmark and thin, widely spaced project, studio, services and contact|A large, uncaptioned interior photograph leads, followed by a left-aligned studi|Use a vertical, editorial service stack for the studio's disciplines, not unifor|Restrained modern sans; modest but confident headings, narrow body measure and g|image-led opening -> studio promise and work action -> integrated process split |Large architectural photographs alternate with quiet text blocks; a low, horizon",
+        "A small emblem on the left and compact uppercase portfolio, studio, shop, news a|A full-width interior photograph carries a very large white serif studio title a|Lead with photographic discipline gateways, then explain the approach through a |Expressive high-contrast serif display and section titles paired with small, mea|room photograph and oversized title -> cream craft statement -> three-image disc|Immersive furnished-room photographs, three adjacent feature images, a maker por",
+        "compact-architectural-index|featured-project-tableau-with-metadata|capabilities-after-project-index-and-principles|restrained-neutral-grotesk|featured-work-to-practice-to-project-archive-to-enquiry|archival-project-image-with-ruled-metadata"
+      ]
     }
   ],
   "launchesByBusinessKind": {
     "dental": [
-      {
-        "id": "2026-10-01-willowbridge-community-dental-fictional-preview-attempt-109-run-36824027964-attempt-1",
-        "launchedAt": "2026-10-01T06:20:57.010Z",
-        "stage": "attempt",
-        "reservationKey": "109-run-36824027964-attempt-1",
-        "businessName": "Willowbridge Community Dental - Fictional Preview",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "attested-dapper-dental-dark",
-          "cinematic-stage",
-          "guided-conversation",
-          "typographic-poster",
-          "web-dental-gartside-street-family",
-          "web-dental-glint-austin-family"
-        ],
-        "heroArchetypes": [
-          "image-led-editorial",
-          "image-overlay"
-        ],
-        "referenceIds": [
-          "attested-dapper-dental",
-          "web-dental-gartside-street",
-          "web-dental-glint-austin"
-        ],
-        "routeSignatures": [
-          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
-          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
-          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
-        ]
-      },
       {
         "id": "2026-10-01-cedarbrook-family-dental-fictional-seo-canary-attempt-115-run-36881384874-attempt-1",
         "launchedAt": "2026-10-01T15:06:15.255Z",
@@ -2256,6 +2219,42 @@
           "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
           "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
           "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail"
+        ]
+      },
+      {
+        "id": "2026-10-01-willowbridge-community-dental-fictional-preview-attempt-109-run-36824027964-attempt-1",
+        "launchedAt": "2026-10-01T06:20:57.010Z",
+        "stage": "attempt",
+        "reservationKey": "109-run-36824027964-attempt-1",
+        "businessName": "Willowbridge Community Dental - Fictional Preview",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-dapper-dental-dark",
+          "cinematic-stage",
+          "guided-conversation",
+          "typographic-poster",
+          "web-dental-gartside-street-family",
+          "web-dental-glint-austin-family"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-overlay"
+        ],
+        "referenceIds": [
+          "attested-dapper-dental",
+          "web-dental-gartside-street",
+          "web-dental-glint-austin"
+        ],
+        "routeSignatures": [
+          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
+          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
         ]
       },
       {
@@ -3788,6 +3787,41 @@
           "A compact wordmark and thin, widely spaced project, studio, services and contact|A large, uncaptioned interior photograph leads, followed by a left-aligned studi|Use a vertical, editorial service stack for the studio's disciplines, not unifor|Restrained modern sans; modest but confident headings, narrow body measure and g|image-led opening -> studio promise and work action -> integrated process split |Large architectural photographs alternate with quiet text blocks; a low, horizon",
           "Fine uppercase navigation and a monogram-like mark rest over a light, low-profil|An immersive warm interior opening with small centered serif copy gives way to a|Explain interior design and procurement in one considered editorial chapter, the|Small elegant serif headings and uppercase labels, with narrow calm paragraphs a|immersive opening photograph -> introductory statement band -> studio split -> s|Full-height residential interiors alternate with copy and a three-image project",
           "minimal-corner-menu|full-bleed-image-with-oversized-wordmark|vertical-serif-project-and-service-index|high-contrast-editorial-serif|architectural-image-to-film-frame-to-vertical-index-to-dark-footer|architectural-texture-and-cinematic-presentation-frame"
+        ]
+      },
+      {
+        "id": "2026-11-24-silt-line-architecture-studio-attempt-314-run-45460687463-attempt-1",
+        "launchedAt": "2026-11-24T18:37:06.747Z",
+        "stage": "attempt",
+        "reservationKey": "314-run-45460687463-attempt-1",
+        "businessName": "Silt & Line Architecture Studio",
+        "businessKind": "architecture",
+        "recipe": "general-editorial",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "architecture-bottom-anchored-serif-image-title",
+          "architecture-uncaptioned-room-image-opening",
+          "archive-rail",
+          "colorlib-drafthouse-atlas",
+          "guided-conversation",
+          "market-collage"
+        ],
+        "heroArchetypes": [
+          "image-overlay"
+        ],
+        "referenceIds": [
+          "colorlib-drafthouse-atlas",
+          "web-architecture-simpson-studio",
+          "web-architecture-studio-peake"
+        ],
+        "routeSignatures": [
+          "A compact wordmark and thin, widely spaced project, studio, services and contact|A large, uncaptioned interior photograph leads, followed by a left-aligned studi|Use a vertical, editorial service stack for the studio's disciplines, not unifor|Restrained modern sans; modest but confident headings, narrow body measure and g|image-led opening -> studio promise and work action -> integrated process split |Large architectural photographs alternate with quiet text blocks; a low, horizon",
+          "A small emblem on the left and compact uppercase portfolio, studio, shop, news a|A full-width interior photograph carries a very large white serif studio title a|Lead with photographic discipline gateways, then explain the approach through a |Expressive high-contrast serif display and section titles paired with small, mea|room photograph and oversized title -> cream craft statement -> three-image disc|Immersive furnished-room photographs, three adjacent feature images, a maker por",
+          "compact-architectural-index|featured-project-tableau-with-metadata|capabilities-after-project-index-and-principles|restrained-neutral-grotesk|featured-work-to-practice-to-project-archive-to-enquiry|archival-project-image-with-ruled-metadata"
         ]
       }
     ]
