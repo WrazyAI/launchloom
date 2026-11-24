@@ -198,6 +198,23 @@ export default function Experience({ content }) { return <main data-mobile-recom
     expect(reportFor("secondary").findings).toContainEqual(missingHero);
   });
 
+  it("does not credit CreativeImage through an unsealed local helper", () => {
+    const missingHero = expect.objectContaining({
+      code: "unbound-content-token",
+      message: expect.stringContaining("content.hero.image"),
+    });
+    const source = `import { CreativeImage as Art } from "@launchloom/runtime";\nfunction Hero({ content }) { return <Art content={content} slot="hero" alt="Window" />; }\n${validExperience.replace('<img src={content.hero.image} />', "<Hero />")}`;
+    const unsealed = validateReferenceCandidate({ referenceDna: dna, experienceSource: source, stylesSource: validStyles, motionSource: validMotion });
+    expect(unsealed.findings).toContainEqual(missingHero);
+    const sealed = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: source.replace("<Hero />", "<Hero content={content} />"),
+      stylesSource: validStyles,
+      motionSource: validMotion,
+    });
+    expect(sealed.findings).not.toContainEqual(missingHero);
+  });
+
   it("does not count FAQList as output when it is outside the semantic FAQs section", () => {
     const source = `import { FAQList } from "@launchloom/runtime";\n${validExperience.replace("{content.faqs}", "").replace("</main>", "<FAQList content={content} /></main>")}`;
     const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: source, stylesSource: validStyles, motionSource: validMotion });

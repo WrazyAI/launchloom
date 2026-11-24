@@ -216,8 +216,11 @@ function outputContentPaths(source) {
     const content = opening.attributes.properties.find((attribute) =>
       ts.isJsxAttribute(attribute) && ts.isIdentifier(attribute.name) && attribute.name.text === "content",
     );
-    return Boolean(content && content.initializer && ts.isJsxExpression(content.initializer) &&
-      content.initializer.expression && ts.isIdentifier(content.initializer.expression) && content.initializer.expression.text === "content");
+    const expression = content?.initializer && ts.isJsxExpression(content.initializer)
+      ? content.initializer.expression
+      : null;
+    return Boolean(expression && ts.isIdentifier(expression) && expression.text === "content" &&
+      paths(expression).some((path) => path === "content" || path.startsWith("content.")));
   };
   const isInsideFaqSection = (node) => {
     for (let current = node?.parent; current; current = current.parent) {

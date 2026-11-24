@@ -952,7 +952,16 @@ function validateContentBoundRuntimeHelpers(source, route, content, rootComponen
       const contentAttribute = jsxAttribute(opening, "content");
       const expression = contentAttribute?.initializer && ts.isJsxExpression(contentAttribute.initializer)
         ? contentAttribute.initializer.expression : null;
-      if (!expression || !isSealedContentExpression(expression, rootComponent))
+      if (
+        !expression ||
+        !isSealedContentExpression(
+          expression,
+          rootComponent,
+          new Set(),
+          file,
+          elements,
+        )
+      )
         throw new Error(`Candidate ${route.id} runtime helper ${localName} requires the entry's sealed content parameter.`);
       const allowed = new Set(["content", "className", "key", ...(helperName === "CreativeImage" ? ["slot", "alt"] : ["index"])]);
       const seen = new Set();
@@ -969,15 +978,39 @@ function validateContentBoundRuntimeHelpers(source, route, content, rootComponen
         if (!slot || !ts.isStringLiteral(slot) || !Object.hasOwn(creativeImageSlots, slot.text))
           throw new Error(`Candidate ${route.id} runtime helper ${localName} requires a literal hero, secondary, tertiary, or logo slot.`);
         const alt = jsxAttribute(opening, "alt")?.initializer;
-        if (!alt || (ts.isJsxExpression(alt) && (!alt.expression || ["null", "undefined"].includes(alt.expression.getText(file)))))
-          throw new Error(`Candidate ${route.id} runtime helper ${localName} requires a usable alt attribute.`);
+        const altExpression =
+          alt && ts.isJsxExpression(alt) ? alt.expression : null;
+        if (
+          !alt ||
+          (!ts.isStringLiteral(alt) &&
+            !ts.isNoSubstitutionTemplateLiteral(alt) &&
+            !isUsableCreativeAltExpression(altExpression))
+        )
+          throw new Error(
+            `Candidate ${route.id} runtime helper ${localName} requires a usable alt attribute.`,
+          );
         const [group, field] = creativeImageSlots[slot.text];
         const image = content?.[group]?.[field];
         if (image && !isSafeSealedImageUrl(image))
           throw new Error(`Candidate ${route.id} runtime helper ${localName} requires a safe sealed image URL.`);
         if (image) imageSources.push(String(image).trim());
-      } else if (!jsxAttribute(opening, "index")?.initializer)
-        throw new Error(`Candidate ${route.id} runtime helper ${localName} requires a service index.`);
+      } else {
+        const index = jsxAttribute(opening, "index")?.initializer;
+        const indexExpression =
+          index && ts.isJsxExpression(index) ? index.expression : null;
+        if (
+          !isValidServiceIndexExpression(
+            indexExpression,
+            opening,
+            file,
+            rootComponent,
+            elements,
+          )
+        )
+          throw new Error(
+            `Candidate ${route.id} runtime helper ${localName} requires a nonnegative literal index or the enclosing content.services map index.`,
+          );
+      }
     }
     // FAQList is a trusted runtime adapter that reads content.faqs itself.
     // Count that as the FAQ token binding only when it is inside the required
@@ -1455,9 +1488,12 @@ function isSealedContentExpression(
   expression,
   componentName,
   seen = new Set(),
+  file = null,
+  elements = null,
 ) {
   if (!expression) return false;
-  const file = expression.getSourceFile();
+  file ||= expression.getSourceFile();
+  elements ||= collectJsxElements(file.text).elements;
   if (isRootExperienceContentIdentifier(expression, file, componentName))
     return true;
   if (!ts.isIdentifier(expression) || expression.text !== "content") return false;
@@ -1471,7 +1507,7 @@ function isSealedContentExpression(
     return false;
   const helperName = componentNameForFunction(binding.node.parent);
   if (!helperName) return false;
-  const callSites = collectJsxElements(file.text).elements.filter(
+  const callSites = elements.filter(
     ({ opening }) => jsxOpeningName(opening) === helperName,
   );
   if (!callSites.length) return false;
@@ -1492,6 +1528,8 @@ function isSealedContentExpression(
       initializer.expression,
       componentName,
       nextSeen,
+      file,
+      elements,
     );
   });
 }
@@ -2006,6 +2044,7 @@ function isSealedServiceCollectionExpression(
   expression,
   file,
   seen = new Set(),
+  componentName = "Experience",
 ) {
   if (!expression) return false;
   const node = unwrapUrlExpression(expression);
@@ -2013,7 +2052,7 @@ function isSealedServiceCollectionExpression(
   if (
     directPath === "content.services" &&
     ts.isPropertyAccessExpression(node) &&
-    isRootExperienceContentIdentifier(node.expression, file)
+    isRootExperienceContentIdentifier(node.expression, file, componentName)
   )
     return true;
   if (
@@ -2025,6 +2064,7 @@ function isSealedServiceCollectionExpression(
       node.expression.expression,
       file,
       seen,
+      componentName,
     );
   if (!ts.isIdentifier(node) || seen.has(node.text)) return false;
   const binding = visibleBinding(node.text, node);
@@ -2034,7 +2074,7 @@ function isSealedServiceCollectionExpression(
   if (binding.kind === "parameter")
     return (
       bindingPath?.join(".") === "content.services" &&
-      isRootExperienceFunction(binding.node.parent, file) &&
+      isRootExperienceFunction(binding.node.parent, file, componentName) &&
       !isBindingMutated(binding.node, file)
     );
   if (!(binding.node.parent.flags & ts.NodeFlags.Const)) return false;
@@ -2042,14 +2082,97 @@ function isSealedServiceCollectionExpression(
   if (bindingPath?.join(".") === "services")
     return (
       ts.isIdentifier(binding.node.initializer) &&
-      isRootExperienceContentIdentifier(binding.node.initializer, file)
+      isRootExperienceContentIdentifier(
+        binding.node.initializer,
+        file,
+        componentName,
+      )
     );
   if (bindingPath?.length) return false;
   return isSealedServiceCollectionExpression(
     binding.node.initializer,
     file,
     seen,
+    componentName,
   );
+}
+
+function isUsableCreativeAltExpression(expression) {
+  if (!expression) return false;
+  if (
+    ts.isStringLiteral(expression) ||
+    ts.isNoSubstitutionTemplateLiteral(expression) ||
+    ts.isTemplateExpression(expression)
+  )
+    return true;
+  if (ts.isIdentifier(expression))
+    return !["NaN", "Infinity", "undefined"].includes(expression.text);
+  if (
+    ts.isPropertyAccessExpression(expression) ||
+    ts.isElementAccessExpression(expression)
+  )
+    return true;
+  return (
+    ts.isBinaryExpression(expression) &&
+    expression.operatorToken.kind === ts.SyntaxKind.PlusToken
+  );
+}
+
+function enclosingServiceMap(opening, file) {
+  for (let current = opening?.parent; current; current = current.parent) {
+    if (
+      ts.isCallExpression(current) &&
+      ts.isPropertyAccessExpression(current.expression) &&
+      current.expression.name.text === "map" &&
+      current.arguments.length === 1 &&
+      (ts.isArrowFunction(current.arguments[0]) ||
+        ts.isFunctionExpression(current.arguments[0]))
+    )
+      return { call: current, callback: current.arguments[0] };
+  }
+  return null;
+}
+
+function isValidServiceIndexExpression(
+  expression,
+  opening,
+  file,
+  componentName = "Experience",
+  elements = null,
+) {
+  if (!expression) return false;
+  const map = enclosingServiceMap(opening, file);
+  if (map) {
+    const binding = ts.isIdentifier(expression)
+      ? visibleBinding(expression.text, expression)
+      : null;
+    const collection = map.call.expression.expression;
+    const sealedCollection =
+      isSealedServiceCollectionExpression(
+        collection,
+        file,
+        new Set(),
+        componentName,
+      ) ||
+      (ts.isPropertyAccessExpression(collection) &&
+        collection.name.text === "services" &&
+        isSealedContentExpression(
+          collection.expression,
+          componentName,
+          new Set(),
+          file,
+          elements || collectJsxElements(file.text).elements,
+        ));
+    return Boolean(
+      sealedCollection &&
+      binding?.kind === "parameter" &&
+      binding.node === map.callback.parameters[1] &&
+      !isBindingMutated(binding.node, file),
+    );
+  }
+  if (!ts.isNumericLiteral(expression)) return false;
+  const value = Number(expression.text);
+  return Number.isSafeInteger(value) && value >= 0;
 }
 
 /**

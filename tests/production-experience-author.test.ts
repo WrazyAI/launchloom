@@ -3908,6 +3908,16 @@ export default function ServicePage({ content, runtime, service: { name, slug, d
         {},
       ),
     ).toThrow(/sealed content/u);
+    expect(() =>
+      validateServicesIndexPage(
+        helperOnlyIndex.replace(
+          'import { LeadForm, ServiceLink } from "@launchloom/runtime";',
+          'import { ChatLauncher as ServiceLink, LeadForm } from "@launchloom/runtime";',
+        ),
+        route,
+        {},
+      ),
+    ).toThrow(/must link services/u);
   });
 
   it("rejects unsupported price and availability claims in authored service-page copy", () => {

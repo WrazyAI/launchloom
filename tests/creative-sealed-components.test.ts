@@ -39,6 +39,15 @@ describe("sealed creative runtime components", () => {
     ))).toBe("");
   });
 
+  it("keeps approved media when alt is not a string", () => {
+    const html = renderToStaticMarkup(createElement(runtime.CreativeImage, {
+      content,
+      slot: "hero",
+      alt: 0 as unknown as string,
+    }));
+    expect(html).toContain('<img src="/images/sash.webp" alt=""');
+  });
+
   it("does not render nonapproved configured media or malformed configured slugs", () => {
     const unapproved = {
       ...content,
@@ -68,6 +77,11 @@ export default function Experience({ content, runtime }) {
     expect(() => validate(experience.replace('slot="hero"', 'slot="unknown"'))).toThrow(/CreativeImage.*slot/u);
     expect(() => validate(experience.replace('alt="Illustrated window"', 'alt="Illustrated window" {...props}'))).toThrow(/CreativeImage.*spread/u);
     expect(() => validate(experience.replace("index={index}", "index={index} target=\"_blank\""))).toThrow(/ServiceLink.*target/u);
+    expect(() => validate(experience.replace("index={index}", "index={missingIndex}"))).toThrow(/ServiceLink.*index/u);
+    expect(() => validate(experience.replace("index={index}", "index={-1}"))).toThrow(/ServiceLink.*index/u);
+    expect(() => validate(experience.replace("index={index}", "index={1.5}"))).toThrow(/ServiceLink.*index/u);
+    expect(() => validate(experience.replace("index={index}", "index={\"0\"}"))).toThrow(/ServiceLink.*index/u);
+    expect(() => validate(experience.replace("index={index}", "index={0}"))).toThrow(/ServiceLink.*index/u);
     expect(() => validate(experience
       .replace('import { CreativeImage, ServiceLink, LeadForm }', 'import Helpers from "@launchloom/runtime";\nimport { ServiceLink, LeadForm }')
       .replace('<CreativeImage content={content}', '<Helpers.CreativeImage content={other}')))
@@ -79,6 +93,8 @@ export default function Experience({ content, runtime }) {
     expect(() => validate(experience.replace('<ServiceLink content={content} index={index} />',
       '<a href={`/services/${other.slug}/`}>{service.name}</a>'))).toThrow(/unsafe URL attribute href/u);
     expect(() => validate(experience.replace('<CreativeImage content={content} slot="hero" alt="Illustrated window" />', '<CreativeImage content={content} slot="hero" alt={null} />'))).toThrow(/CreativeImage.*alt/u);
+    expect(() => validate(experience.replace('alt="Illustrated window"', "alt={0}"))).toThrow(/CreativeImage.*alt/u);
+    expect(() => validate(experience.replace('alt="Illustrated window"', "alt={content.hero.heading}"))).not.toThrow();
     expect(() => validate(experience.replace('<CreativeImage content={content} slot="hero" alt="Illustrated window" />', '<CreativeImage content={content} slot="hero" alt="" /><CreativeImage content={content} slot="hero" alt="" /><img src={content.hero.image} alt="" />'))).toThrow(/reuses the primary hero image/u);
     expect(() => validate(experience)).not.toThrow();
     const withHelper = `function ServiceArt({ content }) { return <CreativeImage content={content} slot="hero" alt="Illustrated window" />; }\n${experience.replace(
@@ -102,5 +118,16 @@ export default function Experience({ content, runtime }) {
       .replace("function ServiceArt({ content })", "function ServiceArt({ other: content })")
       .replace("<ServiceArt content={content} />", "<ServiceArt other={content} />")))
       .toThrow(/sealed content/u);
+    const recursive = `function ServiceArt({ content }) { return <div><ServiceArt content={content} /><CreativeImage content={content} slot="hero" alt="Illustrated window" /></div>; }\n${experience.replace(
+      '<CreativeImage content={content} slot="hero" alt="Illustrated window" />',
+      "<ServiceArt content={content} />",
+    )}`;
+    expect(() => validate(recursive)).toThrow(/sealed content/u);
+    const servicesSection = '{content.services.map((service, index) => <article key={service.name}><h2>{service.name}</h2><p>{service.description}</p><ServiceLink content={content} index={index} /></article>)}';
+    const helperServices = `function ServiceMenu({ content }) { return <section id="services">${servicesSection}</section>; }\n${experience.replace(
+      `<section id="services">${servicesSection}</section>`,
+      "<ServiceMenu content={content} />",
+    )}`;
+    expect(() => validate(helperServices)).not.toThrow();
   });
 });

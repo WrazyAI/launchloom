@@ -159,8 +159,8 @@ export function CreativeImage({ content, slot, alt, className }: {
     : slot === "secondary" ? content.hero.secondaryImage
       : slot === "tertiary" ? content.hero.tertiaryImage
         : slot === "logo" ? content.brand.logo : undefined;
-  if (typeof alt !== "string" || !src || !isSafeSealedImageUrl(src)) return null;
-  return <img src={src} alt={alt} className={className}
+  if (!src || !isSafeSealedImageUrl(src)) return null;
+  return <img src={src} alt={typeof alt === "string" ? alt : ""} className={className}
     loading={slot === "hero" ? "eager" : "lazy"} fetchPriority={slot === "hero" ? "high" : undefined} />;
 }
 
