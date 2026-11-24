@@ -3918,6 +3918,15 @@ export default function ServicePage({ content, runtime, service: { name, slug, d
         {},
       ),
     ).toThrow(/must link services/u);
+    const trailingComment = helperOnlyIndex
+      .replace(/<ServiceLink[\s\S]*?<\/ServiceLink>/u, "<span />")
+      .replace(
+        "  return <main data-services-index>",
+        "  const marker = true; // <ServiceLink content={content} index={0} />\n  return <main data-services-index>",
+      );
+    expect(() =>
+      validateServicesIndexPage(trailingComment, route, {}),
+    ).toThrow(/must link services/u);
   });
 
   it("rejects unsupported price and availability claims in authored service-page copy", () => {

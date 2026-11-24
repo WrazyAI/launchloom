@@ -75,7 +75,7 @@ export function assertCreativeInnerPageSource(
   if (!/<h1\b/u.test(value)) fail("must render a page H1 heading");
   const withoutComments = value
     .replace(/\/\*[\s\S]*?\*\//gu, "")
-    .replace(/(^|\n)\s*\/\/[^\n]*/gu, "$1");
+    .replace(/\/\/[^\n]*/gu, "");
   const runtimeImports = [
     ...withoutComments.matchAll(
       /import\s*\{([^}]*)\}\s*from\s*["']@launchloom\/runtime["']/gu,
