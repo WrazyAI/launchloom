@@ -1254,49 +1254,85 @@ export function GenerationActivity({
   const threadMainContent = (
     <>
       {topBanner}
-      <header className="admin-activity__head">
-        <div>
-          {threaded ? (
-            <p className="admin-view-kicker">Execution trace</p>
-          ) : null}
-          <h3 id="generation-activity-title">
-            {threaded ? "Agent runs" : "Live activity"}
+      {threaded ? (
+        <header className="admin-chat__meta-strip">
+          <h3 id="generation-activity-title" className="admin-visually-hidden">
+            Agent runs
           </h3>
-          {threaded ? (
-            <p className="admin-activity__intro">
-              Follow recorded agent turns, collapsible reasoning traces, tool
-              calls, and model outputs.
+          <div className="admin-chat__meta-left">
+            {usage ? (
+              <div
+                className="admin-activity__summary"
+                title="Token totals cover completed calls only, not live token growth. Streaming rows are labeled as estimates."
+              >
+                <span>{usage.responses}</span>
+                <span>{usage.tokens}</span>
+                <span>{usage.cost}</span>
+              </div>
+            ) : null}
+            <span className="admin-activity__meta">
+              {page
+                ? `Updated ${formatRelativeTime(page.observedAt, now)} · UTC`
+                : "No activity snapshot yet"}
+            </span>
+          </div>
+          <div className="admin-activity__pills">
+            {connection === "disconnected" ? (
+              <span className="admin-activity__status admin-activity__status--bad">
+                Connection lost
+              </span>
+            ) : null}
+            {recording ? (
+              <span
+                className={`admin-activity__status admin-activity__status--${
+                  recording.tone === "live"
+                    ? "live"
+                    : recording.tone === "warning"
+                      ? "warn"
+                      : recording.tone === "error"
+                        ? "bad"
+                        : "muted"
+                }`}
+              >
+                {recording.label}
+              </span>
+            ) : null}
+          </div>
+        </header>
+      ) : (
+        <header className="admin-activity__head">
+          <div>
+            <h3 id="generation-activity-title">Live activity</h3>
+            <p className="admin-activity__meta">
+              {page
+                ? `Updated ${formatRelativeTime(page.observedAt, now)} · times in UTC`
+                : "No activity snapshot yet"}
             </p>
-          ) : null}
-          <p className="admin-activity__meta">
-            {page
-              ? `Updated ${formatRelativeTime(page.observedAt, now)} · times in UTC`
-              : "No activity snapshot yet"}
-          </p>
-        </div>
-        <div className="admin-activity__pills">
-          {connection === "disconnected" ? (
-            <span className="admin-activity__status admin-activity__status--bad">
-              Connection lost
-            </span>
-          ) : null}
-          {recording ? (
-            <span
-              className={`admin-activity__status admin-activity__status--${
-                recording.tone === "live"
-                  ? "live"
-                  : recording.tone === "warning"
-                    ? "warn"
-                    : recording.tone === "error"
-                      ? "bad"
-                      : "muted"
-              }`}
-            >
-              {recording.label}
-            </span>
-          ) : null}
-        </div>
-      </header>
+          </div>
+          <div className="admin-activity__pills">
+            {connection === "disconnected" ? (
+              <span className="admin-activity__status admin-activity__status--bad">
+                Connection lost
+              </span>
+            ) : null}
+            {recording ? (
+              <span
+                className={`admin-activity__status admin-activity__status--${
+                  recording.tone === "live"
+                    ? "live"
+                    : recording.tone === "warning"
+                      ? "warn"
+                      : recording.tone === "error"
+                        ? "bad"
+                        : "muted"
+                }`}
+              >
+                {recording.label}
+              </span>
+            ) : null}
+          </div>
+        </header>
+      )}
 
       {!enabled ? (
         <p className="admin-activity__empty">
@@ -1304,7 +1340,7 @@ export function GenerationActivity({
         </p>
       ) : (
         <>
-          {usage ? (
+          {usage && !threaded ? (
             <>
               <div className="admin-activity__summary">
                 <span>{usage.responses}</span>

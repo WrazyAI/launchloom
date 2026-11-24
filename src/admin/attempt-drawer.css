@@ -136,14 +136,44 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 18px 24px 20px;
+  padding: 12px 24px 18px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 .admin-chat__scroll > * {
   flex: 0 0 auto;
   min-width: 0;
+}
+.admin-chat__meta-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+}
+.admin-chat__meta-left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  min-width: 0;
+}
+.admin-chat__meta-strip .admin-activity__summary {
+  padding: 5px 10px;
+  border-radius: 8px;
+  gap: 10px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.admin-chat__meta-strip .admin-activity__meta {
+  margin: 0;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.admin-activity--thread .admin-activity__note {
+  margin: -4px 0 0;
+  font-size: 11.5px;
 }
 .admin-chat__dock {
   position: relative;
@@ -1448,10 +1478,10 @@
     padding-inline: 2px;
   }
   .admin-activity--thread .admin-activity__pills {
-    margin-top: 10px;
+    margin-top: 0;
   }
   .admin-chat__scroll {
-    padding: 14px 14px 16px;
+    padding: 10px 14px 14px;
   }
   .admin-activity--thread .admin-activity__toolbar--unified {
     flex-wrap: wrap;

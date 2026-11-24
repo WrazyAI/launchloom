@@ -3423,9 +3423,11 @@ it("renders model calls, actions, usage and inspectable evidence in a dedicated 
         activity.locator(".admin-activity__coverage summary").textContent(),
       )
       .toContain("Coverage: 1 instrumented");
-    await visible(
-      activity.getByText(/Token totals cover completed calls only/u),
-    );
+    await expect
+      .poll(() =>
+        activity.locator(".admin-activity__summary").getAttribute("title"),
+      )
+      .toContain("Token totals cover completed calls only");
 
     await activity.getByRole("button", { name: /Model request/u }).click();
     const evidence = activity.locator(
