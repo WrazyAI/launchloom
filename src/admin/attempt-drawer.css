@@ -146,6 +146,7 @@
   min-width: 0;
 }
 .admin-chat__dock {
+  position: relative;
   flex: 0 0 auto;
   display: grid;
   gap: 8px;
@@ -153,6 +154,55 @@
   border-top: 1px solid var(--chat-line);
   background: var(--chat-paper);
   box-shadow: 0 -10px 26px -18px rgba(16, 37, 31, 0.16);
+}
+@keyframes admin-jump-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+.admin-chat__jump-btn {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--chat-line);
+  border-radius: 999px;
+  background: var(--chat-paper);
+  color: var(--chat-forest);
+  box-shadow:
+    0 4px 14px -4px rgba(16, 37, 31, 0.2),
+    0 1px 2px rgba(16, 37, 31, 0.08);
+  cursor: pointer;
+  animation: admin-jump-pop 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+.admin-chat__jump-btn svg {
+  width: 16px;
+  height: 16px;
+}
+.admin-chat__jump-btn:hover {
+  background: var(--admin-ivory, #f4f2ea);
+  border-color: #b7c2b7;
+  transform: translate(-50%, -1px);
+  box-shadow:
+    0 6px 18px -4px rgba(16, 37, 31, 0.24),
+    0 2px 4px rgba(16, 37, 31, 0.1);
 }
 .admin-chat__dock-bar {
   display: flex;
@@ -472,14 +522,76 @@
   small {
   color: var(--chat-lime);
 }
-.admin-activity--thread .admin-activity__toolbar {
-  gap: 10px;
+.admin-activity--thread .admin-activity__toolbar--unified {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  min-width: 0;
 }
-.admin-activity__toolbar-actions {
+.admin-activity--thread
+  .admin-activity__toolbar--unified
+  .admin-activity__filters {
+  flex: 0 0 auto;
+}
+.admin-activity--thread .admin-activity__stages--inline {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0 0 0 8px;
+  border-left: 1px solid var(--chat-line-soft);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.admin-activity--thread .admin-activity__stages--inline::-webkit-scrollbar {
+  display: none;
+}
+.admin-activity--thread .admin-activity__stages--inline > li {
+  display: flex;
+  flex: 0 0 auto;
+}
+.admin-chat__thinking-btn {
+  flex: 0 0 auto;
+  margin-left: auto;
   display: inline-flex;
   align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--chat-line);
+  border-radius: 8px;
+  background: var(--chat-paper);
+  color: var(--chat-forest);
+  font-family: "Manrope", "Avenir Next", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+.admin-chat__thinking-btn svg {
+  width: 13px;
+  height: 13px;
+  color: var(--chat-ink-2);
+  flex: 0 0 auto;
+}
+.admin-chat__thinking-btn:hover {
+  background: var(--chat-hover);
+  border-color: #b7c2b7;
+}
+.admin-chat__thinking-btn[aria-pressed="true"] {
+  background: #edf3ee;
+  border-color: #b7c9be;
 }
 .admin-activity--thread .admin-activity__filters {
   background: var(--chat-field);
@@ -1341,6 +1453,16 @@
   .admin-chat__scroll {
     padding: 14px 14px 16px;
   }
+  .admin-activity--thread .admin-activity__toolbar--unified {
+    flex-wrap: wrap;
+  }
+  .admin-activity--thread .admin-activity__stages--inline {
+    border-left: 0;
+    padding-left: 0;
+  }
+  .admin-chat__thinking-btn {
+    margin-left: 0;
+  }
   .admin-chat__dock {
     padding: 10px 14px 10px;
   }
@@ -1357,7 +1479,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .admin-timeline-drawer__scrim,
-  .admin-timeline-drawer__panel {
+  .admin-timeline-drawer__panel,
+  .admin-chat__jump-btn {
     animation: none;
   }
 }

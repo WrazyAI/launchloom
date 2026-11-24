@@ -3698,6 +3698,32 @@ it("renders chat-style Agent runs with collapsible thinking traces, structured J
       ),
     );
 
+    // Filters, inline stage tags, and the Collapse/Expand thinking button
+    // share one single horizontal toolbar row on desktop.
+    const filtersGroup = activity.getByRole("group", {
+      name: "Activity filters",
+    });
+    const thinkingToolbarBtn = activity.locator(".admin-chat__thinking-btn");
+    await visible(thinkingToolbarBtn);
+    expect(
+      await thinkingToolbarBtn.evaluate(
+        (element) => getComputedStyle(element).textDecorationLine,
+      ),
+    ).toBe("none");
+    const [filtersBox, stageBox, thinkingBtnBox] = await Promise.all([
+      filtersGroup.boundingBox(),
+      stageBtn.boundingBox(),
+      thinkingToolbarBtn.boundingBox(),
+    ]);
+    expect(filtersBox).not.toBeNull();
+    expect(stageBox).not.toBeNull();
+    expect(thinkingBtnBox).not.toBeNull();
+    const filtersMid = filtersBox!.y + filtersBox!.height / 2;
+    const stageMid = stageBox!.y + stageBox!.height / 2;
+    const thinkingMid = thinkingBtnBox!.y + thinkingBtnBox!.height / 2;
+    expect(Math.abs(filtersMid - stageMid)).toBeLessThanOrEqual(6);
+    expect(Math.abs(filtersMid - thinkingMid)).toBeLessThanOrEqual(6);
+
     // Locked future prompt composer is anchored to the bottom of the drawer,
     // with the "View timeline" trigger directly beneath it.
     const dock = activity.locator(".admin-chat__dock");
@@ -3731,13 +3757,34 @@ it("renders chat-style Agent runs with collapsible thinking traces, structured J
       composerBox!.y + composerBox!.height - 1,
     );
 
+    // Scrolling up shows the icon-only "Jump to latest" button anchored above
+    // the input bar; clicking it returns to the bottom and hides the button.
+    const scroller = activity.locator(".admin-chat__scroll");
+    await scroller.evaluate((element) => {
+      element.scrollTop = 0;
+      element.dispatchEvent(new Event("scroll"));
+    });
+    const jumpBtn = dock.getByRole("button", { name: "Jump to latest" });
+    await visible(jumpBtn);
+    expect((await jumpBtn.textContent())?.trim() || "").toBe("");
+    const jumpBox = await jumpBtn.boundingBox();
+    expect(jumpBox).not.toBeNull();
+    expect(jumpBox!.y + jumpBox!.height).toBeLessThanOrEqual(dockBox!.y + 1);
+
     if (process.env.ADMIN_DESIGN_CAPTURE_DIR) {
       await page.setViewportSize({ width: 1512, height: 960 });
+      await scroller.evaluate((element) => {
+        element.scrollTop = 120;
+        element.dispatchEvent(new Event("scroll"));
+      });
       await page.waitForTimeout(250);
       await page.screenshot({
         path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-agent-runs-anchored-1512.png`,
       });
     }
+
+    await jumpBtn.click();
+    await expect.poll(() => jumpBtn.count()).toBe(0);
 
     // Opening "View timeline" reveals the compact vertical Stage timeline drawer
     // and Escape dismisses only the timeline drawer without closing the inspector.
