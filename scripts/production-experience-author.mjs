@@ -1,6 +1,7 @@
 import { compilePageBriefs } from "../templates/client-site/src/lib/page-briefs.mjs";
 import { redactPrivateLocation } from "../templates/client-site/src/lib/business-facts.mjs";
 import { resolveLocationMap } from "../templates/client-site/src/lib/location-map.mjs";
+import { creativeImageSlots, isSafeSealedImageUrl } from "../templates/client-site/src/lib/creative-image-policy.mjs";
 import { findUnsupportedBusinessClaimMatches } from "./business-copy-claims.mjs";
 import { stripBoundedCorrections } from "./bounded-corrections.mjs";
 import { routeLinkedContent } from "../templates/client-site/src/lib/route-inventory.mjs";
@@ -18,6 +19,7 @@ import {
   buildCandidateManifest,
 } from "./creative-compiler.mjs";
 import {
+  CREATIVE_HOMEPAGE_MEDIA_LINK_CONTRACT,
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   HERO_MEDIA_FOCUS_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
@@ -872,8 +874,10 @@ function assertSingleMainHeading(elements, route, fileName) {
 
 const contentBoundRuntimeHelpers = new Set([
   "ContactLinks",
+  "CreativeImage",
   "FAQList",
   "LocationMap",
+  "ServiceLink",
   "SocialProof",
 ]);
 const optionalSealedImagePaths = new Set([
@@ -883,11 +887,12 @@ const optionalSealedImagePaths = new Set([
   "content.hero.tertiaryImage",
 ]);
 
-function validateContentBoundRuntimeHelpers(source, route) {
+function validateContentBoundRuntimeHelpers(source, route, content, rootComponent = "Experience") {
   const { file, elements } = collectJsxElements(source);
   const namedHelpers = new Map();
   const runtimeNamespaces = new Set();
   const sealedBindings = new Set();
+  const imageSources = [];
 
   for (const statement of file.statements) {
     if (
@@ -897,7 +902,9 @@ function validateContentBoundRuntimeHelpers(source, route) {
     )
       continue;
 
-    const bindings = statement.importClause?.namedBindings;
+    const clause = statement.importClause;
+    if (clause?.name) runtimeNamespaces.add(clause.name.text);
+    const bindings = clause?.namedBindings;
     if (!bindings) continue;
     if (ts.isNamespaceImport(bindings)) {
       runtimeNamespaces.add(bindings.name.text);
@@ -938,6 +945,73 @@ function validateContentBoundRuntimeHelpers(source, route) {
       throw new Error(
         `Candidate ${route.id} runtime helper ${localName} must receive sealed content through content={content}.`,
       );
+    if (helperName === "CreativeImage" || helperName === "ServiceLink") {
+      const importedIdentifier = ts.isPropertyAccessExpression(tagName) ? tagName.expression : tagName;
+      if (visibleBinding(importedIdentifier.text, importedIdentifier))
+        throw new Error(`Candidate ${route.id} runtime helper ${localName} must not shadow the runtime import.`);
+      const contentAttribute = jsxAttribute(opening, "content");
+      const expression = contentAttribute?.initializer && ts.isJsxExpression(contentAttribute.initializer)
+        ? contentAttribute.initializer.expression : null;
+      if (
+        !expression ||
+        !isSealedContentExpression(
+          expression,
+          rootComponent,
+          new Set(),
+          file,
+          elements,
+        )
+      )
+        throw new Error(`Candidate ${route.id} runtime helper ${localName} requires the entry's sealed content parameter.`);
+      const allowed = new Set(["content", "className", "key", ...(helperName === "CreativeImage" ? ["slot", "alt"] : ["index"])]);
+      const seen = new Set();
+      for (const prop of opening.attributes.properties) {
+        if (ts.isJsxSpreadAttribute(prop))
+          throw new Error(`Candidate ${route.id} runtime helper ${localName} cannot use a spread attribute.`);
+        const name = prop.name.getText(file);
+        if (!allowed.has(name) || seen.has(name))
+          throw new Error(`Candidate ${route.id} runtime helper ${localName} cannot use prop ${name}.`);
+        seen.add(name);
+      }
+      if (helperName === "CreativeImage") {
+        const slot = jsxAttribute(opening, "slot")?.initializer;
+        if (!slot || !ts.isStringLiteral(slot) || !Object.hasOwn(creativeImageSlots, slot.text))
+          throw new Error(`Candidate ${route.id} runtime helper ${localName} requires a literal hero, secondary, tertiary, or logo slot.`);
+        const alt = jsxAttribute(opening, "alt")?.initializer;
+        const altExpression =
+          alt && ts.isJsxExpression(alt) ? alt.expression : null;
+        if (
+          !alt ||
+          (!ts.isStringLiteral(alt) &&
+            !ts.isNoSubstitutionTemplateLiteral(alt) &&
+            !isUsableCreativeAltExpression(altExpression))
+        )
+          throw new Error(
+            `Candidate ${route.id} runtime helper ${localName} requires a usable alt attribute.`,
+          );
+        const [group, field] = creativeImageSlots[slot.text];
+        const image = content?.[group]?.[field];
+        if (image && !isSafeSealedImageUrl(image))
+          throw new Error(`Candidate ${route.id} runtime helper ${localName} requires a safe sealed image URL.`);
+        if (image) imageSources.push(String(image).trim());
+      } else {
+        const index = jsxAttribute(opening, "index")?.initializer;
+        const indexExpression =
+          index && ts.isJsxExpression(index) ? index.expression : null;
+        if (
+          !isValidServiceIndexExpression(
+            indexExpression,
+            opening,
+            file,
+            rootComponent,
+            elements,
+          )
+        )
+          throw new Error(
+            `Candidate ${route.id} runtime helper ${localName} requires a nonnegative literal index or the enclosing content.services map index.`,
+          );
+      }
+    }
     // FAQList is a trusted runtime adapter that reads content.faqs itself.
     // Count that as the FAQ token binding only when it is inside the required
     // FAQ section; unrelated helpers and unbound helper calls cannot satisfy it.
@@ -947,7 +1021,7 @@ function validateContentBoundRuntimeHelpers(source, route) {
     )
       sealedBindings.add("content.faqs");
   }
-  return sealedBindings;
+  return { sealedBindings, imageSources };
 }
 
 function bindingPatternNames(name) {
@@ -1359,11 +1433,11 @@ function expressionPath(expression, file) {
   return "";
 }
 
-function isRootExperienceFunction(fn, file) {
+function isRootExperienceFunction(fn, file, componentName = "Experience") {
   if (!fn) return false;
   if (
     ts.isFunctionDeclaration(fn) &&
-    fn.name?.text === "Experience" &&
+    fn.name?.text === componentName &&
     fn.parent === file
   )
     return true;
@@ -1374,21 +1448,90 @@ function isRootExperienceFunction(fn, file) {
   return (
     ts.isVariableDeclaration(declaration) &&
     ts.isIdentifier(declaration.name) &&
-    declaration.name.text === "Experience" &&
+    declaration.name.text === componentName &&
     lexicalScope(declaration) === file
   );
 }
 
-function isRootExperienceContentIdentifier(identifier, file) {
+function isRootExperienceContentIdentifier(identifier, file, componentName) {
   if (!ts.isIdentifier(identifier) || identifier.text !== "content")
     return false;
   const binding = visibleBinding("content", identifier);
-  return (
+  return Boolean(
     binding?.kind === "parameter" &&
-    isRootExperienceFunction(binding.node.parent, file) &&
+    isRootExperienceFunction(binding.node.parent, file, componentName) &&
     bindingPathForName(binding.node.name, "content")?.join(".") === "content" &&
-    !isBindingMutated(binding.node, file)
+    !isBindingMutated(binding.node, file),
   );
+}
+
+function componentNameForFunction(fn) {
+  if (!fn) return "";
+  if (ts.isFunctionDeclaration(fn) && fn.name) return fn.name.text;
+  if (
+    (ts.isArrowFunction(fn) || ts.isFunctionExpression(fn)) &&
+    ts.isVariableDeclaration(fn.parent) &&
+    ts.isIdentifier(fn.parent.name)
+  )
+    return fn.parent.name.text;
+  if (ts.isFunctionExpression(fn) && fn.name) return fn.name.text;
+  return "";
+}
+
+/**
+ * Treat `content` as sealed when it is the validated page entry parameter or a
+ * prop of an in-file section component whose every call site receives sealed
+ * content. This keeps helper factoring usable without accepting a fabricated
+ * local object or an unverified prop.
+ */
+function isSealedContentExpression(
+  expression,
+  componentName,
+  seen = new Set(),
+  file = null,
+  elements = null,
+) {
+  if (!expression) return false;
+  file ||= expression.getSourceFile();
+  elements ||= collectJsxElements(file.text).elements;
+  if (isRootExperienceContentIdentifier(expression, file, componentName))
+    return true;
+  if (!ts.isIdentifier(expression) || expression.text !== "content") return false;
+  const binding = visibleBinding("content", expression);
+  if (
+    binding?.kind !== "parameter" ||
+    bindingPathForName(binding.node.name, "content")?.join(".") !== "content" ||
+    isBindingMutated(binding.node, file) ||
+    seen.has(binding.node)
+  )
+    return false;
+  const helperName = componentNameForFunction(binding.node.parent);
+  if (!helperName) return false;
+  const callSites = elements.filter(
+    ({ opening }) => jsxOpeningName(opening) === helperName,
+  );
+  if (!callSites.length) return false;
+  const nextSeen = new Set(seen).add(binding.node);
+  return callSites.every(({ opening }) => {
+    const properties = jsxAttributes(opening);
+    if (properties.some((property) => ts.isJsxSpreadAttribute(property)))
+      return false;
+    const contentAttributes = properties.filter(
+      (property) =>
+        ts.isJsxAttribute(property) &&
+        property.name.getText() === "content",
+    );
+    if (contentAttributes.length !== 1) return false;
+    const initializer = contentAttributes[0].initializer;
+    if (!initializer || !ts.isJsxExpression(initializer)) return false;
+    return isSealedContentExpression(
+      initializer.expression,
+      componentName,
+      nextSeen,
+      file,
+      elements,
+    );
+  });
 }
 
 function assignmentTargetRoots(node) {
@@ -1621,49 +1764,6 @@ function isSealedImageExpression(expression, file) {
       isSealedImageExpression(expression.right, file)
     );
   return false;
-}
-
-function isSafeSealedImageUrl(value) {
-  const url = String(value || "").trim();
-  if (
-    /^\/(?:images|assets|_astro)\/[A-Za-z0-9._~!$&'()*+,;=@%-]+(?:\/[A-Za-z0-9._~!$&'()*+,;=@%-]+)*(?:\?[^\s#]*)?(?:#[^\s]*)?$/u.test(
-      url,
-    )
-  ) {
-    const pathname = url.split(/[?#]/u, 1)[0];
-    try {
-      return pathname.split("/").every((segment) => {
-        const decoded = decodeURIComponent(segment);
-        return (
-          decoded !== "." &&
-          decoded !== ".." &&
-          !/[\\/\u0000-\u001f]/u.test(decoded)
-        );
-      });
-    } catch {
-      return false;
-    }
-  }
-  if (
-    /^data:image\/(?:png|jpeg|webp|avif);base64,[A-Za-z0-9+/]+={0,2}$/iu.test(
-      url,
-    )
-  )
-    return true;
-  try {
-    const parsed = new URL(url);
-    return (
-      parsed.protocol === "https:" &&
-      parsed.hostname === "assets.launchloom.wrazyos.com" &&
-      parsed.username === "" &&
-      parsed.password === "" &&
-      parsed.port === "" &&
-      parsed.pathname.startsWith("/") &&
-      !parsed.pathname.split("/").some((part) => part === "." || part === "..")
-    );
-  } catch {
-    return false;
-  }
 }
 
 function isSafeLocalHref(value) {
@@ -1944,6 +2044,7 @@ function isSealedServiceCollectionExpression(
   expression,
   file,
   seen = new Set(),
+  componentName = "Experience",
 ) {
   if (!expression) return false;
   const node = unwrapUrlExpression(expression);
@@ -1951,7 +2052,7 @@ function isSealedServiceCollectionExpression(
   if (
     directPath === "content.services" &&
     ts.isPropertyAccessExpression(node) &&
-    isRootExperienceContentIdentifier(node.expression, file)
+    isRootExperienceContentIdentifier(node.expression, file, componentName)
   )
     return true;
   if (
@@ -1963,6 +2064,7 @@ function isSealedServiceCollectionExpression(
       node.expression.expression,
       file,
       seen,
+      componentName,
     );
   if (!ts.isIdentifier(node) || seen.has(node.text)) return false;
   const binding = visibleBinding(node.text, node);
@@ -1972,7 +2074,7 @@ function isSealedServiceCollectionExpression(
   if (binding.kind === "parameter")
     return (
       bindingPath?.join(".") === "content.services" &&
-      isRootExperienceFunction(binding.node.parent, file) &&
+      isRootExperienceFunction(binding.node.parent, file, componentName) &&
       !isBindingMutated(binding.node, file)
     );
   if (!(binding.node.parent.flags & ts.NodeFlags.Const)) return false;
@@ -1980,14 +2082,97 @@ function isSealedServiceCollectionExpression(
   if (bindingPath?.join(".") === "services")
     return (
       ts.isIdentifier(binding.node.initializer) &&
-      isRootExperienceContentIdentifier(binding.node.initializer, file)
+      isRootExperienceContentIdentifier(
+        binding.node.initializer,
+        file,
+        componentName,
+      )
     );
   if (bindingPath?.length) return false;
   return isSealedServiceCollectionExpression(
     binding.node.initializer,
     file,
     seen,
+    componentName,
   );
+}
+
+function isUsableCreativeAltExpression(expression) {
+  if (!expression) return false;
+  if (
+    ts.isStringLiteral(expression) ||
+    ts.isNoSubstitutionTemplateLiteral(expression) ||
+    ts.isTemplateExpression(expression)
+  )
+    return true;
+  if (ts.isIdentifier(expression))
+    return !["NaN", "Infinity", "undefined"].includes(expression.text);
+  if (
+    ts.isPropertyAccessExpression(expression) ||
+    ts.isElementAccessExpression(expression)
+  )
+    return true;
+  return (
+    ts.isBinaryExpression(expression) &&
+    expression.operatorToken.kind === ts.SyntaxKind.PlusToken
+  );
+}
+
+function enclosingServiceMap(opening, file) {
+  for (let current = opening?.parent; current; current = current.parent) {
+    if (
+      ts.isCallExpression(current) &&
+      ts.isPropertyAccessExpression(current.expression) &&
+      current.expression.name.text === "map" &&
+      current.arguments.length === 1 &&
+      (ts.isArrowFunction(current.arguments[0]) ||
+        ts.isFunctionExpression(current.arguments[0]))
+    )
+      return { call: current, callback: current.arguments[0] };
+  }
+  return null;
+}
+
+function isValidServiceIndexExpression(
+  expression,
+  opening,
+  file,
+  componentName = "Experience",
+  elements = null,
+) {
+  if (!expression) return false;
+  const map = enclosingServiceMap(opening, file);
+  if (map) {
+    const binding = ts.isIdentifier(expression)
+      ? visibleBinding(expression.text, expression)
+      : null;
+    const collection = map.call.expression.expression;
+    const sealedCollection =
+      isSealedServiceCollectionExpression(
+        collection,
+        file,
+        new Set(),
+        componentName,
+      ) ||
+      (ts.isPropertyAccessExpression(collection) &&
+        collection.name.text === "services" &&
+        isSealedContentExpression(
+          collection.expression,
+          componentName,
+          new Set(),
+          file,
+          elements || collectJsxElements(file.text).elements,
+        ));
+    return Boolean(
+      sealedCollection &&
+      binding?.kind === "parameter" &&
+      binding.node === map.callback.parameters[1] &&
+      !isBindingMutated(binding.node, file),
+    );
+  }
+  if (!ts.isNumericLiteral(expression)) return false;
+  const value = Number(expression.text);
+  return Number.isSafeInteger(value) && value >= 0;
 }
 
 /**
@@ -2304,7 +2489,7 @@ function validateAuthoredUrlAttributes(source, route, content) {
   }
 }
 
-function validateImageRoleReuse(source, route, content) {
+function validateImageRoleReuse(source, route, content, helperImageSources) {
   const heroImage = String(content?.hero?.image || "").trim();
   if (!heroImage) return;
 
@@ -2314,7 +2499,7 @@ function validateImageRoleReuse(source, route, content) {
     return (
       resolvedImageValue(jsxAttribute(opening, "src"), content) === heroImage
     );
-  }).length;
+  }).length + helperImageSources.filter((image) => image === heroImage).length;
 
   const missingSupportingFallbacks = ["secondaryImage", "tertiaryImage"].filter(
     (slot) => {
@@ -3297,8 +3482,13 @@ function validateInnerPageSource({
       throw new Error(
         `Candidate ${route.id} ${file} is missing required sealed binding ${token}.`,
       );
-  validateContentBoundRuntimeHelpers(source, route);
-  validateImageRoleReuse(source, route, content);
+  const { imageSources } = validateContentBoundRuntimeHelpers(
+    source,
+    route,
+    content,
+    rootComponent,
+  );
+  validateImageRoleReuse(source, route, content, imageSources);
   for (const { opening } of elements) {
     if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
     const altAttribute = jsxAttribute(opening, "alt");
@@ -3508,11 +3698,12 @@ function validateExperience(source, route, content, visualBrief = {}) {
     throw new Error(
       `Candidate ${route.id} must pass sealed content to the shared LeadForm runtime surface.`,
     );
-  const helperSealedBindings = validateContentBoundRuntimeHelpers(
+  const { sealedBindings: helperSealedBindings, imageSources } = validateContentBoundRuntimeHelpers(
     source,
     route,
+    content,
   );
-  validateImageRoleReuse(source, route, content);
+  validateImageRoleReuse(source, route, content, imageSources);
   validatePurposefulInteraction(source, route, visualBrief);
   for (const { opening } of collectJsxElements(source).elements) {
     if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
@@ -3808,14 +3999,15 @@ function authorRules() {
     HERO_MEDIA_FOCUS_CONTRACT,
     REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
     VERIFIED_CLIENT_PERSONNEL_CONTRACT,
-    "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
+    "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, CreativeImage, LocationMap, ServiceLink, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
     "The host renders the location map and owns the #location anchor. Never add a custom element with that ID; an eligible map may be linked at #location.",
+    CREATIVE_HOMEPAGE_MEDIA_LINK_CONTRACT,
     "Render exactly one meaningful H1 inside the page's single <main> landmark. The main landmark must contain the hero heading and unique page content; keep the H1 out of sibling headers or sections. Use semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
     "At 390px, recombine every navigation row so the wordmark, all navigation links, and the primary action fit within the viewport; allow a deliberate second row or stack instead of a fixed non-wrapping min-content row. At all viewports, hero copy, image and CTA must remain inside the hero's visible bounds; prefer content-driven sizing and never clip text with a fixed-height overflow-hidden box. If the reference requires a fixed opening composition, prove every element fits it.",
     `Keep every individual authored source file at or below ${MAX_REPAIR_FILE_SOURCE_CHARS} characters so the safe bounded repair path can represent it. Prefer concise markup and avoid repeated CSS rules; simplify an oversized file without changing the assigned composition.`,
     'Phone and email links must use their sealed tokens. Telephone links may prefix content.brand.phone with tel: and may normalize it only with replace(/[^\\d+]/g, "") or replace(/[^0-9+]/g, ""); a local const href is allowed only when its initializer is that exact safe expression. Do not compute URLs from any other data.',
-    "For service-page links, the only accepted form is {content.services.map((service) => <a href={`/services/${service.slug}/`}>...</a>)} inside a direct map over a sealed service list. Do not search for a selected service, bind its slug into a computed href, concatenate arbitrary path parts, or derive href values from unsealed input.",
-    "The sealed hero image tokens may be empty. Render each optional image only inside a direct truthiness guard for that same token, such as {content.hero.secondaryImage && <img src={content.hero.secondaryImage} ... />}; do not emit an img with a blank src, remote URL, or a fallback that reuses the hero for a missing supporting image.",
+    "Legacy hand-written service links still require a sealed service slug; do not derive href values from unsealed input.",
+    "When using raw <img> markup, guard each optional image with a direct truthiness check for that same token, such as {content.hero.secondaryImage && <img src={content.hero.secondaryImage} ... />}; do not emit an img with a blank src, remote URL, or a fallback that reuses the hero for a missing supporting image.",
     'Give every <img> a usable alt attribute. Use concise descriptive text for informative images. Use alt="" only for purely decorative images or when adjacent text fully conveys the image\'s relevant information. Preserve supplied or reviewed descriptions for known informative assets; do not replace them with generic filler.',
     "Do not silently reuse the primary hero image to fill missing secondary or tertiary image roles. When supporting image tokens are unavailable, keep the hero unique and adapt that chapter to a non-duplicative text-led or graphic treatment that still preserves the assigned reference mechanics.",
     "When the client visual brief explicitly requests a purposeful interaction, guide, selector, chooser, or navigator, implement a clearly labeled stateful native interaction marked with data-purposeful-interaction. Keep a useful visible default/static state. FAQ disclosure, LeadForm, ChatLauncher, ordinary navigation, or an image carousel alone do not satisfy that request; use only sealed service and decision-support content and never invent advice.",

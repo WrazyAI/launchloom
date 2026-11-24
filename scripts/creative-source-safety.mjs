@@ -73,7 +73,30 @@ export function assertCreativeInnerPageSource(
   if (rootMarker && !new RegExp(`\\b${rootMarker}\\b`, "u").test(value))
     fail(`must expose ${rootMarker} on the page root`);
   if (!/<h1\b/u.test(value)) fail("must render a page H1 heading");
-  if (requireServiceRoute && !/\/services\//u.test(value))
+  const withoutComments = value
+    .replace(/\/\*[\s\S]*?\*\//gu, "")
+    .replace(/(^|\n)\s*\/\/[^\n]*/gu, "$1");
+  const runtimeImports = [
+    ...withoutComments.matchAll(
+      /import\s*\{([^}]*)\}\s*from\s*["']@launchloom\/runtime["']/gu,
+    ),
+  ].flatMap((match) => match[1].split(",").map((item) => item.trim()));
+  const serviceLinkTags =
+    withoutComments.match(/<ServiceLink\b[^>]*>/gu) || [];
+  const trustedServiceLink =
+    runtimeImports.includes("ServiceLink") &&
+    serviceLinkTags.some(
+      (tag) =>
+        !tag.includes("...") &&
+        /\bindex\s*=/u.test(tag) &&
+        (tag.match(/\bcontent\s*=/gu) || []).length === 1 &&
+        /\bcontent\s*=\s*\{\s*content\s*\}/u.test(tag),
+    );
+  if (
+    requireServiceRoute &&
+    !/\/services\//u.test(value) &&
+    !trustedServiceLink
+  )
     fail("must link services through the /services/ route");
   return true;
 }

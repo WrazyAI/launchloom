@@ -1019,7 +1019,10 @@ describe("creative repair loop", () => {
       "The room reveal remains visually dominant beside the service choice.",
     );
     expect(prompt).toContain(
-      "<FAQList content={content} />, <ContactLinks content={content} />, <LocationMap content={content} />, and <SocialProof content={content} runtime={runtime} />",
+      "Content-bound helper contract: FAQList, ContactLinks, CreativeImage, LocationMap, ServiceLink, and SocialProof",
+    );
+    expect(prompt).toContain(
+      '<CreativeImage content={content} slot="hero" alt="Description" />',
     );
     expect(prompt.indexOf('data-reference-section="hero"')).toBeLessThan(
       prompt.indexOf('data-reference-section="services"'),

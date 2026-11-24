@@ -1,5 +1,7 @@
 export { default as PageBriefSections } from "../components/PageBriefSections";
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { isSafeSealedImageUrl } from "./creative-image-policy.mjs";
 
 export type CreativeRuntime = {
   candidateId?: string;
@@ -133,6 +135,33 @@ export function ContactLinks({ content }: { content: CreativeContent }) {
       )}
     </div>
   );
+}
+
+export function ServiceLink({ content, index, className, children }: {
+  content: CreativeContent;
+  index: number;
+  className?: string;
+  children?: ReactNode;
+}) {
+  if (!Number.isSafeInteger(index) || index < 0) return null;
+  const service = content.services[index];
+  if (!service?.slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(service.slug)) return null;
+  return <a href={`/services/${service.slug}/`} className={className}>{children ?? service.name}</a>;
+}
+
+export function CreativeImage({ content, slot, alt, className }: {
+  content: CreativeContent;
+  slot: "hero" | "secondary" | "tertiary" | "logo";
+  alt: string;
+  className?: string;
+}) {
+  const src = slot === "hero" ? content.hero.image
+    : slot === "secondary" ? content.hero.secondaryImage
+      : slot === "tertiary" ? content.hero.tertiaryImage
+        : slot === "logo" ? content.brand.logo : undefined;
+  if (!src || !isSafeSealedImageUrl(src)) return null;
+  return <img src={src} alt={typeof alt === "string" ? alt : ""} className={className}
+    loading={slot === "hero" ? "eager" : "lazy"} fetchPriority={slot === "hero" ? "high" : undefined} />;
 }
 
 export function FAQList({ content }: { content: CreativeContent }) {
@@ -449,9 +478,11 @@ export function ChatLauncher() {
 export default {
   ChatLauncher,
   ContactLinks,
+  CreativeImage,
   FAQList,
   LeadForm,
   LocationMap,
+  ServiceLink,
   SocialProof,
   resolveAsset,
   useReducedMotion,
