@@ -1464,6 +1464,7 @@ function isSealedContentExpression(
   const binding = visibleBinding("content", expression);
   if (
     binding?.kind !== "parameter" ||
+    bindingPathForName(binding.node.name, "content")?.join(".") !== "content" ||
     isBindingMutated(binding.node, file) ||
     seen.has(binding.node)
   )
@@ -1476,7 +1477,16 @@ function isSealedContentExpression(
   if (!callSites.length) return false;
   const nextSeen = new Set(seen).add(binding.node);
   return callSites.every(({ opening }) => {
-    const initializer = jsxAttribute(opening, "content")?.initializer;
+    const properties = jsxAttributes(opening);
+    if (properties.some((property) => ts.isJsxSpreadAttribute(property)))
+      return false;
+    const contentAttributes = properties.filter(
+      (property) =>
+        ts.isJsxAttribute(property) &&
+        property.name.getText() === "content",
+    );
+    if (contentAttributes.length !== 1) return false;
+    const initializer = contentAttributes[0].initializer;
     if (!initializer || !ts.isJsxExpression(initializer)) return false;
     return isSealedContentExpression(
       initializer.expression,

@@ -90,5 +90,17 @@ export default function Experience({ content, runtime }) {
       "<ServiceArt content={content} />",
       "<ServiceArt content={{ ...content }} />",
     ))).toThrow(/sealed content/u);
+    expect(() => validate(withHelper.replace(
+      "<ServiceArt content={content} />",
+      "<ServiceArt content={content} {...{ content: { ...content } }} />",
+    ))).toThrow(/sealed content/u);
+    expect(() => validate(withHelper.replace(
+      "<ServiceArt content={content} />",
+      "<ServiceArt content={content} content={{ ...content }} />",
+    ))).toThrow(/sealed content/u);
+    expect(() => validate(withHelper
+      .replace("function ServiceArt({ content })", "function ServiceArt({ other: content })")
+      .replace("<ServiceArt content={content} />", "<ServiceArt other={content} />")))
+      .toThrow(/sealed content/u);
   });
 });

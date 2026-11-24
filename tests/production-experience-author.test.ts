@@ -3884,6 +3884,30 @@ export default function ServicePage({ content, runtime, service: { name, slug, d
         {},
       ),
     ).toThrow(/remote URL/u);
+
+    const helperOnlyIndex = servicesIndexPage
+      .replace(
+        'import { LeadForm } from "@launchloom/runtime";',
+        'import { LeadForm, ServiceLink } from "@launchloom/runtime";',
+      )
+      .replace(
+        "{content.services.map((item) => <li key={item.slug}><a href={`/services/${item.slug}/`}>{item.name}</a></li>)}",
+        "{content.services.map((item, index) => <li key={item.slug}><ServiceLink content={content} index={index}>{item.name}</ServiceLink></li>)}",
+      );
+    expect(helperOnlyIndex).not.toContain("/services/");
+    expect(() =>
+      validateServicesIndexPage(helperOnlyIndex, route, {}),
+    ).not.toThrow();
+    expect(() =>
+      validateServicesIndexPage(
+        helperOnlyIndex.replace(
+          "<ServiceLink content={content}",
+          "<ServiceLink {...{ content: { ...content } }}",
+        ),
+        route,
+        {},
+      ),
+    ).toThrow(/sealed content/u);
   });
 
   it("rejects unsupported price and availability claims in authored service-page copy", () => {
