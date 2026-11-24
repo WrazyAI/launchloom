@@ -450,7 +450,8 @@ describe("contextual image generation", () => {
       }),
     });
 
-    expect(prompts[0]).toHaveLength(DEFAULT_MAX_PROMPT_LENGTH);
+    expect(prompts[0].length).toBeGreaterThan(80);
+    expect(prompts[0].length).toBeLessThanOrEqual(340);
     expect(prompts[1].length).toBeLessThanOrEqual(DEFAULT_MAX_PROMPT_LENGTH);
     expect(prompts[1]).toContain("Do not create a webpage");
     expect(result.manifest.placements).toHaveLength(1);
@@ -848,21 +849,12 @@ describe("contextual image generation", () => {
         fetchImpl: async () => fakeImageResponse(),
       });
 
-      heroBriefs.set(
-        familyId,
-        prompt.split("Primary request: ")[1]?.split(" Business context: ")[0] ||
-          "",
-      );
+      heroBriefs.set(familyId, prompt);
     }
 
     expect([...heroBriefs.values()]).not.toContain("");
-    expect(
-      [...heroBriefs.values()].some((brief) =>
-        brief.includes(
-          "Create a distinctive, service-relevant scene using the assigned reference's physical subject cues",
-        ),
-      ),
-    ).toBe(false);
+    for (const brief of heroBriefs.values())
+      expect(brief).toMatch(/^Photograph of /u);
     expect(new Set(heroBriefs.values()).size).toBe(families.length);
   });
 
@@ -1328,9 +1320,14 @@ describe("contextual image generation", () => {
     });
 
     expect(prompts).toHaveLength(3);
-    expect(prompts[0]).toMatch(/living-room/i);
-    expect(prompts[1]).toMatch(/coastal-house|exterior/i);
-    expect(prompts[2]).toMatch(/painted-house|exterior/i);
+    // Routes render concurrently, so capture order is not stable.
+    expect(prompts.some((prompt) => /living-room/i.test(prompt))).toBe(true);
+    expect(
+      prompts.some((prompt) => /coastal-house|exterior/i.test(prompt)),
+    ).toBe(true);
+    expect(
+      prompts.some((prompt) => /painted-house|exterior/i.test(prompt)),
+    ).toBe(true);
     for (const prompt of prompts)
       expect(prompt).not.toMatch(/estimate form|floating estimate/iu);
   });
@@ -1380,11 +1377,9 @@ describe("contextual image generation", () => {
     });
 
     expect(prompts).toHaveLength(1);
-    expect(prompts[0]).toMatch(/standalone visual image asset/iu);
-    expect(prompts[0]).toMatch(
-      /never a website or webpage screenshot.*mockup.*poster/iu,
-    );
-    expect(prompts[0]).toMatch(/no readable text|no text-like marks/iu);
+    expect(prompts[0]).toMatch(/^Photograph of /u);
+    expect(prompts[0]).toMatch(/No people, no text, no logos/iu);
+    expect(prompts[0]).not.toMatch(/visual medium:|asset type:|hard rule:/iu);
     expect(prompts[0]).not.toContain("typographic-poster");
     expect(prompts[0]).not.toContain("typographic-monument");
     expect(prompts[0]).not.toContain("poster-like headline composition");
@@ -1970,7 +1965,7 @@ describe("scene-aware generated-image review", () => {
       },
     } as any);
 
-    expect(reviews[0].scene).toContain("one standalone visual image asset");
+    expect(reviews[0].scene).toContain("Photograph of");
     expect(reviews[0].businessKind).toBe("architecture");
     expect(reviews[0].placement).toBe("hero");
     expect(result.manifest.placements[0].imageReview.status).toBe("approved");
@@ -2102,5 +2097,50 @@ describe("reviewer failure handling", () => {
       unavailable: 0,
       total: 2,
     });
+  });
+});
+
+describe("Workers AI image provider pipeline", () => {
+  it("generates through Workers AI and records its provenance", async () => {
+    vi.stubEnv("IMAGE_PROVIDER", "workers-ai");
+    vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "account-1");
+    vi.stubEnv("CLOUDFLARE_API_TOKEN", "token-1");
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-workers-ai-"));
+    const png = await sharp({
+      create: { width: 1024, height: 1024, channels: 3, background: { r: 40, g: 60, b: 50 } },
+    })
+      .png()
+      .toBuffer();
+    const calls: string[] = [];
+    const fetchImpl = async (url: string) => {
+      calls.push(String(url));
+      return new Response(
+        JSON.stringify({ success: true, result: { image: png.toString("base64") } }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    };
+    try {
+      const result = await generateContextualAssets({
+        site: fixture(),
+        inspiration: { routes: [{ id: "workers-ai-route" }] },
+        outputDir,
+        key: "",
+        maxImages: 1,
+        maxRequests: 1,
+        fetchImpl,
+        imageReviewer: async () => ({
+          approved: true,
+          reasonCodes: [],
+          model: "test-reviewer",
+        }),
+      } as any);
+      expect(result.manifest.provider).toBe("workers-ai");
+      expect(result.manifest.placements).toHaveLength(1);
+      expect(result.manifest.placements[0].imageReview.status).toBe("approved");
+      expect(calls.some((url) => url.includes("api.cloudflare.com"))).toBe(true);
+      expect(result.site.images.hero).toMatch(/^\/images\/generated\/hero-/);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });

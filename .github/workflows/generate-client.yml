@@ -365,6 +365,10 @@ jobs:
       FAL_IMAGE_MODEL: ${{ vars.FAL_IMAGE_MODEL || 'fal-ai/minimax/image-01' }}
       FAL_IMAGE_MAX_IMAGES: ${{ vars.FAL_IMAGE_MAX_IMAGES || '3' }}
       FAL_IMAGE_MAX_REQUESTS: ${{ vars.FAL_IMAGE_MAX_REQUESTS || '15' }}
+      # Workers AI is the default image provider; FAL stays available by
+      # setting the IMAGE_PROVIDER variable to fal.
+      IMAGE_PROVIDER: ${{ vars.IMAGE_PROVIDER || 'workers-ai' }}
+      WORKERS_AI_IMAGE_MODEL: ${{ vars.WORKERS_AI_IMAGE_MODEL || '@cf/black-forest-labs/flux-1-schnell' }}
       # Code authoring and repair are hard-pinned to DeepSeek V4.1 Flash.
       # GLM and DeepSeek v4-pro are visual-judge/trial models only.
       CREATIVE_EXPERIENCE_MODEL: deepseek/deepseek-v4.1-flash
@@ -402,6 +406,7 @@ jobs:
       LEAD_SIGNING_SECRET: ${{ secrets.LEAD_SIGNING_SECRET }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_WORKERS_AI_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_AI_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ (github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery && secrets.LAUNCHLOOM_INTERNAL_QA_RECIPIENT) || (!(github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery) && vars.LAUNCHLOOM_DEVELOPER_EMAIL) || '' }}
