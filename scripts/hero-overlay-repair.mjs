@@ -55,6 +55,22 @@ body[data-ll-route="/"] [data-hero]::after {
   );
   pointer-events: none;
 }
+/* The copy group is often a data-hero-copy div inside a figcaption that owns
+   the opaque plate. Clearing only the inner div left the card in place, the
+   repair loop restored the pre-repair state, and every round re-applied the
+   same correction. Clear the media caption that contains the copy group. */
+body[data-ll-route="/"] [data-hero-media] figcaption:has([data-hero-copy]) {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  background-color: transparent;
+  color: #f7f3e8;
+}
 body[data-ll-route="/"] [data-hero-copy] {
   position: relative;
   z-index: 2;
