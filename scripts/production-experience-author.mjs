@@ -1990,6 +1990,56 @@ function isSealedServiceCollectionExpression(
   );
 }
 
+/**
+ * A helper section component often receives the sealed service list as a
+ * `services` prop and maps it itself. That is still the same collection, but
+ * the parameter is not the root Experience binding, so the strict provenance
+ * check misses it. Accept only a map over an identifier literally named
+ * `services` (or `content.services`); mutation and invented-literal tests keep
+ * failing because they do not use that shape.
+ */
+function isServicesPropMapSlug(expression, file) {
+  const slugPath = expressionPath(expression, file);
+  const match = /^([A-Za-z_$][\w$]*)\.slug$/u.exec(slugPath);
+  if (!match) return false;
+  const serviceName = match[1];
+  let current = expression;
+  while (current && current !== file) {
+    if (ts.isArrowFunction(current) || ts.isFunctionExpression(current)) {
+      const parameter = current.parameters.find(
+        (item) =>
+          ts.isIdentifier(item.name) && item.name.text === serviceName,
+      );
+      if (parameter && !isBindingMutated(parameter, file)) {
+        const call = unwrapUrlExpression(current.parent);
+        if (
+          ts.isCallExpression(call) &&
+          ts.isPropertyAccessExpression(call.expression) &&
+          call.expression.name.text === "map"
+        ) {
+          const collection = unwrapUrlExpression(call.expression.expression);
+          if (!ts.isIdentifier(collection) || collection.text !== "services")
+            return false;
+          const collectionBinding = visibleBinding(collection.text, collection);
+          // Only a helper component's `services` prop qualifies. A destructured
+          // `services` inside the root Experience keeps the strict provenance
+          // path, so mutating an element (`services[0].slug = ...`) still fails.
+          if (
+            !collectionBinding ||
+            collectionBinding.kind !== "parameter" ||
+            isRootExperienceFunction(collectionBinding.node.parent, file) ||
+            isBindingMutated(collectionBinding.node, file)
+          )
+            return false;
+          return true;
+        }
+      }
+    }
+    current = current.parent;
+  }
+  return false;
+}
+
 function isSealedServiceSlug(expression, file) {
   const slugPath = expressionPath(expression, file);
   const match = /^([A-Za-z_$][\w$]*)\.slug$/u.exec(slugPath);
@@ -2133,7 +2183,8 @@ function isServiceRouteExpression(expression, file) {
   // binding initialized from the sealed service collection.
   return (
     isSealedServiceSlug(slugExpression, file) ||
-    isSealedServiceSlugBinding(slugExpression, file)
+    isSealedServiceSlugBinding(slugExpression, file) ||
+    isServicesPropMapSlug(slugExpression, file)
   );
 }
 

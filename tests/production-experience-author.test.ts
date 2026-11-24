@@ -404,6 +404,25 @@ describe("production experience author", () => {
       }),
     ).not.toThrow();
 
+    const helperServiceList = serviceDetail.replace(
+      "export default function Experience",
+      `function ServiceLinks({ services }) {
+  return services.map((service) => <a href={\`/services/\${service.slug}/\`}>{service.name}</a>);
+}
+export default function Experience`,
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: helperServiceList, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "Repair" }],
+        },
+      }),
+    ).not.toThrow();
+
     const unsealedServiceDetail = aliasedServiceDetail.replace(
       "const serviceItems = content.services",
       'const boundServices = content.services; const serviceItems = [{ slug: "outside-content" }]',

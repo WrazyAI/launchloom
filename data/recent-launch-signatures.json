@@ -1,44 +1,7 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-23T16:48:45.988Z",
+  "updatedAt": "2026-11-24T15:37:19.407Z",
   "launches": [
-    {
-      "id": "2026-10-01-willowbridge-community-clinic-fictional-canary-attempt-104-run-36795941269-attempt-1",
-      "launchedAt": "2026-10-01T00:25:52.979Z",
-      "stage": "attempt",
-      "reservationKey": "104-run-36795941269-attempt-1",
-      "businessName": "Willowbridge Community Clinic - Fictional Canary",
-      "businessKind": "dental",
-      "recipe": "care-editorial",
-      "packId": "bold-utility",
-      "variantId": "standard",
-      "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
-      "creativeFamilyId": "",
-      "referenceFamilyId": "",
-      "routeFamilyIds": [
-        "attested-omp-dental-editorial",
-        "editorial-monument",
-        "guided-conversation",
-        "market-collage",
-        "web-dental-gartside-street-family",
-        "web-dental-smile-san-francisco-family"
-      ],
-      "heroArchetypes": [
-        "image-led-editorial",
-        "image-panel",
-        "split-media-copy"
-      ],
-      "referenceIds": [
-        "attested-one-manor-place-dental",
-        "web-dental-gartside-street",
-        "web-dental-smile-san-francisco"
-      ],
-      "routeSignatures": [
-        "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
-        "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
-        "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
-      ]
-    },
     {
       "id": "2026-10-01-pine-plumb-painting-co-attempt-92-run-36799377613-attempt-1",
       "launchedAt": "2026-10-01T01:08:36.883Z",
@@ -1787,46 +1750,554 @@
         "micro-wordmark-and-restrained-anchors|graphic-opening-field-before-practice-statement|type-led-service-index-after-project-collage|expressive-grotesk-with-editorial-accents|graphic-open-to-practice-to-asymmetric-projects-to-services-to-dark-close|asymmetric-project-collage-with-line-drawing-notes",
         "minimal-corner-menu|full-bleed-image-with-oversized-wordmark|vertical-serif-project-and-service-index|high-contrast-editorial-serif|architectural-image-to-film-frame-to-vertical-index-to-dark-footer|architectural-texture-and-cinematic-presentation-frame"
       ]
+    },
+    {
+      "id": "2026-11-24-silt-line-architecture-studio-attempt-314-run-45426639697-attempt-1",
+      "launchedAt": "2026-11-24T15:37:19.404Z",
+      "stage": "attempt",
+      "reservationKey": "314-run-45426639697-attempt-1",
+      "businessName": "Silt & Line Architecture Studio",
+      "businessKind": "architecture",
+      "recipe": "general-editorial",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "architecture-cinematic-interior-opening",
+        "architecture-uncaptioned-room-image-opening",
+        "archive-rail",
+        "colorlib-drafthouse-atlas",
+        "guided-conversation"
+      ],
+      "heroArchetypes": [
+        "image-overlay"
+      ],
+      "referenceIds": [
+        "colorlib-drafthouse-atlas",
+        "web-architecture-indie-interiors",
+        "web-architecture-simpson-studio"
+      ],
+      "routeSignatures": [
+        "A compact wordmark and thin, widely spaced project, studio, services and contact|A large, uncaptioned interior photograph leads, followed by a left-aligned studi|Use a vertical, editorial service stack for the studio's disciplines, not unifor|Restrained modern sans; modest but confident headings, narrow body measure and g|image-led opening -> studio promise and work action -> integrated process split |Large architectural photographs alternate with quiet text blocks; a low, horizon",
+        "Fine uppercase navigation and a monogram-like mark rest over a light, low-profil|An immersive warm interior opening with small centered serif copy gives way to a|Explain interior design and procurement in one considered editorial chapter, the|Small elegant serif headings and uppercase labels, with narrow calm paragraphs a|immersive opening photograph -> introductory statement band -> studio split -> s|Full-height residential interiors alternate with copy and a three-image project",
+        "compact-architectural-index|featured-project-tableau-with-metadata|capabilities-after-project-index-and-principles|restrained-neutral-grotesk|featured-work-to-practice-to-project-archive-to-enquiry|archival-project-image-with-ruled-metadata"
+      ]
     }
   ],
   "launchesByBusinessKind": {
-    "painting": [
+    "dental": [
       {
-        "id": "2026-10-01-pine-plumb-painting-co-attempt-92-run-36794315141-attempt-1",
-        "launchedAt": "2026-10-01T00:08:44.423Z",
+        "id": "2026-10-01-willowbridge-community-clinic-fictional-canary-attempt-104-run-36795941269-attempt-1",
+        "launchedAt": "2026-10-01T00:25:52.979Z",
         "stage": "attempt",
-        "reservationKey": "92-run-36794315141-attempt-1",
-        "businessName": "Pine & Plumb Painting Co.",
-        "businessKind": "painting",
-        "recipe": "local-trades",
-        "packId": "kinetic-poster",
+        "reservationKey": "104-run-36795941269-attempt-1",
+        "businessName": "Willowbridge Community Clinic - Fictional Canary",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "bold-utility",
         "variantId": "standard",
-        "layoutFingerprint": "kinetic-poster|standard|command-bar|poster-split|quick-request|diagnostic-list|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/coverage/process/social-proof/faq/location-map/contact",
+        "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
         "creativeFamilyId": "",
         "referenceFamilyId": "",
         "routeFamilyIds": [
-          "archive-rail",
+          "attested-omp-dental-editorial",
           "editorial-monument",
+          "guided-conversation",
+          "market-collage",
+          "web-dental-gartside-street-family",
+          "web-dental-smile-san-francisco-family"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-panel",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "attested-one-manor-place-dental",
+          "web-dental-gartside-street",
+          "web-dental-smile-san-francisco"
+        ],
+        "routeSignatures": [
+          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
+          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
+        ]
+      },
+      {
+        "id": "2026-10-01-willowbridge-community-dental-fictional-preview-attempt-109-run-36824027964-attempt-1",
+        "launchedAt": "2026-10-01T06:20:57.010Z",
+        "stage": "attempt",
+        "reservationKey": "109-run-36824027964-attempt-1",
+        "businessName": "Willowbridge Community Dental - Fictional Preview",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-dapper-dental-dark",
+          "cinematic-stage",
+          "guided-conversation",
           "typographic-poster",
-          "web-painting-av",
-          "web-painting-house-doctor",
-          "web-painting-southern"
+          "web-dental-gartside-street-family",
+          "web-dental-glint-austin-family"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-overlay"
+        ],
+        "referenceIds": [
+          "attested-dapper-dental",
+          "web-dental-gartside-street",
+          "web-dental-glint-austin"
+        ],
+        "routeSignatures": [
+          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
+          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
+        ]
+      },
+      {
+        "id": "2026-10-01-cedarbrook-family-dental-fictional-seo-canary-attempt-115-run-36881384874-attempt-1",
+        "launchedAt": "2026-10-01T15:06:15.255Z",
+        "stage": "attempt",
+        "reservationKey": "115-run-36881384874-attempt-1",
+        "businessName": "Cedarbrook Family Dental - Fictional SEO Canary",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-omp-dental-editorial",
+          "cinematic-stage",
+          "editorial-monument",
+          "guided-conversation",
+          "html5up-dimension-clinic",
+          "web-dental-glint-austin-family"
         ],
         "heroArchetypes": [
           "image-overlay",
-          "split-form"
+          "split-media-copy"
         ],
         "referenceIds": [
-          "web-painting-av",
-          "web-painting-house-doctor",
-          "web-painting-southern"
+          "attested-one-manor-place-dental",
+          "html5up-dental-dimension",
+          "web-dental-glint-austin"
         ],
         "routeSignatures": [
-          "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
-          "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
-          "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
+          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
+          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
+          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
         ]
       },
+      {
+        "id": "2026-10-01-cedarbrook-family-dental-fictional-seo-canary-attempt-115-run-36883592916-attempt-1",
+        "launchedAt": "2026-10-01T15:25:11.040Z",
+        "stage": "attempt",
+        "reservationKey": "115-run-36883592916-attempt-1",
+        "businessName": "Cedarbrook Family Dental - Fictional SEO Canary",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-dapper-dental-dark",
+          "guided-conversation",
+          "html5up-dimension-clinic",
+          "typographic-poster",
+          "web-dental-gartside-street-family"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-overlay"
+        ],
+        "referenceIds": [
+          "attested-dapper-dental",
+          "html5up-dental-dimension",
+          "web-dental-gartside-street"
+        ],
+        "routeSignatures": [
+          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
+          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
+          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels"
+        ]
+      },
+      {
+        "id": "2026-10-28-northline-dental-studio-attempt-202-run-40713717954-attempt-1",
+        "launchedAt": "2026-10-28T15:18:42.396Z",
+        "stage": "attempt",
+        "reservationKey": "202-run-40713717954-attempt-1",
+        "businessName": "Northline Dental Studio",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "results-ledger",
+        "variantId": "standard",
+        "layoutFingerprint": "results-ledger|standard|minimal-inline|results-ledger|confidential-request|oversized-rows|results-table|conversation-handoff|editorial-contrast|typographic-ledger|editorial|still|css|0|editorial-stack|hero/conversion/services/process/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-omp-dental-editorial",
+          "cinematic-stage",
+          "editorial-monument",
+          "market-collage",
+          "web-dental-glint-austin-family",
+          "web-dental-smile-san-francisco-family"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "image-panel",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "attested-one-manor-place-dental",
+          "web-dental-glint-austin",
+          "web-dental-smile-san-francisco"
+        ],
+        "routeSignatures": [
+          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
+          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops",
+          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
+        ]
+      },
+      {
+        "id": "2026-10-28-northline-dental-studio-attempt-202-run-40722030520-attempt-1",
+        "launchedAt": "2026-10-28T16:09:32.713Z",
+        "stage": "attempt",
+        "reservationKey": "202-run-40722030520-attempt-1",
+        "businessName": "Northline Dental Studio",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "guided-conversation",
+          "html5up-dimension-clinic",
+          "market-collage",
+          "web-dental-gartside-street-family",
+          "web-dental-smile-san-francisco-family"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-overlay",
+          "image-panel"
+        ],
+        "referenceIds": [
+          "html5up-dental-dimension",
+          "web-dental-gartside-street",
+          "web-dental-smile-san-francisco"
+        ],
+        "routeSignatures": [
+          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
+          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
+        ]
+      },
+      {
+        "id": "2026-10-28-northline-dental-studio-attempt-202-run-40737253021-attempt-1",
+        "launchedAt": "2026-10-28T17:46:51.329Z",
+        "stage": "attempt",
+        "reservationKey": "202-run-40737253021-attempt-1",
+        "businessName": "Northline Dental Studio",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-dapper-dental-dark",
+          "attested-omp-dental-editorial",
+          "cinematic-stage",
+          "editorial-monument",
+          "typographic-poster",
+          "web-dental-glint-austin-family"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "attested-dapper-dental",
+          "attested-one-manor-place-dental",
+          "web-dental-glint-austin"
+        ],
+        "routeSignatures": [
+          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
+          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
+          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
+        ]
+      },
+      {
+        "id": "2026-10-29-northline-dental-studio-attempt-202-run-40947786674-attempt-1",
+        "launchedAt": "2026-10-29T20:22:06.106Z",
+        "stage": "attempt",
+        "reservationKey": "202-run-40947786674-attempt-1",
+        "businessName": "Northline Dental Studio",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-dapper-dental-dark",
+          "attested-omp-dental-editorial",
+          "editorial-monument",
+          "guided-conversation",
+          "html5up-dimension-clinic",
+          "typographic-poster"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "attested-dapper-dental",
+          "attested-one-manor-place-dental",
+          "html5up-dental-dimension"
+        ],
+        "routeSignatures": [
+          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
+          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
+          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail"
+        ]
+      },
+      {
+        "id": "2026-10-29-northline-dental-studio-attempt-202-run-40953294123-attempt-1",
+        "launchedAt": "2026-10-29T20:59:59.027Z",
+        "stage": "attempt",
+        "reservationKey": "202-run-40953294123-attempt-1",
+        "businessName": "Northline Dental Studio",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "cinematic-stage",
+          "guided-conversation",
+          "market-collage",
+          "web-dental-gartside-street-family",
+          "web-dental-glint-austin-family",
+          "web-dental-smile-san-francisco-family"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-overlay",
+          "image-panel"
+        ],
+        "referenceIds": [
+          "web-dental-gartside-street",
+          "web-dental-glint-austin",
+          "web-dental-smile-san-francisco"
+        ],
+        "routeSignatures": [
+          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops",
+          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
+        ]
+      },
+      {
+        "id": "2026-11-04-brightline-dental-care-attempt-250-run-41905063306-attempt-1",
+        "launchedAt": "2026-11-04T20:21:17.677Z",
+        "stage": "attempt",
+        "reservationKey": "250-run-41905063306-attempt-1",
+        "businessName": "Brightline Dental Care",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-omp-dental-editorial",
+          "editorial-monument",
+          "guided-conversation",
+          "html5up-dimension-clinic",
+          "market-collage",
+          "web-dental-smile-san-francisco-family"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "image-panel",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "attested-one-manor-place-dental",
+          "html5up-dental-dimension",
+          "web-dental-smile-san-francisco"
+        ],
+        "routeSignatures": [
+          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
+          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
+          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
+        ]
+      },
+      {
+        "id": "2026-11-05-brightline-dental-care-attempt-252-run-42029232137-attempt-1",
+        "launchedAt": "2026-11-05T12:46:25.717Z",
+        "stage": "attempt",
+        "reservationKey": "252-run-42029232137-attempt-1",
+        "businessName": "Brightline Dental Care",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-dapper-dental-dark",
+          "guided-conversation",
+          "market-collage",
+          "typographic-poster",
+          "web-dental-gartside-street-family",
+          "web-dental-smile-san-francisco-family"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-overlay",
+          "image-panel"
+        ],
+        "referenceIds": [
+          "attested-dapper-dental",
+          "web-dental-gartside-street",
+          "web-dental-smile-san-francisco"
+        ],
+        "routeSignatures": [
+          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
+          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
+        ]
+      },
+      {
+        "id": "2026-11-05-brightline-dental-care-attempt-256-run-42054959878-attempt-1",
+        "launchedAt": "2026-11-05T15:32:28.809Z",
+        "stage": "attempt",
+        "reservationKey": "256-run-42054959878-attempt-1",
+        "businessName": "Brightline Dental Care",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "cinematic-stage",
+          "guided-conversation",
+          "html5up-dimension-clinic",
+          "web-dental-gartside-street-family",
+          "web-dental-glint-austin-family"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-overlay"
+        ],
+        "referenceIds": [
+          "html5up-dental-dimension",
+          "web-dental-gartside-street",
+          "web-dental-glint-austin"
+        ],
+        "routeSignatures": [
+          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
+          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
+        ]
+      },
+      {
+        "id": "2026-11-05-brightline-dental-care-attempt-259-run-42065788121-attempt-1",
+        "launchedAt": "2026-11-05T16:39:34.279Z",
+        "stage": "attempt",
+        "reservationKey": "259-run-42065788121-attempt-1",
+        "businessName": "Brightline Dental Care",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-dapper-dental-dark",
+          "attested-omp-dental-editorial",
+          "editorial-monument",
+          "market-collage",
+          "typographic-poster",
+          "web-dental-smile-san-francisco-family"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "image-panel",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "attested-dapper-dental",
+          "attested-one-manor-place-dental",
+          "web-dental-smile-san-francisco"
+        ],
+        "routeSignatures": [
+          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
+          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
+          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
+        ]
+      },
+      {
+        "id": "2026-11-05-brightline-dental-care-attempt-261-run-42076154750-attempt-1",
+        "launchedAt": "2026-11-05T17:42:50.147Z",
+        "stage": "attempt",
+        "reservationKey": "261-run-42076154750-attempt-1",
+        "businessName": "Brightline Dental Care",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-omp-dental-editorial",
+          "editorial-monument",
+          "guided-conversation",
+          "html5up-dimension-clinic",
+          "web-dental-gartside-street-family"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-overlay",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "attested-one-manor-place-dental",
+          "html5up-dental-dimension",
+          "web-dental-gartside-street"
+        ],
+        "routeSignatures": [
+          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
+          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail"
+        ]
+      }
+    ],
+    "painting": [
       {
         "id": "2026-10-01-pine-plumb-painting-co-attempt-92-run-36799377613-attempt-1",
         "launchedAt": "2026-10-01T01:08:36.883Z",
@@ -2533,515 +3004,41 @@
           "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
           "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
         ]
-      }
-    ],
-    "dental": [
+      },
       {
-        "id": "2026-10-01-willowbridge-community-clinic-fictional-canary-attempt-104-run-36795941269-attempt-1",
-        "launchedAt": "2026-10-01T00:25:52.979Z",
+        "id": "2026-10-01-pine-plumb-painting-co-attempt-92-run-36794315141-attempt-1",
+        "launchedAt": "2026-10-01T00:08:44.423Z",
         "stage": "attempt",
-        "reservationKey": "104-run-36795941269-attempt-1",
-        "businessName": "Willowbridge Community Clinic - Fictional Canary",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "bold-utility",
+        "reservationKey": "92-run-36794315141-attempt-1",
+        "businessName": "Pine & Plumb Painting Co.",
+        "businessKind": "painting",
+        "recipe": "local-trades",
+        "packId": "kinetic-poster",
         "variantId": "standard",
-        "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+        "layoutFingerprint": "kinetic-poster|standard|command-bar|poster-split|quick-request|diagnostic-list|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/coverage/process/social-proof/faq/location-map/contact",
         "creativeFamilyId": "",
         "referenceFamilyId": "",
         "routeFamilyIds": [
-          "attested-omp-dental-editorial",
-          "editorial-monument",
-          "guided-conversation",
-          "market-collage",
-          "web-dental-gartside-street-family",
-          "web-dental-smile-san-francisco-family"
-        ],
-        "heroArchetypes": [
-          "image-led-editorial",
-          "image-panel",
-          "split-media-copy"
-        ],
-        "referenceIds": [
-          "attested-one-manor-place-dental",
-          "web-dental-gartside-street",
-          "web-dental-smile-san-francisco"
-        ],
-        "routeSignatures": [
-          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
-          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
-          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
-        ]
-      },
-      {
-        "id": "2026-10-01-willowbridge-community-dental-fictional-preview-attempt-109-run-36824027964-attempt-1",
-        "launchedAt": "2026-10-01T06:20:57.010Z",
-        "stage": "attempt",
-        "reservationKey": "109-run-36824027964-attempt-1",
-        "businessName": "Willowbridge Community Dental - Fictional Preview",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "attested-dapper-dental-dark",
-          "cinematic-stage",
-          "guided-conversation",
-          "typographic-poster",
-          "web-dental-gartside-street-family",
-          "web-dental-glint-austin-family"
-        ],
-        "heroArchetypes": [
-          "image-led-editorial",
-          "image-overlay"
-        ],
-        "referenceIds": [
-          "attested-dapper-dental",
-          "web-dental-gartside-street",
-          "web-dental-glint-austin"
-        ],
-        "routeSignatures": [
-          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
-          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
-          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
-        ]
-      },
-      {
-        "id": "2026-10-01-cedarbrook-family-dental-fictional-seo-canary-attempt-115-run-36881384874-attempt-1",
-        "launchedAt": "2026-10-01T15:06:15.255Z",
-        "stage": "attempt",
-        "reservationKey": "115-run-36881384874-attempt-1",
-        "businessName": "Cedarbrook Family Dental - Fictional SEO Canary",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "attested-omp-dental-editorial",
-          "cinematic-stage",
-          "editorial-monument",
-          "guided-conversation",
-          "html5up-dimension-clinic",
-          "web-dental-glint-austin-family"
-        ],
-        "heroArchetypes": [
-          "image-overlay",
-          "split-media-copy"
-        ],
-        "referenceIds": [
-          "attested-one-manor-place-dental",
-          "html5up-dental-dimension",
-          "web-dental-glint-austin"
-        ],
-        "routeSignatures": [
-          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
-          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
-          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
-        ]
-      },
-      {
-        "id": "2026-10-01-cedarbrook-family-dental-fictional-seo-canary-attempt-115-run-36883592916-attempt-1",
-        "launchedAt": "2026-10-01T15:25:11.040Z",
-        "stage": "attempt",
-        "reservationKey": "115-run-36883592916-attempt-1",
-        "businessName": "Cedarbrook Family Dental - Fictional SEO Canary",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "attested-dapper-dental-dark",
-          "guided-conversation",
-          "html5up-dimension-clinic",
-          "typographic-poster",
-          "web-dental-gartside-street-family"
-        ],
-        "heroArchetypes": [
-          "image-led-editorial",
-          "image-overlay"
-        ],
-        "referenceIds": [
-          "attested-dapper-dental",
-          "html5up-dental-dimension",
-          "web-dental-gartside-street"
-        ],
-        "routeSignatures": [
-          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
-          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
-          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels"
-        ]
-      },
-      {
-        "id": "2026-10-28-northline-dental-studio-attempt-202-run-40713717954-attempt-1",
-        "launchedAt": "2026-10-28T15:18:42.396Z",
-        "stage": "attempt",
-        "reservationKey": "202-run-40713717954-attempt-1",
-        "businessName": "Northline Dental Studio",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "results-ledger",
-        "variantId": "standard",
-        "layoutFingerprint": "results-ledger|standard|minimal-inline|results-ledger|confidential-request|oversized-rows|results-table|conversation-handoff|editorial-contrast|typographic-ledger|editorial|still|css|0|editorial-stack|hero/conversion/services/process/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "attested-omp-dental-editorial",
-          "cinematic-stage",
-          "editorial-monument",
-          "market-collage",
-          "web-dental-glint-austin-family",
-          "web-dental-smile-san-francisco-family"
-        ],
-        "heroArchetypes": [
-          "image-overlay",
-          "image-panel",
-          "split-media-copy"
-        ],
-        "referenceIds": [
-          "attested-one-manor-place-dental",
-          "web-dental-glint-austin",
-          "web-dental-smile-san-francisco"
-        ],
-        "routeSignatures": [
-          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
-          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops",
-          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
-        ]
-      },
-      {
-        "id": "2026-10-28-northline-dental-studio-attempt-202-run-40722030520-attempt-1",
-        "launchedAt": "2026-10-28T16:09:32.713Z",
-        "stage": "attempt",
-        "reservationKey": "202-run-40722030520-attempt-1",
-        "businessName": "Northline Dental Studio",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "guided-conversation",
-          "html5up-dimension-clinic",
-          "market-collage",
-          "web-dental-gartside-street-family",
-          "web-dental-smile-san-francisco-family"
-        ],
-        "heroArchetypes": [
-          "image-led-editorial",
-          "image-overlay",
-          "image-panel"
-        ],
-        "referenceIds": [
-          "html5up-dental-dimension",
-          "web-dental-gartside-street",
-          "web-dental-smile-san-francisco"
-        ],
-        "routeSignatures": [
-          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
-          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
-          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
-        ]
-      },
-      {
-        "id": "2026-10-28-northline-dental-studio-attempt-202-run-40737253021-attempt-1",
-        "launchedAt": "2026-10-28T17:46:51.329Z",
-        "stage": "attempt",
-        "reservationKey": "202-run-40737253021-attempt-1",
-        "businessName": "Northline Dental Studio",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "attested-dapper-dental-dark",
-          "attested-omp-dental-editorial",
-          "cinematic-stage",
+          "archive-rail",
           "editorial-monument",
           "typographic-poster",
-          "web-dental-glint-austin-family"
+          "web-painting-av",
+          "web-painting-house-doctor",
+          "web-painting-southern"
         ],
         "heroArchetypes": [
           "image-overlay",
-          "split-media-copy"
+          "split-form"
         ],
         "referenceIds": [
-          "attested-dapper-dental",
-          "attested-one-manor-place-dental",
-          "web-dental-glint-austin"
+          "web-painting-av",
+          "web-painting-house-doctor",
+          "web-painting-southern"
         ],
         "routeSignatures": [
-          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
-          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
-          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
-        ]
-      },
-      {
-        "id": "2026-10-29-northline-dental-studio-attempt-202-run-40947786674-attempt-1",
-        "launchedAt": "2026-10-29T20:22:06.106Z",
-        "stage": "attempt",
-        "reservationKey": "202-run-40947786674-attempt-1",
-        "businessName": "Northline Dental Studio",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "attested-dapper-dental-dark",
-          "attested-omp-dental-editorial",
-          "editorial-monument",
-          "guided-conversation",
-          "html5up-dimension-clinic",
-          "typographic-poster"
-        ],
-        "heroArchetypes": [
-          "image-overlay",
-          "split-media-copy"
-        ],
-        "referenceIds": [
-          "attested-dapper-dental",
-          "attested-one-manor-place-dental",
-          "html5up-dental-dimension"
-        ],
-        "routeSignatures": [
-          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
-          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
-          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail"
-        ]
-      },
-      {
-        "id": "2026-10-29-northline-dental-studio-attempt-202-run-40953294123-attempt-1",
-        "launchedAt": "2026-10-29T20:59:59.027Z",
-        "stage": "attempt",
-        "reservationKey": "202-run-40953294123-attempt-1",
-        "businessName": "Northline Dental Studio",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "cinematic-stage",
-          "guided-conversation",
-          "market-collage",
-          "web-dental-gartside-street-family",
-          "web-dental-glint-austin-family",
-          "web-dental-smile-san-francisco-family"
-        ],
-        "heroArchetypes": [
-          "image-led-editorial",
-          "image-overlay",
-          "image-panel"
-        ],
-        "referenceIds": [
-          "web-dental-gartside-street",
-          "web-dental-glint-austin",
-          "web-dental-smile-san-francisco"
-        ],
-        "routeSignatures": [
-          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
-          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops",
-          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
-        ]
-      },
-      {
-        "id": "2026-11-04-brightline-dental-care-attempt-250-run-41905063306-attempt-1",
-        "launchedAt": "2026-11-04T20:21:17.677Z",
-        "stage": "attempt",
-        "reservationKey": "250-run-41905063306-attempt-1",
-        "businessName": "Brightline Dental Care",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "attested-omp-dental-editorial",
-          "editorial-monument",
-          "guided-conversation",
-          "html5up-dimension-clinic",
-          "market-collage",
-          "web-dental-smile-san-francisco-family"
-        ],
-        "heroArchetypes": [
-          "image-overlay",
-          "image-panel",
-          "split-media-copy"
-        ],
-        "referenceIds": [
-          "attested-one-manor-place-dental",
-          "html5up-dental-dimension",
-          "web-dental-smile-san-francisco"
-        ],
-        "routeSignatures": [
-          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
-          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
-          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
-        ]
-      },
-      {
-        "id": "2026-11-05-brightline-dental-care-attempt-252-run-42029232137-attempt-1",
-        "launchedAt": "2026-11-05T12:46:25.717Z",
-        "stage": "attempt",
-        "reservationKey": "252-run-42029232137-attempt-1",
-        "businessName": "Brightline Dental Care",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "attested-dapper-dental-dark",
-          "guided-conversation",
-          "market-collage",
-          "typographic-poster",
-          "web-dental-gartside-street-family",
-          "web-dental-smile-san-francisco-family"
-        ],
-        "heroArchetypes": [
-          "image-led-editorial",
-          "image-overlay",
-          "image-panel"
-        ],
-        "referenceIds": [
-          "attested-dapper-dental",
-          "web-dental-gartside-street",
-          "web-dental-smile-san-francisco"
-        ],
-        "routeSignatures": [
-          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
-          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
-          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
-        ]
-      },
-      {
-        "id": "2026-11-05-brightline-dental-care-attempt-256-run-42054959878-attempt-1",
-        "launchedAt": "2026-11-05T15:32:28.809Z",
-        "stage": "attempt",
-        "reservationKey": "256-run-42054959878-attempt-1",
-        "businessName": "Brightline Dental Care",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "cinematic-stage",
-          "guided-conversation",
-          "html5up-dimension-clinic",
-          "web-dental-gartside-street-family",
-          "web-dental-glint-austin-family"
-        ],
-        "heroArchetypes": [
-          "image-led-editorial",
-          "image-overlay"
-        ],
-        "referenceIds": [
-          "html5up-dental-dimension",
-          "web-dental-gartside-street",
-          "web-dental-glint-austin"
-        ],
-        "routeSignatures": [
-          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
-          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
-          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
-        ]
-      },
-      {
-        "id": "2026-11-05-brightline-dental-care-attempt-259-run-42065788121-attempt-1",
-        "launchedAt": "2026-11-05T16:39:34.279Z",
-        "stage": "attempt",
-        "reservationKey": "259-run-42065788121-attempt-1",
-        "businessName": "Brightline Dental Care",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "attested-dapper-dental-dark",
-          "attested-omp-dental-editorial",
-          "editorial-monument",
-          "market-collage",
-          "typographic-poster",
-          "web-dental-smile-san-francisco-family"
-        ],
-        "heroArchetypes": [
-          "image-overlay",
-          "image-panel",
-          "split-media-copy"
-        ],
-        "referenceIds": [
-          "attested-dapper-dental",
-          "attested-one-manor-place-dental",
-          "web-dental-smile-san-francisco"
-        ],
-        "routeSignatures": [
-          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
-          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
-          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
-        ]
-      },
-      {
-        "id": "2026-11-05-brightline-dental-care-attempt-261-run-42076154750-attempt-1",
-        "launchedAt": "2026-11-05T17:42:50.147Z",
-        "stage": "attempt",
-        "reservationKey": "261-run-42076154750-attempt-1",
-        "businessName": "Brightline Dental Care",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "attested-omp-dental-editorial",
-          "editorial-monument",
-          "guided-conversation",
-          "html5up-dimension-clinic",
-          "web-dental-gartside-street-family"
-        ],
-        "heroArchetypes": [
-          "image-led-editorial",
-          "image-overlay",
-          "split-media-copy"
-        ],
-        "referenceIds": [
-          "attested-one-manor-place-dental",
-          "html5up-dental-dimension",
-          "web-dental-gartside-street"
-        ],
-        "routeSignatures": [
-          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
-          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
-          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail"
+          "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
+          "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
+          "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
         ]
       }
     ],
@@ -3688,6 +3685,40 @@
           "A small emblem on the left and compact uppercase portfolio, studio, shop, news a|A full-width interior photograph carries a very large white serif studio title a|Lead with photographic discipline gateways, then explain the approach through a |Expressive high-contrast serif display and section titles paired with small, mea|room photograph and oversized title -> cream craft statement -> three-image disc|Immersive furnished-room photographs, three adjacent feature images, a maker por",
           "micro-wordmark-and-restrained-anchors|graphic-opening-field-before-practice-statement|type-led-service-index-after-project-collage|expressive-grotesk-with-editorial-accents|graphic-open-to-practice-to-asymmetric-projects-to-services-to-dark-close|asymmetric-project-collage-with-line-drawing-notes",
           "minimal-corner-menu|full-bleed-image-with-oversized-wordmark|vertical-serif-project-and-service-index|high-contrast-editorial-serif|architectural-image-to-film-frame-to-vertical-index-to-dark-footer|architectural-texture-and-cinematic-presentation-frame"
+        ]
+      },
+      {
+        "id": "2026-11-24-silt-line-architecture-studio-attempt-314-run-45426639697-attempt-1",
+        "launchedAt": "2026-11-24T15:37:19.404Z",
+        "stage": "attempt",
+        "reservationKey": "314-run-45426639697-attempt-1",
+        "businessName": "Silt & Line Architecture Studio",
+        "businessKind": "architecture",
+        "recipe": "general-editorial",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "architecture-cinematic-interior-opening",
+          "architecture-uncaptioned-room-image-opening",
+          "archive-rail",
+          "colorlib-drafthouse-atlas",
+          "guided-conversation"
+        ],
+        "heroArchetypes": [
+          "image-overlay"
+        ],
+        "referenceIds": [
+          "colorlib-drafthouse-atlas",
+          "web-architecture-indie-interiors",
+          "web-architecture-simpson-studio"
+        ],
+        "routeSignatures": [
+          "A compact wordmark and thin, widely spaced project, studio, services and contact|A large, uncaptioned interior photograph leads, followed by a left-aligned studi|Use a vertical, editorial service stack for the studio's disciplines, not unifor|Restrained modern sans; modest but confident headings, narrow body measure and g|image-led opening -> studio promise and work action -> integrated process split |Large architectural photographs alternate with quiet text blocks; a low, horizon",
+          "Fine uppercase navigation and a monogram-like mark rest over a light, low-profil|An immersive warm interior opening with small centered serif copy gives way to a|Explain interior design and procurement in one considered editorial chapter, the|Small elegant serif headings and uppercase labels, with narrow calm paragraphs a|immersive opening photograph -> introductory statement band -> studio split -> s|Full-height residential interiors alternate with copy and a three-image project",
+          "compact-architectural-index|featured-project-tableau-with-metadata|capabilities-after-project-index-and-principles|restrained-neutral-grotesk|featured-work-to-practice-to-project-archive-to-enquiry|archival-project-image-with-ruled-metadata"
         ]
       }
     ]

@@ -13,6 +13,10 @@ import {
 } from "./openrouter-client.mjs";
 import { opencodeGoUsageMetrics } from "./opencode-go.mjs";
 import {
+  WORKERS_AI_DEFAULT_MODEL,
+  generateWorkersAiImage,
+} from "./workers-ai-image.mjs";
+import {
   buildGoCreativeRequest,
   completeGoCreative,
   creativeLaneProvider,
@@ -30,7 +34,11 @@ import {
   reviewSessionKey,
 } from "./image-review-policy.mjs";
 
-export const DEFAULT_FAL_MODEL = "fal-ai/minimax/image-01";
+// minimax/image-01 frequently typeset prompt text as documents and UI panels:
+// 14 of 15 images for one architecture brief were rejected, and a 145-character
+// photo prompt still produced a browser screenshot. Seedream v4 produced
+// relevant, text-free architecture interiors in repeated trials.
+export const DEFAULT_FAL_MODEL = "fal-ai/bytedance/seedream/v4/text-to-image";
 export const DEFAULT_MAX_IMAGES = 3;
 export const DEFAULT_MAX_REQUESTS = 15;
 export const DEFAULT_MAX_PROMPT_LENGTH = 1500;
@@ -130,6 +138,16 @@ function safePromptPart(value, limit = 180) {
   const candidate = text(value, limit);
   if (!candidate || PRIVATE_FIELD.test(candidate)) return "";
   return candidate.replace(/[{}<>]/gu, "");
+}
+
+/** Slice at a word boundary so a prompt never ends mid-word. */
+function cutWords(value, limit) {
+  const candidate = String(value || "").trim();
+  if (candidate.length <= limit) return candidate;
+  return candidate
+    .slice(0, limit)
+    .replace(/\s+\S*$/u, "")
+    .trimEnd();
 }
 
 function imageOnlyDirection(value, limit = 180) {
@@ -554,6 +572,11 @@ export function promptFor(site, route, placement) {
   const problems = list(seo.customerQuestions, 3);
   const direction = visualDirection(site);
   const dna = route?.referenceDna || {};
+  // The pack's referenceDna.familyId carries the dossier id, not the compiled
+  // family. Looking up briefs by it always fell back to the generic prompt,
+  // which produced blank or text-document images for the real architecture
+  // brief. The contract owns the family id.
+  const routeFamilyId = buildRouteContract(route).familyId;
   const familyImageDirection = {
     "editorial-monument":
       "restrained editorial environments, oversized negative space, tactile paper and stone materials, and quiet ink-blue shadows",
@@ -768,6 +791,52 @@ export function promptFor(site, route, placement) {
         "Create a close still life of bread, herbs, paper, or serving details with a tactile handmade feeling and an intentional crop for a graphic visit or order band.",
     },
   };
+  // Short, family-specific scene nouns keep generated imagery distinct across
+  // the production families without returning to instruction blocks.
+  const familySceneNouns = {
+    "editorial-monument":
+      "quiet editorial material tableau with tactile paper and stone in soft daylight",
+    "cinematic-stage":
+      "wide cinematic service environment with one strong horizon and directional light",
+    "utility-diagnostic":
+      "clean work surface with service tools and practical daylight",
+    "typographic-poster":
+      "single bold service object against a limited-color field with broad negative space",
+    "archive-rail":
+      "archive-style arrangement of service specimens on a neutral surface",
+    "guided-conversation":
+      "calm consultation room with arranged seating and soft daylight",
+    "spatial-object":
+      "single sculptural service object under controlled studio light",
+    "market-collage":
+      "warm tabletop still life of service materials with layered color and tactile texture",
+    "a1-collage-composition":
+      "layered editorial still life of separated physical objects on tactile surfaces",
+    "a1-kinetic-command":
+      "directional action-documentary scene with a clear silhouette and open space",
+    "a1-object-stage":
+      "monumental studio staging of one service object with deep controlled shadows",
+    "a1-kinetic-founder":
+      "authored workspace still life with process tools and directional light",
+    "a1-cinematic-3d":
+      "cinematic spatial environment with believable materials and controlled perspective",
+    "kokoro-editorial-architecture":
+      "warm architectural interior with tactile natural materials",
+    "skyelite-cinematic-luxury":
+      "wide premium transport scene with soft horizon light and restraint",
+    "health-portal-masked-mosaic":
+      "calm clinical interior with clean neutral surfaces and soft daylight",
+    "3d-portfolio-object-led":
+      "object-led studio scene with sculptural materials and controlled light",
+    "veyra-kinetic-typography":
+      "high-energy action scene with a bold silhouette and open negative space",
+    "digital-experiences-liquid-glass":
+      "abstract atmospheric light field with translucent depth and no text",
+    "vortex-editorial-studio":
+      "restrained project still life with broad horizontal crop potential",
+    "neighborhood-table-collage":
+      "warm neighborhood table still life of bread, produce, and ceramics",
+  };
   const homeServices = /plumb|drain|water heater|repip|pipe|leak repair/iu.test(
     `${site.industry || ""} ${site.businessKind || ""} ${(site.services || [])
       .map((service) => service?.name)
@@ -783,7 +852,7 @@ export function promptFor(site, route, placement) {
   };
   const familyBrief = homeServices
     ? homeServicesBrief
-    : familyAssetBriefs[dna.familyId] || {
+    : familyAssetBriefs[routeFamilyId] || {
         medium: "commercial editorial photography",
         hero: "Create a distinctive, service-relevant scene using the assigned reference's physical subject cues.",
         secondary:
@@ -817,7 +886,7 @@ export function promptFor(site, route, placement) {
   const dnaContext = homeServices
     ? "Reference family: home-services trade still life. Preserve the reference's practical materials and palette only. Do not depict people, technicians, service vans, uniforms, livery, signage, or readable text."
     : dna.familyId
-      ? `Reference family: ${dna.familyId}. Image art direction: ${familyImageDirection[dna.familyId] || "Follow the assigned reference's visual mood and materials without copying a brand."} Image treatment: ${sceneOnlyDirection(dna.imageTreatment?.mode, 120)}. Crop strategy: ${imageOnlyDirection(dna.imageTreatment?.crop, 140)}. Palette intent: ${imageOnlyDirection(dna.palette?.contrastIntent, 140)}.`
+      ? `Reference family: ${dna.familyId}. Image art direction: ${familyImageDirection[routeFamilyId] || "Follow the assigned reference's visual mood and materials without copying a brand."} Image treatment: ${sceneOnlyDirection(dna.imageTreatment?.mode, 120)}. Crop strategy: ${imageOnlyDirection(dna.imageTreatment?.crop, 140)}. Palette intent: ${imageOnlyDirection(dna.palette?.contrastIntent, 140)}.`
       : "";
   const directionContext = direction ? `Visual direction: ${direction}.` : "";
   const placementBrief =
@@ -826,26 +895,54 @@ export function promptFor(site, route, placement) {
       : placement.id === "secondary"
         ? familyBrief.secondary
         : familyBrief.tertiary;
-  const prompt = [
-    `Visual medium: ${familyBrief.medium}.`,
-    `Asset type: one standalone visual image asset, specifically a ${placement.id} photo or illustration.`,
-    "Hard rule: output only a single image, never a website or webpage screenshot, browser frame, UI, interface, wireframe, mockup, poster, brochure, menu, book cover, sign, or text collage. The scene must be empty of people: no workers, faces, hands, body parts, or silhouettes of people. No clothing, uniforms, patches, embroidery, name tags, labels, signage, or writing of any kind. No readable text or text-like marks, words, letters, glyphs, logos, watermarks, branded products, credentials, medical claims, or copied campaign. Prefer clean equipment, materials, tools, or interiors shown without any labels. Reference is visual mood only, not image content.",
-    `Primary request: ${placementBrief}.`,
-    `Business context: ${subject}.`,
-    referenceSceneContext,
-    areaContext,
-    dnaContext,
-    directionContext,
-    vocabularyContext,
-    problemContext,
-    `Style: follow the assigned family mechanics and crop strategy. Preserve believable materials and production polish appropriate to ${familyBrief.medium}; do not normalize every family into the same editorial photograph.`,
-    "Keep the image useful at the requested crop and avoid tiny details that disappear on mobile.",
-    placement.focal,
-    "Do not include storefront signage, menus, labels, packaging lettering, logos, watermarks, or readable words.",
-  ]
-    .filter(Boolean)
-    .join(" ");
-  return text(prompt, DEFAULT_MAX_PROMPT_LENGTH);
+  // Image models render long, labeled instruction blocks as text documents:
+  // the real architecture brief produced "Analyze the Request" instead of a
+  // photograph, and 14 of 15 generated images were rejected for text/UI. Keep
+  // the scene short, flowing, and label-free. The hard constraints stay as a
+  // single closing sentence, which the model follows without typesetting it.
+  const compactDirection = String(directionContext || "")
+    .replace(/^Visual direction:\s*/iu, "")
+    .replace(/[,:;]+/gu, " ")
+    .trim();
+  const constraints = "No people, no text, no logos, no signage.";
+  // Noun-first, two-sentence prompts. Long instruction blocks and service
+  // lists made the image model typeset the request as a document
+  // ("Analyze the Request"), which the review gate correctly rejected.
+  const kindLabel = safePromptPart(site.businessKind || site.industry || "", 40);
+  const firstService =
+    services[0] || kindLabel || site.businessKind || "local service";
+  const architectural = /architect|interior design/iu.test(kindLabel);
+  const familyScene = familySceneNouns[routeFamilyId];
+  const sceneNoun = homeServices
+    ? "a close tactile still life of copper and brass pipe fittings, a well-used wrench, and a clean workbench in soft daylight"
+    : architectural
+      ? `an architectural scene showing ${familyScene || "a quiet interior with daylight, timber, stone, and generous negative space"}`
+      : familyScene
+        ? `a ${familyScene}`
+        : `a ${kindLabel || "local service"} setting for ${firstService}, with believable materials and natural light`;
+  // Reference geometry often describes typography ("oversized wordmark"),
+  // and the image model renders those words as lettering. Strip them.
+  const physicalCue = cutWords(
+    sceneOnlyDirection(
+      `${dna.heroGeometry?.mode || ""} ${dna.imageTreatment?.mode || ""}`,
+      90,
+    )
+      .replace(
+        /\b(?:wordmark|serif|sans|title|typeface|typographic|lettering|monogram|logotype)\b/giu,
+        " ",
+      )
+      .replace(/\s+/gu, " ")
+      .trim(),
+    70,
+  );
+  const prompt = text(
+    `Photograph of ${sceneNoun}.${physicalCue ? ` ${physicalCue}.` : ""} ${constraints}`.replace(
+      /\s+/gu,
+      " ",
+    ),
+    340,
+  );
+  return prompt;
 }
 
 function fallbackImage(site, placement) {
@@ -997,7 +1094,43 @@ async function downloadImage(url, fetchImpl = fetch, timeoutMs = 30_000) {
   }
 }
 
-async function requestImage({ client, model, prompt, aspectRatio, timeoutMs }) {
+const IMAGE_PROVIDER = () =>
+  String(process.env.IMAGE_PROVIDER || "fal").trim().toLowerCase();
+
+function imageProviderLabel() {
+  return IMAGE_PROVIDER() === "workers-ai" ? "workers-ai" : "fal.ai";
+}
+
+function imageProviderConfigured(falKey) {
+  return IMAGE_PROVIDER() === "workers-ai"
+    ? Boolean(
+        process.env.CLOUDFLARE_ACCOUNT_ID &&
+          (process.env.CLOUDFLARE_WORKERS_AI_TOKEN ||
+            process.env.CLOUDFLARE_API_TOKEN),
+      )
+    : Boolean(falKey);
+}
+
+function imageModelFor(provider, fallback) {
+  return provider === "workers-ai"
+    ? process.env.WORKERS_AI_IMAGE_MODEL || WORKERS_AI_DEFAULT_MODEL
+    : fallback;
+}
+
+async function requestImage({ client, model, prompt, aspectRatio, timeoutMs, fetchImpl }) {
+  if (IMAGE_PROVIDER() === "workers-ai") {
+    const generated = await generateWorkersAiImage({
+      prompt,
+      timeoutMs,
+      fetchImpl,
+    });
+    return {
+      data: generated.data,
+      requestId: generated.requestId,
+      provider: generated.provider,
+      model: generated.model,
+    };
+  }
   const result = await client.subscribe(model, {
     input: {
       prompt,
@@ -1011,7 +1144,12 @@ async function requestImage({ client, model, prompt, aspectRatio, timeoutMs }) {
   });
   const image = result?.data?.images?.[0] || result?.images?.[0];
   if (!image?.url) throw new Error("FAL returned no image URL.");
-  return { url: image.url, requestId: result?.requestId || "" };
+  return {
+    url: image.url,
+    requestId: result?.requestId || "",
+    provider: "fal",
+    model,
+  };
 }
 
 function existingEntry(manifest, placement, promptHash, outputDir) {
@@ -1077,8 +1215,8 @@ async function generateContextualAssetsForRoute({
   );
   const manifest = {
     version: 3,
-    provider: "fal.ai",
-    model,
+    provider: imageProviderLabel(),
+    model: imageModelFor(IMAGE_PROVIDER(), model),
     reviewPolicyVersion: GENERATED_ASSET_REVIEW_POLICY_VERSION,
     strategy: "client-first-fill-missing-route-directed",
     routeId: routeContract.id,
@@ -1093,8 +1231,11 @@ async function generateContextualAssetsForRoute({
     (creativeLaneProvider() === "opencode-go"
       ? Boolean(process.env.OPENCODE_GO_API_KEY)
       : Boolean(process.env.OPENROUTER_API_KEY));
-  const canGenerate = Boolean(key && !force && hasReviewProvider);
-  if (canGenerate) falClient.config({ credentials: key });
+  const canGenerate = Boolean(
+    imageProviderConfigured(key) && !force && hasReviewProvider,
+  );
+  if (canGenerate && IMAGE_PROVIDER() !== "workers-ai")
+    falClient.config({ credentials: key });
 
   let generationBlockedByFailure = null;
   const remainingImageBudget = Math.max(0, imageBudget);
@@ -1229,8 +1370,10 @@ async function generateContextualAssetsForRoute({
         entry: {
           placement: placement.id,
           reason: !canGenerate
-            ? !key
-              ? "FAL_KEY-not-configured"
+            ? !imageProviderConfigured(key)
+              ? IMAGE_PROVIDER() === "workers-ai"
+                ? "CLOUDFLARE_WORKERS_AI-not-configured"
+                : "FAL_KEY-not-configured"
               : !hasReviewProvider
                 ? "OPENCODE_GO_API_KEY-not-configured"
                 : "image-generation-disabled"
@@ -1273,6 +1416,7 @@ async function generateContextualAssetsForRoute({
                 ),
           aspectRatio: placement.aspectRatio,
           timeoutMs,
+          fetchImpl,
         });
       } catch (error) {
         const classified = falRequestFailure(error);
@@ -1288,11 +1432,9 @@ async function generateContextualAssetsForRoute({
         continue;
       }
       try {
-        const downloaded = await downloadImage(
-          requested.url,
-          fetchImpl,
-          timeoutMs,
-        );
+        const downloaded = requested.data
+          ? { data: requested.data }
+          : await downloadImage(requested.url, fetchImpl, timeoutMs);
         const normalized = await normalizeImage(downloaded.data, placement);
         let review;
         let reviewSummary;
@@ -1453,9 +1595,12 @@ async function generateContextualAssetsForRoute({
       asset: entry.path,
       placement: entry.placement,
       source: "fal-generated",
-      provider: "fal.ai",
-      model,
-      license: "fal.ai provider terms; verify current terms before production",
+      provider: imageProviderLabel(),
+      model: imageModelFor(IMAGE_PROVIDER(), model),
+      license:
+        IMAGE_PROVIDER() === "workers-ai"
+          ? "Cloudflare Workers AI terms; verify current terms before production"
+          : "fal.ai provider terms; verify current terms before production",
       subject: entry.alt,
       promptHash: entry.promptHash,
       requestId: entry.requestId,
@@ -1598,10 +1743,12 @@ export async function generateContextualAssets(options = {}) {
         routeId: manifest.routeId,
         familyId: manifest.familyId,
         source: "fal-generated",
-        provider: "fal.ai",
+        provider: manifest.provider,
         model: manifest.model,
         license:
-          "fal.ai provider terms; verify current terms before production",
+          manifest.provider === "workers-ai"
+            ? "Cloudflare Workers AI terms; verify current terms before production"
+            : "fal.ai provider terms; verify current terms before production",
         subject: entry.alt,
         promptHash: entry.promptHash,
         requestId: entry.requestId,
@@ -1636,8 +1783,11 @@ export async function generateContextualAssets(options = {}) {
   };
   const manifest = {
     version: 4,
-    provider: "fal.ai",
-    model: options.model || process.env.FAL_IMAGE_MODEL || DEFAULT_FAL_MODEL,
+    provider: imageProviderLabel(),
+    model: imageModelFor(
+      IMAGE_PROVIDER(),
+      options.model || process.env.FAL_IMAGE_MODEL || DEFAULT_FAL_MODEL,
+    ),
     reviewPolicyVersion: GENERATED_ASSET_REVIEW_POLICY_VERSION,
     strategy: "client-first-per-route-reference-directed",
     generatedAt: new Date().toISOString(),
