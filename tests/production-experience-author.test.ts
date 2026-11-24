@@ -14,6 +14,7 @@ import {
   restoreImageAltsFromOriginal,
   restoreRequiredExperienceMarkers,
   restoreRequiredSectionIdsOnSemanticSections,
+  referenceFidelityBlocks,
   validateProductionCandidateFiles,
   validateLocationPage,
   validateServicePage,
@@ -4244,4 +4245,56 @@ it("requires the shared route-bound page primitive for a rich location source", 
       { pageBriefContractVersion: 1 },
     ),
   ).toThrow("PageBriefSections");
+});
+
+
+describe("preview visual reference advisory", () => {
+  it("never relaxes a hard reference failure", () => {
+    expect(
+      referenceFidelityBlocks({
+        pass: false,
+        visualPass: true,
+        runCreativeChecks: true,
+        visualAdvisory: true,
+      }),
+    ).toBe(true);
+    expect(
+      referenceFidelityBlocks({
+        pass: false,
+        visualPass: false,
+        runCreativeChecks: false,
+        visualAdvisory: true,
+      }),
+    ).toBe(true);
+  });
+
+  it("keeps static visual findings advisory only in preview runs", () => {
+    expect(
+      referenceFidelityBlocks({
+        pass: true,
+        visualPass: false,
+        runCreativeChecks: true,
+        visualAdvisory: true,
+      }),
+    ).toBe(false);
+    expect(
+      referenceFidelityBlocks({
+        pass: true,
+        visualPass: false,
+        runCreativeChecks: true,
+        visualAdvisory: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("does not block on visual findings when creative checks are disabled", () => {
+    expect(
+      referenceFidelityBlocks({
+        pass: true,
+        visualPass: false,
+        runCreativeChecks: false,
+        visualAdvisory: false,
+      }),
+    ).toBe(false);
+  });
 });

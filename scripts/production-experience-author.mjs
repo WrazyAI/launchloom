@@ -34,6 +34,28 @@ import {
 import { validateReferenceDna } from "./reference-dna.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 import { MAX_REPAIR_FILE_SOURCE_CHARS } from "./creative-repair-contract.mjs";
+/**
+ * Decide whether a reference-fidelity report blocks authoring.
+ *
+ * A hard failure always blocks. Static visual markers (hero geometry, section
+ * order, service presentation, motion primitive) are self-declared labels; in
+ * a preview-only run the rendered bakeoff judges the actual composition, so
+ * those findings stay advisory. Promote runs keep the strict behaviour.
+ *
+ * @param {{pass?: boolean, visualPass?: boolean, runCreativeChecks?: boolean,
+ *   visualAdvisory?: boolean}} [input]
+ */
+export function referenceFidelityBlocks({
+  pass,
+  visualPass,
+  runCreativeChecks,
+  visualAdvisory = false,
+} = {}) {
+  if (!pass) return true;
+  return Boolean(runCreativeChecks && !visualPass && !visualAdvisory);
+}
+
+
 
 /**
  * @typedef {"contract" | "experience" | "service" | "location" | "service-index" | "styles" | "motion"} AuthorStage
@@ -4208,6 +4230,7 @@ export async function authorExperienceCandidates({
   testProfile = "full",
   fastLane = false,
   candidateCount = undefined,
+  visualReferenceAdvisory = process.env.PREVIEW_ONLY === "true",
 }) {
   if (typeof generate !== "function")
     throw new Error("A generation adapter is required.");
@@ -4360,8 +4383,12 @@ export async function authorExperienceCandidates({
           motionSource: "export function mountExperienceMotion() {}",
         });
         while (
-          (!fidelity.pass ||
-            (policy.runCreativeChecks && !fidelity.visualPass)) &&
+          referenceFidelityBlocks({
+            pass: fidelity.pass,
+            visualPass: fidelity.visualPass,
+            runCreativeChecks: policy.runCreativeChecks,
+            visualAdvisory: visualReferenceAdvisory,
+          }) &&
           referenceRepairCycles < 2
         ) {
           referenceRepairCycles += 1;
@@ -4392,7 +4419,14 @@ export async function authorExperienceCandidates({
             motionSource: "export function mountExperienceMotion() {}",
           });
         }
-        if (!fidelity.pass || (policy.runCreativeChecks && !fidelity.visualPass))
+        if (
+          referenceFidelityBlocks({
+            pass: fidelity.pass,
+            visualPass: fidelity.visualPass,
+            runCreativeChecks: policy.runCreativeChecks,
+            visualAdvisory: visualReferenceAdvisory,
+          })
+        )
           throw new Error(
             `Reference fidelity failed for ${route.id}: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
           );
@@ -4491,7 +4525,14 @@ export async function authorExperienceCandidates({
           stylesSource: styles,
           motionSource: motion,
         });
-        if (!finalFidelity.pass || (policy.runCreativeChecks && !finalFidelity.visualPass))
+        if (
+          referenceFidelityBlocks({
+            pass: finalFidelity.pass,
+            visualPass: finalFidelity.visualPass,
+            runCreativeChecks: policy.runCreativeChecks,
+            visualAdvisory: visualReferenceAdvisory,
+          })
+        )
           throw new Error(
             `Reference fidelity failed for ${route.id}: ${finalFidelity.findings.map((item) => item.message).join(" | ")}`,
           );
@@ -4548,9 +4589,13 @@ export async function authorExperienceCandidates({
         referenceDna: route.referenceDna,
         referenceFidelity: referenceFidelity
           ? {
-              status: policy.runCreativeChecks
-                ? "enforced"
-                : "visual-checks-skipped",
+              status:
+                visualReferenceAdvisory && !referenceFidelity.visualPass
+                  ? "visual-findings-advisory"
+                  : policy.runCreativeChecks
+                    ? "enforced"
+                    : "visual-checks-skipped",
+              visualAdvisory: visualReferenceAdvisory,
               hardChecksPassed: referenceFidelity.pass,
               visualPass: referenceFidelity.visualPass,
               score: referenceFidelity.score,
