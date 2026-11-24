@@ -2238,6 +2238,12 @@ describe("real admin workspace browser behavior", () => {
           ),
         ).toBe("rgb(18, 88, 97)");
       }
+      const proofButton = page.locator(".admin-site-proof").first();
+      await proofButton.click();
+      await visible(page.locator("#attempt-inspector"));
+      await page.keyboard.press("Escape");
+      await expect.poll(() => page.getByRole("dialog").count()).toBe(0);
+      await focused(proofButton);
       const openClient = page
         .getByRole("button", { name: "Open client" })
         .first();
@@ -3690,6 +3696,19 @@ it("renders chat-style Agent runs with collapsible thinking traces, structured J
     const sendBtn = composer.locator(".admin-chat__composer-send");
     expect(await sendBtn.isDisabled()).toBe(true);
 
+    if (process.env.ADMIN_DESIGN_CAPTURE_DIR) {
+      await page.setViewportSize({ width: 1512, height: 1080 });
+      await page.waitForTimeout(250);
+      await page.screenshot({
+        path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-agent-runs-chat-full-1512.png`,
+      });
+      await composer.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(200);
+      await page.screenshot({
+        path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-agent-runs-composer-1512.png`,
+      });
+    }
+
     autoErrors(errors);
   } finally {
     await page.close();
@@ -3891,6 +3910,11 @@ it.each([1512, 390])(
         await drawer.screenshot({
           path: `/tmp/opencode/run-inspector-${slug}-${width}.png`,
         });
+        if (process.env.ADMIN_DESIGN_CAPTURE_DIR && slug === "agent") {
+          await page.screenshot({
+            path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-sites-agent-runs-${width}.png`,
+          });
+        }
       }
       await drawer
         .getByRole("button", { name: "Overview", exact: true })

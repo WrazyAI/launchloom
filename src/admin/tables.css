@@ -403,6 +403,7 @@
   width: 100%;
   padding: 0;
   border: 0;
+  border-radius: 10px;
   background: transparent;
   color: inherit;
   text-align: left;
@@ -675,6 +676,11 @@
 .admin-site-timeline__row:hover,
 .admin-site-timeline__row:focus-visible {
   background: var(--admin-ivory);
+}
+
+.admin-site-timeline__row[aria-pressed="true"] {
+  background: #edf3ee;
+  box-shadow: inset 2px 0 0 var(--admin-forest);
 }
 
 .admin-site-timeline__when strong,

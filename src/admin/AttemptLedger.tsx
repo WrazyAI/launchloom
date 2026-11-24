@@ -7,7 +7,7 @@ import { groupBySite, siteStatus } from "./site-groups";
 import { GenerationPreview, generationCaptureSrc } from "./GenerationPreview";
 import { describeAttempt, formatProfile } from "./format";
 import type { KeyboardEvent, MouseEvent } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Tone = "success" | "ready" | "running" | "failure" | "warning" | "neutral";
 
@@ -133,6 +133,11 @@ function SiteProofFrame({
   const [captureState, setCaptureState] = useState<
     "loading" | "loaded" | "missing"
   >(src ? "loading" : "missing");
+
+  useEffect(() => {
+    setCaptureState(src ? "loading" : "missing");
+  }, [src]);
+
   const proofHost = siteHostLabel(siteUrl);
   const showBuilding = isRunning && captureState === "missing";
   const viewportLabel =
@@ -520,7 +525,6 @@ export function SiteTimeline({
           >
             <div className="admin-site-band">
               <SiteProofFrame
-                key={`${proofAttempt.attemptId}:${proofAttempt.updatedAt ?? 0}`}
                 groupName={group.name}
                 proofAttempt={proofAttempt}
                 siteUrl={siteUrl}
