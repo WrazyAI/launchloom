@@ -2,8 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   HERO_OVERLAY_CORRECTION_END,
   HERO_OVERLAY_CORRECTION_START,
+  MEDIA_FOCUS_CORRECTION_END,
+  MEDIA_FOCUS_CORRECTION_START,
   heroOverlayRepairCss,
+  mediaFocusRepairCss,
   withHeroOverlayCorrection,
+  withMediaFocusCorrection,
 } from "../scripts/hero-overlay-repair.mjs";
 
 describe("hero overlay correction", () => {
@@ -50,5 +54,38 @@ describe("hero overlay correction", () => {
     expect(repaired).not.toContain("old{}");
     expect(repaired).toContain(HERO_OVERLAY_CORRECTION_START);
     expect(repaired).toContain("body { color: #111; }");
+  });
+});
+
+describe("media focus plate correction", () => {
+  it("paints an opaque plate with an inset light focus ring", () => {
+    const css = mediaFocusRepairCss();
+    expect(css).toContain(MEDIA_FOCUS_CORRECTION_START);
+    expect(css).toContain("[data-hero] :is(a, button, summary):focus-visible");
+    expect(css).toContain("background: #0b1511 !important");
+    expect(css).toContain("outline: 2px solid #f7f3e8 !important");
+    expect(css).toContain("outline-offset: -3px !important");
+  });
+
+  it("gives developer-preview form notes a light plate", () => {
+    const css = mediaFocusRepairCss();
+    expect(css).toContain('body[data-ll-route^="/services"] form small');
+    expect(css).toContain("background: #f7f3e8 !important");
+    expect(css).toContain("color: #14201d !important");
+  });
+
+  it("anchors the homepage heading to the inner-page display token", () => {
+    const css = mediaFocusRepairCss();
+    expect(css).toContain('body[data-ll-route="/"] [data-hero] h1');
+    expect(css).toContain("font-family: var(--ll-creative-display");
+    expect(css).toContain("font-weight: 400 !important");
+  });
+
+  it("replaces the managed block without duplicating it", () => {
+    const first = withMediaFocusCorrection("body { color: #111; }");
+    const second = withMediaFocusCorrection(first);
+    expect(second).toBe(first);
+    expect(second.split(MEDIA_FOCUS_CORRECTION_START)).toHaveLength(2);
+    expect(second).toContain("body { color: #111; }");
   });
 });
