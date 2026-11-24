@@ -7,7 +7,10 @@ import { spawn } from "node:child_process";
 import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
 import { uploadGenerationHero } from "./record-generation-event.mjs";
 import { recordGenerationStage } from "./record-generation-stage.mjs";
-import { withHeroOverlayCorrection } from "./hero-overlay-repair.mjs";
+import {
+  withHeroOverlayCorrection,
+  withMediaFocusCorrection,
+} from "./hero-overlay-repair.mjs";
 import {
   assertCodeAuthoringModel,
   creativeLaneProvider,
@@ -1053,6 +1056,9 @@ function reportCandidate(report, candidateId) {
 const HERO_CARD_FINDING_PATTERN =
   /large bordered card|bordered hero card|hero copy is a large/iu;
 
+const DETERMINISTIC_PAINT_FINDING_PATTERN =
+  /contrast (?:fail|unresolved)\b|heading (?:typeface|weight) drifts/iu;
+
 function heroCardFindingText(finding) {
   if (typeof finding === "string") return finding;
   if (!finding || typeof finding !== "object") return "";
@@ -1088,6 +1094,35 @@ export async function applyDeterministicHeroOverlay({
   const stylesPath = path.join(candidateDir, "styles.css");
   const existing = await fs.readFile(stylesPath, "utf8");
   const next = withHeroOverlayCorrection(existing);
+  if (next === existing) return { applied: false };
+  await fs.writeFile(stylesPath, next);
+  return { applied: true };
+}
+
+/**
+ * Apply one deterministic paint pass when rendered contrast or inner-page
+ * identity checks find a defect the model has repeatedly failed to repair.
+ * Focused controls get an opaque dark plate and an inset light ring,
+ * developer-preview form notes get a light plate, and the homepage heading is
+ * anchored to the display token the inner pages use. This changes paint only;
+ * the rendered gates still decide whether the candidate is acceptable.
+ */
+/**
+ * @param {{candidateDir: string, findings?: Array<string | Record<string, any>>}} options
+ */
+export async function applyDeterministicMediaFocusOverlay({
+  candidateDir,
+  findings = [],
+}) {
+  if (
+    !findings.some((finding) =>
+      DETERMINISTIC_PAINT_FINDING_PATTERN.test(repairFindingText(finding)),
+    )
+  )
+    return { applied: false };
+  const stylesPath = path.join(candidateDir, "styles.css");
+  const existing = await fs.readFile(stylesPath, "utf8");
+  const next = withMediaFocusCorrection(existing);
   if (next === existing) return { applied: false };
   await fs.writeFile(stylesPath, next);
   return { applied: true };
@@ -1604,11 +1639,21 @@ export async function runRenderedCreativeRepair({
       candidateRoot,
       candidateDirectory,
     );
+    const deterministicFocus = await applyDeterministicMediaFocusOverlay({
+      candidateDir,
+      findings,
+    });
     const deterministicHero = await applyDeterministicHeroOverlay({
       candidateDir,
       findings,
     });
-    if (deterministicHero.applied) {
+    if (deterministicFocus.applied || deterministicHero.applied) {
+      const status = [
+        deterministicFocus.applied && "deterministic-media-focus",
+        deterministicHero.applied && "deterministic-hero-overlay",
+      ]
+        .filter(Boolean)
+        .join("+");
       await persistRepairEvidence({
         outDir: evidenceRoot,
         round,
@@ -1616,11 +1661,11 @@ export async function runRenderedCreativeRepair({
         reason,
         findings,
         cyclesUsed: appliedSoFar,
-        attempts: [{ cycle: 0, status: "deterministic-hero-overlay" }],
+        attempts: [{ cycle: 0, status }],
       });
       return {
         status: "repaired",
-        attempts: [{ cycle: 0, status: "deterministic-hero-overlay" }],
+        attempts: [{ cycle: 0, status }],
       };
     }
     // Show Luna the real browser-scale desktop/mobile compositions first, then

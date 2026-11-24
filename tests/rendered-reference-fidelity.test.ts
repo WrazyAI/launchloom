@@ -7,6 +7,7 @@ import {
   RENDERED_REFERENCE_THRESHOLDS,
   evaluateRenderedDiversity,
   evaluateRenderedReferenceFidelity,
+  normalizeReferenceAuditScale,
 } from "../scripts/rendered-reference-fidelity.mjs";
 
 const roots: string[] = [];
@@ -111,6 +112,119 @@ const passingScores = {
   paletteAdherence: 90,
   artDirection: 91,
 };
+
+describe("rendered reference audit scale", () => {
+  const offByTenScores = {
+    heroGeometry: 8,
+    typography: 9,
+    spatialRhythm: 8,
+    imagery: 8,
+    servicePresentation: 7,
+    navigation: 6,
+    ctaPlacement: 7,
+    mobileRecomposition: 7,
+    interactionEvidence: 6,
+    paletteAdherence: 9,
+    artDirection: 8,
+  };
+
+  it("rescales an unambiguous 0-10 audit to the 0-100 gate", () => {
+    const normalized = normalizeReferenceAuditScale({
+      verdict: "pass",
+      overallScore: 6,
+      scores: offByTenScores,
+      findings: [],
+      summary: "The candidate preserves the assigned reference mechanics.",
+    });
+    expect(normalized.overallScore).toBe(60);
+    expect(normalized.scores.heroGeometry).toBe(80);
+    expect(normalized.scores.navigation).toBe(60);
+    expect(normalized.scaleNormalized).toBe("0-10-to-0-100");
+  });
+
+  it("leaves a 0-100 audit untouched", () => {
+    const audit = {
+      verdict: "pass",
+      overallScore: 89,
+      scores: passingScores,
+      findings: [],
+      summary: "Pass.",
+    };
+    expect(normalizeReferenceAuditScale(audit)).toBe(audit);
+  });
+
+  it("does not rescale a block verdict or a critical finding", () => {
+    const blocked = {
+      verdict: "block",
+      overallScore: 6,
+      scores: offByTenScores,
+      findings: [],
+      summary: "Blocked.",
+    };
+    expect(normalizeReferenceAuditScale(blocked)).toBe(blocked);
+    const critical = {
+      ...blocked,
+      verdict: "pass",
+      findings: [
+        {
+          severity: "critical",
+          category: "hero-geometry",
+          viewport: "desktop",
+          evidence: "Wrong hero.",
+          repair: "Rebuild the hero.",
+        },
+      ],
+    };
+    expect(normalizeReferenceAuditScale(critical)).toBe(critical);
+  });
+
+  it("passes the calibrated gate after rescaling the observed judge output", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const files = await evidence();
+    const result = await evaluateRenderedReferenceFidelity({
+      referenceDna: dna(files),
+      candidateScreenshots: {
+        desktop: files.candidateDesktop,
+        compact: files.candidateCompact,
+        mobile: files.candidateMobile,
+      },
+      fetchImpl: async () =>
+        response({
+          verdict: "pass",
+          overallScore: 6,
+          scores: offByTenScores,
+          findings: [],
+          summary: "The candidate preserves the assigned reference mechanics.",
+        }),
+    });
+    expect(result.pass).toBe(true);
+    expect(result.score).toBe(60);
+    expect(result.audit.scaleNormalized).toBe("0-10-to-0-100");
+  });
+
+  it("does not rescale when any score exceeds ten", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const files = await evidence();
+    const result = await evaluateRenderedReferenceFidelity({
+      referenceDna: dna(files),
+      candidateScreenshots: {
+        desktop: files.candidateDesktop,
+        compact: files.candidateCompact,
+        mobile: files.candidateMobile,
+      },
+      fetchImpl: async () =>
+        response({
+          verdict: "pass",
+          overallScore: 6,
+          scores: { ...offByTenScores, heroGeometry: 11 },
+          findings: [],
+          summary: "Mixed scale.",
+        }),
+    });
+    expect(result.pass).toBe(false);
+    expect(result.audit.scaleNormalized).toBeUndefined();
+  });
+});
 
 describe("rendered reference request retries", () => {
   const files = {

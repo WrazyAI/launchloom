@@ -7,6 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import {
   applyDeterministicHeroOverlay,
+  applyDeterministicMediaFocusOverlay,
   collectAvailableScreenshots,
   liveGenerationId,
   selectLiveCandidateScreenshot,
@@ -672,6 +673,81 @@ describe("rendered creative repair orchestration", () => {
         findings: [finding],
       });
       expect(second.applied).toBe(false);
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("applies the media focus plate once for a contrast finding", async () => {
+    const dir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-media-focus-"),
+    );
+    try {
+      await fs.writeFile(
+        path.join(dir, "styles.css"),
+        "body { color: #111; }",
+      );
+      const finding =
+        'contrast fail: / desktop focus body > header > nav > a focus "Services" (2.124; required 3); foreground #f7f9f5, background variable';
+      const first = await applyDeterministicMediaFocusOverlay({
+        candidateDir: dir,
+        findings: [finding],
+      });
+      expect(first.applied).toBe(true);
+      const css = await fs.readFile(path.join(dir, "styles.css"), "utf8");
+      expect(css).toContain("bounded media focus plate");
+      expect(css).toContain("outline-offset: -3px !important");
+      expect(css).toContain("body { color: #111; }");
+      const second = await applyDeterministicMediaFocusOverlay({
+        candidateDir: dir,
+        findings: [finding],
+      });
+      expect(second.applied).toBe(false);
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("applies the same paint pass for an inner-page heading drift", async () => {
+    const dir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-heading-anchor-"),
+    );
+    try {
+      await fs.writeFile(
+        path.join(dir, "styles.css"),
+        "body { color: #111; }",
+      );
+      const result = await applyDeterministicMediaFocusOverlay({
+        candidateDir: dir,
+        findings: [
+          "service-page desktop: service page heading typeface drifts from the homepage typeface",
+        ],
+      });
+      expect(result.applied).toBe(true);
+      const css = await fs.readFile(path.join(dir, "styles.css"), "utf8");
+      expect(css).toContain('body[data-ll-route="/"] [data-hero] h1');
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("does not apply the focus plate when no contrast finding exists", async () => {
+    const dir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-media-focus-none-"),
+    );
+    try {
+      await fs.writeFile(
+        path.join(dir, "styles.css"),
+        "body { color: #111; }",
+      );
+      const result = await applyDeterministicMediaFocusOverlay({
+        candidateDir: dir,
+        findings: ["The rendered hero is too tall."],
+      });
+      expect(result.applied).toBe(false);
+      expect(await fs.readFile(path.join(dir, "styles.css"), "utf8")).toBe(
+        "body { color: #111; }",
+      );
     } finally {
       await fs.rm(dir, { recursive: true, force: true });
     }

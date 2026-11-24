@@ -35,7 +35,7 @@ export const RENDERED_REFERENCE_MODEL =
   creativeLaneDefaultModel(creativeLaneProvider());
 
 const RENDERED_JUDGE_SYSTEM_PROMPT =
-  "You are a strict visual design critic. Judge rendered pixels, not DOM labels or model claims. Compare design mechanics and visual language only. Do not require copied branding, copy, assets, logos, proprietary fonts, or trade dress. Penalize generic split heroes, card walls, generic SaaS/editorial grammar, weak type scale, weak image choreography, incorrect section pacing, and mobile layouts that merely stack desktop. overallScore must measure assigned-reference mechanics only; do not lower it for client-only palette or art-direction misses. Score paletteAdherence and artDirection separately, and still return blocking findings for client-brief failures. Return JSON only.";
+  "You are a strict visual design critic. Judge rendered pixels, not DOM labels or model claims. Compare design mechanics and visual language only. Do not require copied branding, copy, assets, logos, proprietary fonts, or trade dress. Penalize generic split heroes, card walls, generic SaaS/editorial grammar, weak type scale, weak image choreography, incorrect section pacing, and mobile layouts that merely stack desktop. overallScore must measure assigned-reference mechanics only; do not lower it for client-only palette or art-direction misses. Score paletteAdherence and artDirection separately, and still return blocking findings for client-brief failures. Every score is an integer on a 0-100 scale: 50 is a competent match, 70 is strong, and below 30 is poor. Do not use a 0-10 scale; a score of 6 means 6 out of 100. Return JSON only.";
 
 // Calibrated 2026-10-17 with product approval after the 2026-10-16 diagnosis
 // proved the per-dimension conjunction impossible (0 of 105 judged draws; the
@@ -523,6 +523,45 @@ const SCORED_DIMENSIONS = [
   "artDirection",
 ];
 
+/**
+ * Repair an unambiguous scale error from the visual judge.
+ *
+ * The schema declares 0-100, but DeepSeek V4.1 Flash can answer on a 0-10
+ * rubric (for example, every dimension 6-9 with a pass verdict and a positive
+ * summary). Scoring that response literally blocks every candidate at the
+ * calibrated 47-point bar. Rescale only when every returned number is at most
+ * 10, the verdict is not `block`, and there are no critical findings; keep the
+ * original audit and mark the correction so reports stay auditable.
+ *
+ * @param {any} audit
+ * @returns {any}
+ */
+export function normalizeReferenceAuditScale(audit) {
+  if (!audit || typeof audit !== "object" || Array.isArray(audit)) return audit;
+  const scores =
+    audit.scores && typeof audit.scores === "object" ? audit.scores : {};
+  const values = [audit.overallScore, ...Object.values(scores)]
+    .map((value) => Number(value))
+    .filter((value) => Number.isFinite(value));
+  if (!values.length) return audit;
+  if (!values.every((value) => value >= 0 && value <= 10)) return audit;
+  if (audit.verdict === "block") return audit;
+  const findings = Array.isArray(audit.findings) ? audit.findings : [];
+  if (findings.some((finding) => finding?.severity === "critical"))
+    return audit;
+  return {
+    ...audit,
+    scaleNormalized: "0-10-to-0-100",
+    overallScore: Math.round(Number(audit.overallScore || 0) * 10),
+    scores: Object.fromEntries(
+      Object.entries(scores).map(([key, value]) => [
+        key,
+        Math.round(Number(value || 0) * 10),
+      ]),
+    ),
+  };
+}
+
 function scorePass(audit, thresholds = RENDERED_REFERENCE_THRESHOLDS) {
   const scores = audit?.scores || {};
   const criticals = (audit?.findings || []).filter(
@@ -684,12 +723,14 @@ Treat this as binding client art direction layered onto the reference mechanics.
     promptCacheKey,
     fetchImpl,
   });
+  const audit = normalizeReferenceAuditScale(result.audit);
   return {
     version: 1,
     model,
-    pass: scorePass(result.audit) && !interactionEvidence?.failures.length,
-    score: Number(result.audit.overallScore || 0),
+    pass: scorePass(audit) && !interactionEvidence?.failures.length,
+    score: Number(audit.overallScore || 0),
     ...result,
+    audit,
   };
 }
 

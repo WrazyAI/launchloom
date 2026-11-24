@@ -140,6 +140,70 @@ ${HERO_OVERLAY_CORRECTION_END}
 `;
 }
 
+export const MEDIA_FOCUS_CORRECTION_START =
+  "/* launchloom: bounded media focus plate */";
+export const MEDIA_FOCUS_CORRECTION_END =
+  "/* launchloom: end bounded media focus plate */";
+
+/**
+ * A white focus ring disappears over bright photograph areas, and an accent
+ * focus color can fall below the 3:1 indicator bar. The gate must be able to
+ * measure one opaque paint pair, so the focused control gets its own dark
+ * plate and an inset light ring. Form notes get a light plate for the same
+ * reason: their inherited color was unreadable on a dark mobile surface.
+ */
+export function mediaFocusRepairCss() {
+  return `${MEDIA_FOCUS_CORRECTION_START}
+/* Inner pages resolve the display stack directly; the homepage h1 inherits a
+   different family, so the identity gate reports a typeface drift even though
+   the visible wordmark uses the display face. Anchor the homepage heading to
+   the same token the authored inner pages use. */
+body[data-ll-route="/"] [data-hero] h1 {
+  font-family: var(--ll-creative-display, Georgia, serif) !important;
+  font-weight: 400 !important;
+}
+body[data-ll-route="/"] [data-hero] :is(a, button, summary):focus-visible {
+  position: relative;
+  z-index: 4;
+  background: #0b1511 !important;
+  color: #f7f3e8 !important;
+  border-width: 0 !important;
+  outline: 2px solid #f7f3e8 !important;
+  outline-offset: -3px !important;
+  box-shadow: none !important;
+  text-decoration-color: #f7f3e8 !important;
+}
+body[data-ll-route^="/services"] form small {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #f7f3e8 !important;
+  color: #14201d !important;
+}
+${MEDIA_FOCUS_CORRECTION_END}
+`;
+}
+
+/** Replace any previous managed media-focus block, preserving authored CSS. */
+export function withMediaFocusCorrection(
+  existing,
+  block = mediaFocusRepairCss(),
+) {
+  let text = String(existing ?? "");
+  let guard = 0;
+  while (guard++ < 20) {
+    const start = text.indexOf(MEDIA_FOCUS_CORRECTION_START);
+    if (start === -1) break;
+    const end = text.indexOf(MEDIA_FOCUS_CORRECTION_END, start);
+    text =
+      end === -1
+        ? text.slice(0, start)
+        : text.slice(0, start) +
+          text.slice(end + MEDIA_FOCUS_CORRECTION_END.length);
+  }
+  const base = text.replace(/\n{3,}/g, "\n\n").trimEnd();
+  return base ? `${base}\n${block}` : block.trimStart();
+}
+
 /** Replace any previous managed block in place, preserving authored CSS. */
 export function withHeroOverlayCorrection(
   existing,
