@@ -38,3 +38,30 @@ or raw-log collection changes. Validate actual browser geometry and interaction 
 390px and desktop widths, active-to-terminal updates, failure evidence, connection
 recovery and attempt isolation. Prepare a reviewable PR; merging/deploying awaits
 the owner's shipping authorization.
+
+## Connector refinement
+
+The owner rejected the first screenshot's sweeping, redundant connectors. Apply
+the linked Anthropic frontend-design guidance as a focused refinement of the
+existing LaunchLoom interface: a quiet operational pipeline with clear sequence
+and deliberately routed branches. Keep Source Sans 3 for the graph and Manrope
+for app headings. Retain the app palette: paper `#fffefa`, canvas `#f8faf7`,
+forest `#10251f`, connector `#7c9184`,
+success `#4b8a5d`, and failure `#c0392b`.
+
+Use straight connections for aligned stages and short orthogonal turns with a
+consistent small corner radius for branches. Remove transitively redundant
+fallback connections, preserving reachability and every visible stage. Route
+necessary long dependencies beside the occupied cards, not across them. Remove
+non-interactive port dots and the prominent dotted canvas. Keep type and stage
+status as the primary hierarchy. The chosen treatment retains genuine branches;
+a plain timeline would conceal them, while freeform curves caused the rejected
+visual clutter.
+
+Also verify the completed external reviews' inspection issues: a paused stage
+must remain visually anchored when earlier rows arrive, and the parent detail
+reader must clear stale errors when Workflow takes ownership. Tighten the
+history fixture to return results by the requested cursor. Show fresh desktop,
+mobile, branching, and failure-inspection captures before any shipping approval.
+
+Guidance: [Anthropic frontend-design](https://raw.githubusercontent.com/anthropics/skills/refs/heads/main/skills/frontend-design/SKILL.md).

@@ -1712,6 +1712,44 @@ describe("real admin workspace browser behavior", () => {
             }),
           );
         expect(edgesGoDown).toBe(true);
+        const crossedStages = await workflow
+          .locator(".flow-content")
+          .evaluate((content) => {
+            const origin = content.getBoundingClientRect();
+            const boxes = [
+              ...content.querySelectorAll<HTMLElement>(".flow-node"),
+            ].map((node) => {
+              const bounds = node.getBoundingClientRect();
+              return {
+                stage: node.dataset.stage,
+                left: bounds.left - origin.left,
+                right: bounds.right - origin.left,
+                top: bounds.top - origin.top,
+                bottom: bounds.bottom - origin.top,
+              };
+            });
+            return [
+              ...content.querySelectorAll<SVGPathElement>(".flow-edge"),
+            ].flatMap((edge) => {
+              for (
+                let distance = 4;
+                distance < edge.getTotalLength() - 4;
+                distance += 4
+              ) {
+                const point = edge.getPointAtLength(distance);
+                const crossed = boxes.find(
+                  (box) =>
+                    point.x > box.left + 1 &&
+                    point.x < box.right - 1 &&
+                    point.y > box.top + 1 &&
+                    point.y < box.bottom - 1,
+                );
+                if (crossed) return [crossed.stage];
+              }
+              return [];
+            });
+          });
+        expect(crossedStages).toEqual([]);
         await canvas.evaluate((el) => {
           el.scrollTop = 0;
         });
@@ -1734,11 +1772,22 @@ describe("real admin workspace browser behavior", () => {
         await page.setViewportSize({ width, height: 960 });
         await expect.poll(isLatestVisible).toBe(true);
         const captures = process.env.CLIENT_WORKFLOW_SCREENSHOTS;
-        if (captures)
+        if (captures) {
           await page.screenshot({
             path: path.join(captures, `vertical-workflow-${width}.png`),
             animations: "disabled",
           });
+          await canvas.evaluate((el) => {
+            el.scrollTop = 0;
+          });
+          await expect
+            .poll(() => follow.getAttribute("aria-pressed"))
+            .toBe("false");
+          await page.screenshot({
+            path: path.join(captures, `workflow-branches-${width}.png`),
+            animations: "disabled",
+          });
+        }
         autoErrors(errors);
       } finally {
         await page.close();
@@ -1845,12 +1894,116 @@ describe("real admin workspace browser behavior", () => {
         await visible(
           workflow.getByText("LL_STAGE_PREVIEW_DEPLOY_FAILED", { exact: true }),
         );
+        const captures = process.env.CLIENT_WORKFLOW_SCREENSHOTS;
+        if (captures && surface === "sites") {
+          await workflow.locator(".flow-focus").scrollIntoViewIfNeeded();
+          await page.screenshot({
+            path: path.join(captures, "workflow-error-inspection.png"),
+            animations: "disabled",
+          });
+        }
         autoErrors(errors);
       } finally {
         await page.close();
       }
     },
   );
+
+  it("keeps the inspected workflow node anchored when earlier stages arrive", async () => {
+    workflowOverride = progressiveWorkflow("authoring", "started");
+    workflowOverride.events = workflowOverride.events.filter(
+      (event) => event.stage !== "setup",
+    );
+    const { page, errors } = await openPage({
+      clock: true,
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-0000",
+    });
+    try {
+      await page
+        .getByRole("button", { name: "View workflow", exact: true })
+        .click();
+      const workflow = page.locator("[data-workflow-view]");
+      const inspected = workflow.locator('[data-stage="client_repo"]');
+      await inspected.click();
+      const offset = () =>
+        inspected.evaluate(
+          (node) =>
+            node.getBoundingClientRect().top -
+            node.closest("[data-flow-canvas]")!.getBoundingClientRect().top,
+        );
+      const before = await offset();
+      expect(
+        await workflow
+          .getByRole("button", { name: "Follow latest", exact: true })
+          .getAttribute("aria-pressed"),
+      ).toBe("false");
+      workflowOverride = progressiveWorkflow("authoring", "started");
+      await page.clock.runFor(2_100);
+      await expect
+        .poll(() => workflow.locator('[data-stage="setup"]').count())
+        .toBe(1);
+      await expect
+        .poll(async () => Math.abs((await offset()) - before))
+        .toBeLessThan(1);
+      expect(await inspected.getAttribute("aria-pressed")).toBe("true");
+      await visible(
+        workflow.getByText("Evidence for client_repo.", { exact: true }),
+      );
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("clears a stale parent detail error when Workflow owns refresh", async () => {
+    workflowOverride = progressiveWorkflow("authoring", "started");
+    const { page, errors } = await openPage({
+      clock: true,
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-0000",
+    });
+    try {
+      const openWorkflow = page.getByRole("button", {
+        name: "View workflow",
+        exact: true,
+      });
+      await visible(openWorkflow);
+      await page.route("**/workspace/attempts/attempt-0000", (route) =>
+        route.fulfill({
+          status: 503,
+          json: {
+            error: {
+              code: "temporarily_unavailable",
+              message: "Overview refresh temporarily failed.",
+            },
+          },
+        }),
+      );
+      await page.clock.runFor(15_100);
+      await visible(
+        page.getByRole("button", { name: "Retry attempt detail", exact: true }),
+      );
+      await page.unroute("**/workspace/attempts/attempt-0000");
+      await openWorkflow.click();
+      await expect
+        .poll(() =>
+          page
+            .getByRole("button", { name: "Retry attempt detail", exact: true })
+            .count(),
+        )
+        .toBe(0);
+      workflowOverride = progressiveWorkflow("creative_render", "started");
+      await page.clock.runFor(2_100);
+      await visible(
+        page.locator("[data-workflow-view]").getByRole("button", {
+          name: "Creative render: Running",
+          exact: true,
+        }),
+      );
+      autoErrors(errors, { allowResource503: true });
+    } finally {
+      await page.close();
+    }
+  });
 
   it("shows new terminal evidence instead of an older start message", async () => {
     workflowOverride = progressiveWorkflow("authoring", "started");
@@ -1966,13 +2119,34 @@ describe("real admin workspace browser behavior", () => {
       path: "/admin/onboarding-invites?view=generations&attempt=attempt-0000",
     });
     try {
-      let historyPage = { items: [earlier, stale], nextCursor: null, total: 2 };
+      const historyPages = new Map([
+        [
+          "history-page",
+          { items: [earlier, stale], nextCursor: null, total: 2 },
+        ],
+      ]);
+      const historyRequests: string[] = [];
       await page.route(
         "**/workspace/attempts/attempt-0000/events?**",
-        (route) =>
-          route.fulfill({
-            json: historyPage,
-          }),
+        (route) => {
+          const cursor =
+            new URL(route.request().url()).searchParams.get("cursor") ?? "";
+          historyRequests.push(cursor);
+          const historyPage = historyPages.get(cursor);
+          return route.fulfill(
+            historyPage
+              ? { json: historyPage }
+              : {
+                  status: 400,
+                  json: {
+                    error: {
+                      code: "unexpected_cursor",
+                      message: `Unexpected history cursor: ${cursor}`,
+                    },
+                  },
+                },
+          );
+        },
       );
       await page
         .getByRole("button", { name: "View workflow", exact: true })
@@ -2026,7 +2200,7 @@ describe("real admin workspace browser behavior", () => {
       await visible(workflow.getByText(earlier.detail, { exact: true }));
       // More than a page can arrive between polls, including while a tab is hidden.
       // Exhausting an earlier traversal must not make that gap unreachable.
-      historyPage = {
+      historyPages.set("missed-page", {
         items: [
           {
             ...earlier,
@@ -2037,7 +2211,7 @@ describe("real admin workspace browser behavior", () => {
         ],
         nextCursor: null,
         total: 1,
-      };
+      });
       workflowOverride.events = Array.from({ length: 50 }, (_, index) => ({
         ...stale,
         eventKey: `cost:new:${index}`,
@@ -2053,6 +2227,7 @@ describe("real admin workspace browser behavior", () => {
       await visible(
         workflow.getByText("Missed repair diagnostic.", { exact: true }),
       );
+      expect(historyRequests).toEqual(["history-page", "missed-page"]);
       autoErrors(errors.filter((error) => !error.includes("503")));
     } finally {
       await page.close();

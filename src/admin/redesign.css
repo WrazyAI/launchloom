@@ -1984,9 +1984,7 @@
   width: 100%;
   max-height: min(54vh, 520px);
   padding: 10px;
-  background-color: #fbfaf5;
-  background-image: radial-gradient(#d9ddd3 1px, transparent 1px);
-  background-size: 18px 18px;
+  background: #f8faf7;
   overflow-y: auto;
   overflow-x: hidden;
   overflow-anchor: none;
@@ -2007,13 +2005,13 @@
 
 .flow-edge {
   fill: none;
-  stroke: #8f9f8b;
-  stroke-width: 1.6;
+  stroke: #7c9184;
+  stroke-width: 1.4;
   stroke-linecap: round;
 }
 
 .flow-arrowhead {
-  fill: #6f7f6c;
+  fill: #7c9184;
 }
 
 .flow-nodes {
@@ -2045,14 +2043,12 @@
   box-shadow: 0 1px 2px rgb(20 45 38 / 6%);
   transition:
     border-color 140ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 140ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 140ms cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow 140ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .flow-node:hover {
   border-color: #8fa38a;
   box-shadow: 0 4px 12px rgb(20 45 38 / 10%);
-  transform: translateY(-1px);
 }
 
 .flow-node:focus-visible {
@@ -2140,39 +2136,6 @@
   color: var(--admin-muted);
   font-size: 11.5px;
   font-weight: 500;
-}
-
-.flow-port {
-  position: absolute;
-  top: 50%;
-  width: 8px;
-  height: 8px;
-  margin-top: -4px;
-  border: 1.5px solid #9aab96;
-  border-radius: 50%;
-  background: var(--admin-paper);
-}
-
-.flow-port--in {
-  left: -5px;
-}
-.flow-port--out {
-  right: -5px;
-}
-
-.flow-shell[data-orientation="vertical"] .flow-port--in {
-  top: -5px;
-  left: 50%;
-  margin-top: 0;
-  margin-left: -4px;
-}
-
-.flow-shell[data-orientation="vertical"] .flow-port--out {
-  top: auto;
-  right: auto;
-  bottom: -5px;
-  left: 50%;
-  margin-left: -4px;
 }
 
 .flow-legend {

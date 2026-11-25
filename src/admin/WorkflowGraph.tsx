@@ -343,6 +343,190 @@ function nearestVisibleAncestors(
   return found;
 }
 
+type Connection = { key: string; from: Placed; to: Placed };
+type Point = { x: number; y: number };
+
+function visibleConnections(placed: Placed[]): Connection[] {
+  const byStage = new Map(placed.map((item) => [item.key, item]));
+  const connections = placed.flatMap((item, index) => {
+    const parents = new Map<string, Placed>();
+    for (const dependency of DEPENDENCIES[item.key] ?? []) {
+      const direct =
+        byStage.get(dependency) ?? byStage.get(ALIASES[dependency]);
+      for (const parent of direct
+        ? [direct]
+        : nearestVisibleAncestors(dependency, byStage))
+        if (parent.key !== item.key) parents.set(parent.key, parent);
+    }
+    if (!Object.hasOwn(DEPENDENCIES, item.key) && placed[index - 1])
+      parents.set(placed[index - 1].key, placed[index - 1]);
+    return [...parents.values()].map((from) => ({
+      key: `${from.key}->${item.key}`,
+      from,
+      to: item,
+    }));
+  });
+  const incoming = new Map<string, Connection[]>();
+  for (const edge of connections)
+    incoming.set(edge.to.key, [...(incoming.get(edge.to.key) ?? []), edge]);
+  const hasAncestor = (
+    stage: string,
+    ancestor: string,
+    seen = new Set<string>(),
+  ): boolean => {
+    if (stage === ancestor) return true;
+    if (seen.has(stage)) return false;
+    seen.add(stage);
+    return (incoming.get(stage) ?? []).some((edge) =>
+      hasAncestor(edge.from.key, ancestor, seen),
+    );
+  };
+  // Hidden renderer branches can resolve to an ancestor already connected through
+  // the visible path. Keep reachability without drawing a second bypass loop.
+  return connections.filter(
+    (edge) =>
+      !(incoming.get(edge.to.key) ?? []).some(
+        (other) =>
+          other.from.key !== edge.from.key &&
+          hasAncestor(other.from.key, edge.from.key),
+      ),
+  );
+}
+
+function roundedOrthogonalPath(points: Point[]) {
+  const route = points.filter((point, index) => {
+    const previous = points[index - 1];
+    const next = points[index + 1];
+    return (
+      !previous ||
+      !next ||
+      !(
+        (previous.x === point.x && point.x === next.x) ||
+        (previous.y === point.y && point.y === next.y)
+      )
+    );
+  });
+  const coordinates = (point: Point) =>
+    `${Math.round(point.x * 100) / 100} ${Math.round(point.y * 100) / 100}`;
+  let path = `M ${coordinates(route[0])}`;
+  for (let index = 1; index < route.length - 1; index += 1) {
+    const previous = route[index - 1],
+      corner = route[index],
+      next = route[index + 1];
+    const before = Math.hypot(corner.x - previous.x, corner.y - previous.y);
+    const after = Math.hypot(next.x - corner.x, next.y - corner.y);
+    const radius = Math.min(6, before / 2, after / 2);
+    if (!before || !after) continue;
+    const entry = {
+      x: corner.x + ((previous.x - corner.x) * radius) / before,
+      y: corner.y + ((previous.y - corner.y) * radius) / before,
+    };
+    const exit = {
+      x: corner.x + ((next.x - corner.x) * radius) / after,
+      y: corner.y + ((next.y - corner.y) * radius) / after,
+    };
+    path += ` L ${coordinates(entry)} Q ${coordinates(corner)} ${coordinates(exit)}`;
+  }
+  return `${path} L ${coordinates(route.at(-1)!)}`;
+}
+
+function routeConnections(chart: ReturnType<typeof layout>, width: number) {
+  const connections = visibleConnections(chart.placed);
+  const center = (item: Placed) => item.x + chart.nodeWidth / 2;
+  const longGroups = new Map<string, Connection[]>();
+  for (const edge of connections)
+    if (edge.to.row - edge.from.row > 1)
+      longGroups.set(edge.to.key, [
+        ...(longGroups.get(edge.to.key) ?? []),
+        edge,
+      ]);
+  const rails = new Map<string, number>();
+  const occupied: { x: number; start: number; end: number }[] = [];
+  for (const [key, group] of longGroups) {
+    const target = group[0].to;
+    const start = Math.min(...group.map((edge) => edge.from.row));
+    const between = chart.placed.filter(
+      (item) => item.row > start && item.row < target.row,
+    );
+    const sourceXs = group.map((edge) => center(edge.from));
+    const left =
+      Math.min(center(target), ...sourceXs, ...between.map((item) => item.x)) -
+      18;
+    const right =
+      Math.max(
+        center(target),
+        ...sourceXs,
+        ...between.map((item) => item.x + chart.nodeWidth),
+      ) + 18;
+    const preferLeft =
+      sourceXs.reduce((sum, x) => sum + x, 0) / sourceXs.length <=
+      center(target);
+    const candidates = Array.from({ length: 4 }, (_, lane) =>
+      preferLeft
+        ? [left - lane * 8, right + lane * 8]
+        : [right + lane * 8, left - lane * 8],
+    )
+      .flat()
+      .filter((x) => x >= 2 && x <= width - 2);
+    const x =
+      candidates.find(
+        (candidate) =>
+          !occupied.some(
+            (rail) =>
+              Math.abs(rail.x - candidate) < 7 &&
+              rail.start < target.row &&
+              start < rail.end,
+          ),
+      ) ??
+      candidates[0] ??
+      8;
+    rails.set(key, x);
+    occupied.push({ x, start, end: target.row });
+  }
+  return connections.map((edge) => {
+    const from = { x: center(edge.from), y: edge.from.y + NODE_H };
+    const to = { x: center(edge.to), y: edge.to.y - 3 };
+    const lane = rails.get(edge.to.key);
+    const long = edge.to.row - edge.from.row > 1;
+    const points =
+      long && lane !== undefined
+        ? [
+            from,
+            { x: from.x, y: from.y + 10 },
+            { x: lane, y: from.y + 10 },
+            { x: lane, y: to.y - 10 },
+            { x: to.x, y: to.y - 10 },
+            to,
+          ]
+        : [
+            from,
+            { x: from.x, y: from.y + ROW_GAP / 2 },
+            { x: to.x, y: from.y + ROW_GAP / 2 },
+            to,
+          ];
+    return { key: edge.key, path: roundedOrthogonalPath(points) };
+  });
+}
+
+function visibleAnchor(host: HTMLElement, selected: string | null) {
+  const frame = host.getBoundingClientRect();
+  const visible = [...host.querySelectorAll<HTMLElement>(".flow-node")]
+    .map((node) => ({ node, bounds: node.getBoundingClientRect() }))
+    .filter(
+      ({ bounds }) => bounds.bottom > frame.top && bounds.top < frame.bottom,
+    );
+  const anchor =
+    visible.find(({ node }) => node.dataset.stage === selected) ??
+    visible.find(({ bounds }) => bounds.top >= frame.top) ??
+    visible[0];
+  return anchor
+    ? {
+        stage: anchor.node.dataset.stage!,
+        offset: anchor.bounds.top - frame.top,
+      }
+    : null;
+}
+
 export type WorkflowGraphProps = {
   stages: WorkflowStage[];
   active: boolean;
@@ -366,6 +550,7 @@ export function WorkflowGraph({
 }: WorkflowGraphProps) {
   const markerId = `flow-arrow-${useId().replace(/[^a-zA-Z0-9-]/gu, "")}`;
   const hostRef = useRef<HTMLDivElement>(null);
+  const anchorRef = useRef<ReturnType<typeof visibleAnchor>>(null);
   const followedViewport = useRef({ width: 0, height: 0 });
   const [width, setWidth] = useState(560);
   const [viewportHeight, setViewportHeight] = useState(0);
@@ -387,47 +572,26 @@ export function WorkflowGraph({
     .join("|");
   useLayoutEffect(() => {
     const host = hostRef.current;
-    if (host && following)
-      host.scrollTop = host.scrollHeight - host.clientHeight;
-    if (host)
-      followedViewport.current = {
-        width: host.clientWidth,
-        height: host.clientHeight,
-      };
-  }, [following, chart.height, width, viewportHeight, progress]);
-  const byStage = new Map(chart.placed.map((item) => [item.stage.stage, item]));
-  const edges = chart.placed.flatMap((item, index) => {
-    const parents = new Map<string, Placed>();
-    for (const dependency of DEPENDENCIES[item.stage.stage] ?? []) {
-      const direct =
-        byStage.get(dependency) ?? byStage.get(ALIASES[dependency]);
-      const ancestors = direct
-        ? [direct]
-        : nearestVisibleAncestors(dependency, byStage);
-      for (const parent of ancestors)
-        if (parent.key !== item.key) parents.set(parent.key, parent);
+    if (!host) return;
+    if (following) host.scrollTop = host.scrollHeight - host.clientHeight;
+    else if (anchorRef.current) {
+      const anchor = anchorRef.current;
+      const node = [...host.querySelectorAll<HTMLElement>(".flow-node")].find(
+        (node) => node.dataset.stage === anchor.stage,
+      );
+      if (node)
+        host.scrollTop +=
+          node.getBoundingClientRect().top -
+          host.getBoundingClientRect().top -
+          anchor.offset;
     }
-    if (!Object.hasOwn(DEPENDENCIES, item.stage.stage)) {
-      const previous = chart.placed[index - 1];
-      if (previous) parents.set(previous.key, previous);
-    }
-    return [...parents.values()].map((parent) => {
-      const x1 = parent.x + chart.nodeWidth / 2;
-      const y1 = parent.y + NODE_H;
-      const x2 = item.x + chart.nodeWidth / 2;
-      const y2 = item.y;
-      // Long connections use the side gutter, never the intervening cards.
-      const lane = x1 + x2 < width ? 10 : width - 10;
-      const path =
-        item.row - parent.row > 1
-          ? `M ${x1} ${y1} C ${x1} ${y1 + 18}, ${lane} ${y1 + 18}, ${lane} ${y1 + 26} L ${lane} ${y2 - 26} C ${lane} ${y2 - 18}, ${x2} ${y2 - 18}, ${x2} ${y2}`
-          : `M ${x1} ${y1} C ${x1} ${y1 + ROW_GAP / 2}, ${x2} ${y2 - ROW_GAP / 2}, ${x2} ${y2}`;
-      return {
-        key: `${parent.key}->${item.key}`,
-        path,
-      };
-    });
-  });
+    followedViewport.current = {
+      width: host.clientWidth,
+      height: host.clientHeight,
+    };
+    anchorRef.current = visibleAnchor(host, selected);
+  }, [following, chart.height, width, viewportHeight, progress, selected]);
+  const edges = routeConnections(chart, width);
   return (
     <div className="flow-frame">
       <div className="flow-toolbar">
@@ -453,6 +617,7 @@ export function WorkflowGraph({
         tabIndex={0}
         onScroll={(event) => {
           const host = event.currentTarget;
+          anchorRef.current = visibleAnchor(host, selected);
           if (
             following &&
             host.clientWidth === followedViewport.current.width &&
@@ -478,8 +643,9 @@ export function WorkflowGraph({
                 viewBox="0 0 8 8"
                 refX="7"
                 refY="4"
-                markerWidth="7"
-                markerHeight="7"
+                markerWidth="6"
+                markerHeight="6"
+                markerUnits="userSpaceOnUse"
                 orient="auto-start-reverse"
               >
                 <path d="M 0 0 L 8 4 L 0 8 z" className="flow-arrowhead" />
@@ -535,14 +701,6 @@ export function WorkflowGraph({
                       <span>{stageLabel(item.stage.stage)}</span>
                       <small>{state.label}</small>
                     </span>
-                    <span
-                      className="flow-port flow-port--in"
-                      aria-hidden="true"
-                    />
-                    <span
-                      className="flow-port flow-port--out"
-                      aria-hidden="true"
-                    />
                   </button>
                 </li>
               );

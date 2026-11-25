@@ -49,16 +49,27 @@
 
 - [x] Perform an independent bounded review of the diff and behavioral evidence.
 - [x] Resolve concrete defects, re-run affected checks and record verification.
-- [ ] Publish the connected layout/live-refresh changes in one reviewable commit.
-- [ ] Open a PR against latest main and report its actual checks and shipping status.
+- [x] Publish the connected layout/live-refresh changes in one reviewable commit.
+- [x] Open a PR against latest main and report its actual checks and shipping status.
+
+### Task 4: Refine connectors from visual feedback
+
+- [x] Inspect the rejected capture, linked frontend-design guidance, current main,
+  and completed external reviews; preserve concurrent progress-log entries.
+- [x] Reproduce redundant fallback links, paused-node displacement, and stale
+  parent error handling; make history responses specific to their cursor.
+- [x] Simplify visible dependencies, use clean orthogonal branch routing, reduce
+  decorative canvas noise, and preserve a visible node when follow is paused.
+- [x] Inspect fresh desktop, mobile, branch and failure-detail captures; run
+  affected browser/graph checks and builds.
+- [ ] Update PR #370 with the refinement and read back current CI/reviews.
 
 ## Verification checkpoint
 
-All 148 affected checks pass, including the complete 99-case admin workspace
-browser suite, API/view-model checks and layout regressions. Astro checking and
-both builds pass, and final desktop/mobile captures have been inspected. The complete local
-test run reports 2,906 passed, 381 failed and 115 skipped: 380 failures and two
-suite import errors require the 301 absent R2 reference PNGs, while one unchanged
-contextual-assets test timed out during live-network image handling. CI retains
-the existing asset hydration and all required gates. Implementation and local
-verification are complete; PR publication and CI readback are the next steps.
+The initial implementation was published in PR #370 at `e1d780bf`; its five CI
+jobs passed with reference assets hydrated. The connector refinement passes all
+153 affected tests, including the complete 101-case admin workspace browser
+suite and five layout tests. Astro checking and both builds pass. Fresh desktop,
+mobile, branch and error-inspection screenshots have been inspected, and the
+bounded independent review found no remaining correctness or visual issue.
+The updated commit's CI and external review readback are the next steps.

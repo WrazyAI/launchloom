@@ -330,6 +330,7 @@ export function GenerationsView({
     // The open Workflow panel owns live reads until another detail view opens.
     if (workflowOwnsDetail) {
       setDetailLoading(false);
+      setDetailError(null);
       return () => controller.abort();
     }
     const requestId = ++detailRequest.current;
