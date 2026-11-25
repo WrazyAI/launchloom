@@ -454,6 +454,17 @@ describe("rendered contrast independent of authored classes", () => {
       ]),
     );
   });
+  it("does not treat a range input as a text or control contrast pair", async () => {
+    const report = await scan(
+      '<style>body{background:#f8f6f0;color:#14201d}input[type=range]{width:300px;height:44px;color:#ffffff;accent-color:#314b40}</style><input type="range" aria-label="Comparison position" min="0" max="100" value="50">',
+    );
+    expect(report.findings).not.toContainEqual(
+      expect.objectContaining({ kind: "control", text: "Comparison position" }),
+    );
+    expect(report.findings).not.toContainEqual(
+      expect.objectContaining({ kind: "text", text: "50" }),
+    );
+  });
   it("checks hover and opened FAQ content", async () => {
     const report = await scan(
       '<style>a{color:black}a:hover{color:#eeeeee}</style><a href="#faq">FAQs</a><details id="faq"><summary>Prepare</summary><p style="color:#eeeeee">Bring records</p></details>',

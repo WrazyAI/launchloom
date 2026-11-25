@@ -129,5 +129,15 @@ export default function Experience({ content, runtime }) {
       "<ServiceMenu content={content} />",
     )}`;
     expect(() => validate(helperServices)).not.toThrow();
+    const duplicatedServices = experience.replace(
+      '<section id="faqs">',
+      '<section data-service-presentation="duplicate"><h2>{content.copy.servicesHeading}</h2>{content.services.map((service) => <article key={service.slug}><h3>{service.name}</h3><p>{service.description}</p></article>)}</section><section id="faqs">',
+    );
+    expect(() => validate(duplicatedServices)).toThrow(/full service set.*exactly one section/u);
+    const namesOnlyIndex = experience.replace(
+      '<section id="services">',
+      '<section aria-label="Service index">{content.services.map((service, index) => <ServiceLink key={service.slug} content={content} index={index}>{service.name}</ServiceLink>)}</section><section id="services">',
+    );
+    expect(() => validate(namesOnlyIndex)).not.toThrow();
   });
 });

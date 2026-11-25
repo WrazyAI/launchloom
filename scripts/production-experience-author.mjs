@@ -3670,6 +3670,22 @@ export function validateServicesIndexPage(source, route, content) {
   });
 }
 
+function validateServicePresentationDepth(source, route) {
+  const { elements } = collectJsxElements(source);
+  const leafSections = elements
+    .filter(({ opening }) => jsxOpeningName(opening) === "section")
+    .filter(({ body }) => !/<section\b/u.test(body));
+  const fullPresentations = leafSections.filter(
+    ({ body }) =>
+      /content\.services\.(?:map|filter|slice)\b/u.test(body) &&
+      /\.(?:description|decisionSupport)\b/u.test(body),
+  );
+  if (fullPresentations.length > 1)
+    throw new Error(
+      `Candidate ${route.id} must present the full service set with descriptions in exactly one section; found ${fullPresentations.length}. Keep additional service strips, indexes, or project rails to names and links only.`,
+    );
+}
+
 function validateExperience(source, route, content, visualBrief = {}) {
   assertRepairableSourceSize(source, route, "Experience.jsx");
   syntaxErrorFor(source, route, "Experience.jsx", true);
@@ -3726,6 +3742,7 @@ function validateExperience(source, route, content, visualBrief = {}) {
     content,
   );
   validateImageRoleReuse(source, route, content, imageSources);
+  validateServicePresentationDepth(source, route);
   validatePurposefulInteraction(source, route, visualBrief);
   for (const { opening } of collectJsxElements(source).elements) {
     if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
@@ -4029,6 +4046,7 @@ function authorRules() {
     `Keep every individual authored source file at or below ${MAX_REPAIR_FILE_SOURCE_CHARS} characters so the safe bounded repair path can represent it. Prefer concise markup and avoid repeated CSS rules; simplify an oversized file without changing the assigned composition.`,
     'Phone and email links must use their sealed tokens. Telephone links may prefix content.brand.phone with tel: and may normalize it only with replace(/[^\\d+]/g, "") or replace(/[^0-9+]/g, ""); a local const href is allowed only when its initializer is that exact safe expression. Do not compute URLs from any other data.',
     "Legacy hand-written service links still require a sealed service slug; do not derive href values from unsealed input.",
+    "Present the full confirmed service set with descriptions in exactly one section. Additional service strips, indexes, or project rails may repeat names and links only; never repeat descriptions or decision-support copy in a second service section.",
     "When using raw <img> markup, guard each optional image with a direct truthiness check for that same token, such as {content.hero.secondaryImage && <img src={content.hero.secondaryImage} ... />}; do not emit an img with a blank src, remote URL, or a fallback that reuses the hero for a missing supporting image.",
     'Give every <img> a usable alt attribute. Use concise descriptive text for informative images. Use alt="" only for purely decorative images or when adjacent text fully conveys the image\'s relevant information. Preserve supplied or reviewed descriptions for known informative assets; do not replace them with generic filler.',
     "Do not silently reuse the primary hero image to fill missing secondary or tertiary image roles. When supporting image tokens are unavailable, keep the hero unique and adapt that chapter to a non-duplicative text-led or graphic treatment that still preserves the assigned reference mechanics.",

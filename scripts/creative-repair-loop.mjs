@@ -1189,6 +1189,9 @@ REQUIRED STRUCTURAL CHECKLIST
 ${structuralChecklist}
 Keep each required ID and section marker on its semantically matching visible section, in the exact specified DOM order, while making the requested repair. Do not remove or rename them.
 
+SERVICE PRESENTATION CONTRACT
+Present the full service set with descriptions in exactly one section. A compact service strip, index, or project rail may repeat service names and links, but no second section may repeat descriptions or decision-support copy. When consolidating duplicate service sections, keep required IDs and reference markers on the surviving canonical section.
+
 ALT-TEXT CONTRACT
 Every <img> must have a usable alt attribute. Use concise descriptive alt text for informative images. Use alt="" only when the image is purely decorative or its relevant information is fully conveyed by adjacent text. Preserve the reviewed description when reusing a known informative image, even if its crop or position changes. Do not replace an informative description with generic filler such as "Decorative image".
 
