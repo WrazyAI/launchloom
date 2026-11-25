@@ -1,42 +1,7 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-25T16:14:12.446Z",
+  "updatedAt": "2026-11-25T17:48:57.596Z",
   "launches": [
-    {
-      "id": "2026-10-05-coastal-brush-painting-co-attempt-146-run-37352839901-attempt-1",
-      "launchedAt": "2026-10-05T18:09:06.902Z",
-      "stage": "attempt",
-      "reservationKey": "146-run-37352839901-attempt-1",
-      "businessName": "Coastal Brush Painting Co.",
-      "businessKind": "painting",
-      "recipe": "local-trades",
-      "packId": "bold-utility",
-      "variantId": "portrait",
-      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
-      "creativeFamilyId": "",
-      "referenceFamilyId": "",
-      "routeFamilyIds": [
-        "archive-rail",
-        "editorial-monument",
-        "web-painting-av",
-        "web-painting-house-doctor",
-        "web-painting-novak"
-      ],
-      "heroArchetypes": [
-        "image-overlay",
-        "split-form"
-      ],
-      "referenceIds": [
-        "web-painting-av",
-        "web-painting-house-doctor",
-        "web-painting-novak"
-      ],
-      "routeSignatures": [
-        "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
-        "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri",
-        "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
-      ]
-    },
     {
       "id": "2026-10-07-juniper-grove-estate-law-attempt-93-run-37613635991-attempt-1",
       "launchedAt": "2026-10-07T11:25:47.241Z",
@@ -1783,45 +1748,45 @@
         "compact-architectural-index|featured-project-tableau-with-metadata|capabilities-after-project-index-and-principles|restrained-neutral-grotesk|featured-work-to-practice-to-project-archive-to-enquiry|archival-project-image-with-ruled-metadata",
         "micro-wordmark-and-restrained-anchors|graphic-opening-field-before-practice-statement|type-led-service-index-after-project-collage|expressive-grotesk-with-editorial-accents|graphic-open-to-practice-to-asymmetric-projects-to-services-to-dark-close|asymmetric-project-collage-with-line-drawing-notes"
       ]
+    },
+    {
+      "id": "2026-11-25-silt-line-architecture-studio-attempt-314-run-45667698560-attempt-1",
+      "launchedAt": "2026-11-25T17:48:57.593Z",
+      "stage": "attempt",
+      "reservationKey": "314-run-45667698560-attempt-1",
+      "businessName": "Silt & Line Architecture Studio",
+      "businessKind": "architecture",
+      "recipe": "general-editorial",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "architecture-uncaptioned-room-image-opening",
+        "archive-rail",
+        "colorlib-drafthouse-atlas",
+        "editorial-monument",
+        "guided-conversation",
+        "lapa-mcalpine-sanctuary"
+      ],
+      "heroArchetypes": [
+        "image-overlay"
+      ],
+      "referenceIds": [
+        "colorlib-drafthouse-atlas",
+        "lapa-mcalpine-sanctuary",
+        "web-architecture-simpson-studio"
+      ],
+      "routeSignatures": [
+        "A compact wordmark and thin, widely spaced project, studio, services and contact|A large, uncaptioned interior photograph leads, followed by a left-aligned studi|Use a vertical, editorial service stack for the studio's disciplines, not unifor|Restrained modern sans; modest but confident headings, narrow body measure and g|image-led opening -> studio promise and work action -> integrated process split |Large architectural photographs alternate with quiet text blocks; a low, horizon",
+        "compact-architectural-index|featured-project-tableau-with-metadata|capabilities-after-project-index-and-principles|restrained-neutral-grotesk|featured-work-to-practice-to-project-archive-to-enquiry|archival-project-image-with-ruled-metadata",
+        "minimal-corner-menu|full-bleed-image-with-oversized-wordmark|vertical-serif-project-and-service-index|high-contrast-editorial-serif|architectural-image-to-film-frame-to-vertical-index-to-dark-footer|architectural-texture-and-cinematic-presentation-frame"
+      ]
     }
   ],
   "launchesByBusinessKind": {
     "painting": [
-      {
-        "id": "2026-10-02-pine-plumb-painting-co-attempt-92-run-37023713543-attempt-1",
-        "launchedAt": "2026-10-02T15:07:41.527Z",
-        "stage": "attempt",
-        "reservationKey": "92-run-37023713543-attempt-1",
-        "businessName": "Pine & Plumb Painting Co.",
-        "businessKind": "painting",
-        "recipe": "local-trades",
-        "packId": "bold-utility",
-        "variantId": "portrait",
-        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "editorial-monument",
-          "typographic-poster",
-          "utility-diagnostic",
-          "web-painting-concept-pro",
-          "web-painting-novak",
-          "web-painting-southern"
-        ],
-        "heroArchetypes": [
-          "split-form"
-        ],
-        "referenceIds": [
-          "web-painting-concept-pro",
-          "web-painting-novak",
-          "web-painting-southern"
-        ],
-        "routeSignatures": [
-          "minimal charcoal service links and light estimate controls|a low-light exterior-home photograph anchors a dark charcoal layout with a float|compact dark service cards followed by a visual before-and-after comparison|clean geometric sans with large centered statements and compact utility labels|dark image and form hero -> horizontal service strip -> four service cards -> be|darkened finished-home scenes, before-and-after slider, interior projects, and s",
-          "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
-          "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
-        ]
-      },
       {
         "id": "2026-10-05-coastal-brush-painting-co-attempt-146-run-37352839901-attempt-1",
         "launchedAt": "2026-10-05T18:09:06.902Z",
@@ -2420,6 +2385,41 @@
         ],
         "routeSignatures": [
           "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
+          "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
+          "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
+        ]
+      },
+      {
+        "id": "2026-10-02-pine-plumb-painting-co-attempt-92-run-37023713543-attempt-1",
+        "launchedAt": "2026-10-02T15:07:41.527Z",
+        "stage": "attempt",
+        "reservationKey": "92-run-37023713543-attempt-1",
+        "businessName": "Pine & Plumb Painting Co.",
+        "businessKind": "painting",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "editorial-monument",
+          "typographic-poster",
+          "utility-diagnostic",
+          "web-painting-concept-pro",
+          "web-painting-novak",
+          "web-painting-southern"
+        ],
+        "heroArchetypes": [
+          "split-form"
+        ],
+        "referenceIds": [
+          "web-painting-concept-pro",
+          "web-painting-novak",
+          "web-painting-southern"
+        ],
+        "routeSignatures": [
+          "minimal charcoal service links and light estimate controls|a low-light exterior-home photograph anchors a dark charcoal layout with a float|compact dark service cards followed by a visual before-and-after comparison|clean geometric sans with large centered statements and compact utility labels|dark image and form hero -> horizontal service strip -> four service cards -> be|darkened finished-home scenes, before-and-after slider, interior projects, and s",
           "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
           "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
         ]
@@ -3929,6 +3929,41 @@
           "Fine uppercase navigation and a monogram-like mark rest over a light, low-profil|An immersive warm interior opening with small centered serif copy gives way to a|Explain interior design and procurement in one considered editorial chapter, the|Small elegant serif headings and uppercase labels, with narrow calm paragraphs a|immersive opening photograph -> introductory statement band -> studio split -> s|Full-height residential interiors alternate with copy and a three-image project",
           "compact-architectural-index|featured-project-tableau-with-metadata|capabilities-after-project-index-and-principles|restrained-neutral-grotesk|featured-work-to-practice-to-project-archive-to-enquiry|archival-project-image-with-ruled-metadata",
           "micro-wordmark-and-restrained-anchors|graphic-opening-field-before-practice-statement|type-led-service-index-after-project-collage|expressive-grotesk-with-editorial-accents|graphic-open-to-practice-to-asymmetric-projects-to-services-to-dark-close|asymmetric-project-collage-with-line-drawing-notes"
+        ]
+      },
+      {
+        "id": "2026-11-25-silt-line-architecture-studio-attempt-314-run-45667698560-attempt-1",
+        "launchedAt": "2026-11-25T17:48:57.593Z",
+        "stage": "attempt",
+        "reservationKey": "314-run-45667698560-attempt-1",
+        "businessName": "Silt & Line Architecture Studio",
+        "businessKind": "architecture",
+        "recipe": "general-editorial",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "architecture-uncaptioned-room-image-opening",
+          "archive-rail",
+          "colorlib-drafthouse-atlas",
+          "editorial-monument",
+          "guided-conversation",
+          "lapa-mcalpine-sanctuary"
+        ],
+        "heroArchetypes": [
+          "image-overlay"
+        ],
+        "referenceIds": [
+          "colorlib-drafthouse-atlas",
+          "lapa-mcalpine-sanctuary",
+          "web-architecture-simpson-studio"
+        ],
+        "routeSignatures": [
+          "A compact wordmark and thin, widely spaced project, studio, services and contact|A large, uncaptioned interior photograph leads, followed by a left-aligned studi|Use a vertical, editorial service stack for the studio's disciplines, not unifor|Restrained modern sans; modest but confident headings, narrow body measure and g|image-led opening -> studio promise and work action -> integrated process split |Large architectural photographs alternate with quiet text blocks; a low, horizon",
+          "compact-architectural-index|featured-project-tableau-with-metadata|capabilities-after-project-index-and-principles|restrained-neutral-grotesk|featured-work-to-practice-to-project-archive-to-enquiry|archival-project-image-with-ruled-metadata",
+          "minimal-corner-menu|full-bleed-image-with-oversized-wordmark|vertical-serif-project-and-service-index|high-contrast-editorial-serif|architectural-image-to-film-frame-to-vertical-index-to-dark-footer|architectural-texture-and-cinematic-presentation-frame"
         ]
       }
     ]
