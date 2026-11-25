@@ -172,6 +172,36 @@ describe("generation activity contract", () => {
     expect(project("discarded continuation")).toBeUndefined();
   });
 
+  it("scrubs complete Basic credentials through ingest and across progress ticks", () => {
+    const policy = createPrivacyPolicy({ allowSourceText: true });
+    const credential = "Zml4dHVyZTpwYXNz";
+    expect(projectTraceText(`Authorization: Basic ${credential}\n`, policy, { mode: "delta" }))
+      .toEqual({ kind: "text", text: "[credential redacted]\n" });
+
+    const project = createVisibleDeltaProjector(policy);
+    const chunks = ["Author", "ization: Basic ", credential.slice(0, 5),
+      credential.slice(5) + "\n"];
+    expect(chunks.map((chunk) => project(chunk)).filter(Boolean)).toEqual([
+      { kind: "text", text: "[credential redacted]\n" },
+    ]);
+  });
+
+  it("matches known multiline values through newline normalization and split CRLF", () => {
+    const policy = createPrivacyPolicy({
+      allowSourceText: true,
+      sensitiveValues: ["fixture private\ncontact"],
+    });
+    expect(projectTraceText("fixture private\r\ncontact", policy, { mode: "delta" }))
+      .toEqual({ kind: "text", text: "[redacted]" });
+
+    const project = createVisibleDeltaProjector(policy);
+    expect(project("before: fixture private\r")).toEqual({
+      kind: "text", text: "before: ",
+    });
+    expect(project("\n")).toBeUndefined();
+    expect(project("contact\n")).toEqual({ kind: "text", text: "[redacted]\n" });
+  });
+
   it("scrubs escaped quoted credentials and exact multiline values", () => {
     const privacy = createPrivacyPolicy({
       allowSourceText: true,

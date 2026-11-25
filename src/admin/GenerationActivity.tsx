@@ -293,7 +293,7 @@ function Evidence({
         <>
           <h4>Visible output</h4>
           {formatOutput ? (
-            <ChatModelOutput rawText={text(event.payload.message)} />
+            <ChatModelOutput rawText={text(event.payload.message)} fullProse />
           ) : (
             <pre className="admin-activity__text">{text(event.payload.message)}</pre>
           )}
@@ -564,7 +564,13 @@ function ModelThinkingTrace({
   );
 }
 
-function ChatModelOutput({ rawText }: { rawText: string }) {
+function ChatModelOutput({
+  rawText,
+  fullProse = false,
+}: {
+  rawText: string;
+  fullProse?: boolean;
+}) {
   const [copied, setCopied] = useState(false);
   const copyTimer = useRef<number | null>(null);
   const parsed = useMemo(() => parseModelOutputPreview(rawText), [rawText]);
@@ -580,7 +586,7 @@ function ChatModelOutput({ rawText }: { rawText: string }) {
   if (parsed.kind === "prose") {
     return (
       <p className="admin-activity__excerpt admin-chat__prose">
-        {parsed.text.length > 520
+        {!fullProse && parsed.text.length > 520
           ? `${parsed.text.slice(0, 520)}…`
           : parsed.text}
       </p>
@@ -660,6 +666,14 @@ function hasPausedPreview(scroller: HTMLElement) {
   return scroller.querySelector("pre[data-preview-paused]") !== null;
 }
 
+function shouldShowJump(scroller: HTMLElement, following: boolean) {
+  return (
+    !atScrollBottom(scroller) ||
+    hasPausedPreview(scroller) ||
+    (!following && scroller.querySelector('.admin-chat__codeblock--live[data-streaming="true"]') !== null)
+  );
+}
+
 function LiveModelOutput({
   text,
   streaming,
@@ -680,7 +694,10 @@ function LiveModelOutput({
   }, [text, streaming, follow]);
 
   return (
-    <div className="admin-chat__codeblock admin-chat__codeblock--live">
+    <div
+      className="admin-chat__codeblock admin-chat__codeblock--live"
+      data-streaming={streaming || undefined}
+    >
       <div className="admin-chat__codeblock-bar">
         <span className="admin-activity__mono">Visible output</span>
         <span className={streaming ? "admin-activity__status--live" : undefined}>
@@ -1247,7 +1264,7 @@ export function GenerationActivity({
   function syncPreviewScroll() {
     const scroller = scrollRef.current;
     if (scroller) {
-      setShowJumpToLatest(!atScrollBottom(scroller) || hasPausedPreview(scroller));
+      setShowJumpToLatest(shouldShowJump(scroller, follow.current));
     }
   }
 
@@ -1265,7 +1282,7 @@ export function GenerationActivity({
       scroller.scrollTop = scroller.scrollHeight;
     }
     syncPreviewScroll();
-  }, [threaded, events, visible.length]);
+  }, [threaded, events, visible.length, selectedKey]);
 
   useEffect(() => {
     if (!threaded) return;
@@ -1274,7 +1291,7 @@ export function GenerationActivity({
     const update = () => {
       const previewPaused = hasPausedPreview(scroller);
       if (follow.current && !previewPaused) scroller.scrollTop = scroller.scrollHeight;
-      setShowJumpToLatest(!atScrollBottom(scroller) || previewPaused);
+      setShowJumpToLatest(shouldShowJump(scroller, follow.current));
     };
     const frame = window.requestAnimationFrame(update);
     if (typeof ResizeObserver === "undefined") {

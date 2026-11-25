@@ -205,6 +205,10 @@ function escapeRegExp(value) {
 }
 
 const CREDENTIAL_PATTERNS = Object.freeze([
+  [
+    /\bauthorization(?:\\*["'])?\s*[:=]\s*(?:\\*["'])?basic[ \t]+[A-Za-z0-9+/]+={0,2}/giu,
+    "[credential redacted]",
+  ],
   [/Bearer\s+[A-Za-z0-9._~+/-]{8,}={0,2}/giu, "Bearer [redacted]"],
   [
     /(?:gh[pousr]_[A-Za-z0-9_]{8,}|github_pat_[A-Za-z0-9_]{8,})/gu,
@@ -283,9 +287,9 @@ function normalizeTraceText(value) {
 function exactSensitiveForms(policy) {
   const forms = new Set();
   for (const value of policy.sensitiveValues) {
+    if (value.length < 8) continue;
     const normalized = normalizeTraceText(value);
     for (const form of [value, normalized]) {
-      if (form.length < 8) continue;
       forms.add(form);
       forms.add(JSON.stringify(form).slice(1, -1));
     }
@@ -300,9 +304,15 @@ export function scrubTraceText(
   { preserveWhitespace = false } = {},
 ) {
   let text = String(value);
-  for (const sensitive of exactSensitiveForms(policy))
+  const sensitiveForms = exactSensitiveForms(policy);
+  for (const sensitive of sensitiveForms)
     text = text.replaceAll(sensitive, "[redacted]");
-  text = normalizeTraceText(text);
+  const normalized = normalizeTraceText(text);
+  if (normalized !== text) {
+    text = normalized;
+    for (const sensitive of sensitiveForms)
+      text = text.replaceAll(sensitive, "[redacted]");
+  }
   for (const [pattern, replacement] of CREDENTIAL_PATTERNS)
     text = text.replace(pattern, replacement);
   text = text.replace(URL_PATTERN, (url) =>
@@ -340,6 +350,7 @@ const DELTA_SENSITIVE_PREFIXES = [
 ];
 
 const DELTA_OPEN_SENSITIVE = [
+  /\bauthorization(?:\\*["'])?\s*[:=]\s*(?:\\*["'])?basic(?:[ \t]+[A-Za-z0-9+/]*={0,2})?$/iu,
   /https?:\/\/[^\s<>"'`]*$/iu,
   /bearer\s+[A-Za-z0-9._~+/-]*={0,2}$/iu,
   /(?:gh[pousr]_|github_pat_|sk-)[A-Za-z0-9_-]*$/iu,
@@ -361,6 +372,7 @@ function partialPrefixStart(text, prefix) {
 /** Hold incomplete credential and known-value matches across progress ticks. */
 export function createVisibleDeltaProjector(policy) {
   let tail = "";
+  let pendingCarriageReturn = false;
   let withheld = false;
   return (value, omitted = false) => {
     if (withheld) return undefined;
@@ -371,7 +383,12 @@ export function createVisibleDeltaProjector(policy) {
       return { kind: "withheld", reason: "oversize" };
     }
     if (!value) return undefined;
-    const text = tail + value;
+    // A CR at the end of one chunk may be followed by LF in the next.
+    const raw = pendingCarriageReturn ? `\r${value}` : value;
+    pendingCarriageReturn = raw.endsWith("\r");
+    const text = tail + normalizeTraceText(
+      pendingCarriageReturn ? raw.slice(0, -1) : raw,
+    );
     let end = text.length;
     const lower = text.replace(/[A-Z]/gu, (letter) => letter.toLowerCase());
     for (const prefix of DELTA_SENSITIVE_PREFIXES)

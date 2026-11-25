@@ -1794,12 +1794,13 @@ if (
       Number.isSafeInteger(runAttempt) &&
       runAttempt >= 1
     ) {
+      process.env.TRACK_ATTEMPT ||= `github:${runId}:${runAttempt}`;
       const observation = buildAttemptObservation({
         repository: process.env.GITHUB_REPOSITORY || "WrazyAI/launchloom",
         runId,
         runAttempt,
         requestId: null,
-        attemptId: process.env.TRACK_ATTEMPT || `github:${runId}:${runAttempt}`,
+        attemptId: process.env.TRACK_ATTEMPT,
         profile: input.profile,
         issueNumber: Number(input.issue) || null,
         triggeringActor: process.env.GITHUB_TRIGGERING_ACTOR || null,

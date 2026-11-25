@@ -3598,6 +3598,7 @@ it("streams Agent runs code across incremental polls and replaces it at completi
       const model = drawer.getByRole("button", { name: /Model request/u });
       await model.click();
       await visible(drawer.locator(".admin-activity__evidence"));
+      await visible(jump);
       respond([finish, output]);
       await visible(drawer.locator(".admin-activity__evidence .admin-chat__prose")
         .getByText("Authoritative rendered design", { exact: true }));
@@ -3618,11 +3619,16 @@ it("streams Agent runs code across incremental polls and replaces it at completi
 it("shows recorded model output when its start is on an older activity page", async () => {
   activityEnabled = true;
   const initial = activityPageFor("attempt-diagnostic");
+  const fullProse = `${"Recorded prose from the model. ".repeat(23)}End of visible output.`;
   activityFixture = {
     ...initial,
     activity: {
       ...initial.activity,
-      items: initial.activity.items.slice(1, 4),
+      items: initial.activity.items.slice(1, 4).map((item) =>
+        item.kind === "output"
+          ? { ...item, payload: { ...item.payload, message: { kind: "text", text: fullProse } } }
+          : item,
+      ),
     },
   };
   const { page, errors } = await openPage({
@@ -3638,12 +3644,7 @@ it("shows recorded model output when its start is on an older activity page", as
     });
     await visible(row);
     await row.click();
-    await visible(
-      drawer.getByText(
-        "I am building the opening section around the approved service scope.",
-        { exact: true },
-      ),
-    );
+    await visible(drawer.getByText(fullProse, { exact: true }));
     await visible(drawer.getByText("Reported usage", { exact: true }));
     autoErrors(errors);
   } finally {
