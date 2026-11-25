@@ -1882,7 +1882,13 @@ export function collectContrastTargets({
       el.getAttribute("placeholder") ||
       el.localName;
     if (el.matches("input,textarea,select")) {
-      if (el.value || el.placeholder) {
+      const inputType = el.matches("input") ? String(el.type || "").toLowerCase() : "";
+      const textInput =
+        !el.matches("input") ||
+        !["range", "checkbox", "radio", "color", "file", "hidden"].includes(
+          inputType,
+        );
+      if (textInput && (el.value || el.placeholder)) {
         const textStyle = el.value ? s : styleFor(el, "::placeholder");
         const bg = backdrop(el, rect);
         if (Number(textStyle.opacity) !== 1)
@@ -1905,7 +1911,9 @@ export function collectContrastTargets({
       const nativeToggle =
         el.matches('input[type="checkbox"],input[type="radio"]') &&
         s.appearance !== "none";
-      if (!nativeToggle) {
+      const nonPaintableControl =
+        el.matches('input[type="range"],input[type="color"],input[type="file"],input[type="hidden"]');
+      if (!nativeToggle && !nonPaintableControl) {
         const borderSide = ["Bottom", "Top", "Right", "Left"].find(
           (side) =>
             parseFloat(s[`border${side}Width`]) > 0 &&
