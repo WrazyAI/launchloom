@@ -22,6 +22,37 @@ const generate = (options: any): Promise<any> =>
     ...options,
   } as any) as Promise<any>;
 
+describe("client image art direction", () => {
+  it("renders an illustrative concept instead of a photograph when the brief asks for it", () => {
+    const prompt = promptFor(
+      {
+        ...fixture(),
+        style: {
+          ...(fixture().style || {}),
+          artDirection:
+            "Use original abstract plans or contextual concept imagery marked illustrative. Do not imply there are built projects or supplied photography.",
+        },
+      },
+      { referenceDna: { familyId: "editorial-monument" } },
+      { id: "hero", focal: "Keep the subject in a central safe crop." },
+    );
+    expect(prompt.startsWith("Illustration of")).toBe(true);
+    expect(prompt).toContain("concept study for Precision bicycle fitting");
+    expect(prompt).toContain("Explicitly illustrative concept");
+    expect(prompt).not.toContain("Photograph of");
+  });
+
+  it("keeps photographic prompts when no illustrative policy is supplied", () => {
+    const prompt = promptFor(
+      fixture(),
+      { referenceDna: { familyId: "editorial-monument" } },
+      { id: "hero", focal: "Keep the subject in a central safe crop." },
+    );
+    expect(prompt.startsWith("Photograph of")).toBe(true);
+    expect(prompt).not.toContain("Explicitly illustrative concept");
+  });
+});
+
 describe("home-services image prompts", () => {
   it("uses a people-free plumbing still life instead of technician cues", () => {
     const prompt = promptFor(

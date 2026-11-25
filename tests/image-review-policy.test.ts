@@ -18,6 +18,7 @@ const approvedChecks = {
   containsPeople: false,
   peopleAreIncidental: false,
   matchesIntendedScene: true,
+  illustrativeTreatmentVisible: true,
 };
 
 describe("generated-image review policy", () => {
@@ -102,6 +103,79 @@ describe("generated-image review policy", () => {
     expect(prompt).toContain("No people");
     expect(prompt).toContain("prominent lettering");
     expect(prompt.length).toBeLessThanOrEqual(1500);
+  });
+
+  it("requires visible illustrative treatment when the client art direction asks for it", () => {
+    const illustrative = reviewPolicyFor({
+      businessKind: "architecture",
+      placement: "hero",
+      artDirection:
+        "Use original abstract plans or contextual concept imagery marked illustrative. Do not imply there are built projects.",
+    });
+    expect(illustrative.illustrativeRequired).toBe(true);
+    expect(
+      assetReviewReasonCodes(
+        { ...approvedChecks, illustrativeTreatmentVisible: false },
+        illustrative,
+      ),
+    ).toContain("illustrative_treatment_missing");
+    expect(
+      assetReviewReasonCodes(approvedChecks, illustrative),
+    ).not.toContain("illustrative_treatment_missing");
+    const photographic = reviewPolicyFor({
+      businessKind: "architecture",
+      placement: "hero",
+      artDirection: "Photorealistic editorial interiors with natural daylight.",
+    });
+    expect(photographic.illustrativeRequired).toBe(false);
+    expect(
+      assetReviewReasonCodes(
+        { ...approvedChecks, illustrativeTreatmentVisible: false },
+        photographic,
+      ),
+    ).not.toContain("illustrative_treatment_missing");
+    expect(
+      reviewPolicyFor({
+        businessKind: "architecture",
+        placement: "hero",
+        artDirection: "Photorealistic interiors. No illustrations or diagrams.",
+      }).illustrativeRequired,
+    ).toBe(false);
+  });
+
+  it("puts the illustrative policy and art direction into the review instructions", () => {
+    const policy = reviewPolicyFor({
+      businessKind: "architecture",
+      placement: "hero",
+      artDirection: "Use original abstract plans or concept imagery marked illustrative.",
+    });
+    const instructions = buildReviewInstructions({
+      placement: "hero",
+      businessKind: "architecture",
+      scene: "An architectural concept plan.",
+      policy,
+    });
+    expect(instructions).toContain("Client art direction");
+    expect(instructions).toContain("abstract plans");
+    expect(instructions).toContain("illustrativeTreatmentVisible");
+    expect(instructions).toContain("photorealistic finished interior");
+  });
+
+  it("retries an illustrative rejection with drawing guidance", () => {
+    const policy = reviewPolicyFor({
+      businessKind: "architecture",
+      placement: "hero",
+      artDirection: "Use original abstract plans marked illustrative.",
+    });
+    const prompt = imageRetryPrompt(
+      "Illustration of an architectural concept plan.",
+      ["illustrative_treatment_missing"],
+      policy,
+      1500,
+    );
+    expect(prompt).toContain("explicitly illustrative");
+    expect(prompt).toContain("linework");
+    expect(prompt).not.toContain("standalone photographic");
   });
 
   it("separates review sessions by policy and scene so an old verdict cannot be reused", () => {
