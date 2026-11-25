@@ -62,14 +62,27 @@
   decorative canvas noise, and preserve a visible node when follow is paused.
 - [x] Inspect fresh desktop, mobile, branch and failure-detail captures; run
   affected browser/graph checks and builds.
-- [ ] Update PR #370 with the refinement and read back current CI/reviews.
+- [x] Update PR #370 with the refinement and read back current CI/reviews.
+
+### Task 5: Resolve the refined revision's review findings
+
+- [x] Reproduce arrival-order keyboard traversal and a stalled live read.
+- [x] Add actual browser request-cancellation assertions and measure three
+  renderer choices sharing a desktop row.
+- [x] Bound stalled workflow reads, retain evidence with a visible timeout,
+  and render stage buttons in visual row order.
+- [x] Run the affected checks and inspect fresh captures from the updated build.
+- [ ] Update the same PR and read back the new checks.
 
 ## Verification checkpoint
 
 The initial implementation was published in PR #370 at `e1d780bf`; its five CI
 jobs passed with reference assets hydrated. The connector refinement passes all
-153 affected tests, including the complete 101-case admin workspace browser
+155 affected tests, including the complete 103-case admin workspace browser
 suite and five layout tests. Astro checking and both builds pass. Fresh desktop,
 mobile, branch and error-inspection screenshots have been inspected, and the
 bounded independent review found no remaining correctness or visual issue.
-The updated commit's CI and external review readback are the next steps.
+Refinement `5b6be90b` passed all five CI jobs and Greptile approved it with no new
+findings. CodeRabbit identified a stalled-request recovery gap, a reading-order
+issue, and test coverage gaps. The bounded fixes pass their reproduced regressions
+and the full affected suite; publication and final check readback remain.

@@ -5,6 +5,7 @@ import { isAbortError, requestErrorMessage } from "./format";
 
 const LIVE_POLL_MS = 2_000;
 const IDLE_POLL_MS = 15_000;
+const REQUEST_TIMEOUT_MS = 10_000;
 const SOURCE_PRIORITY = {
   "legacy-import": 0,
   callback: 1,
@@ -61,6 +62,7 @@ export function useWorkflowRun(
   useEffect(() => {
     let disposed = false;
     let timer: number | undefined;
+    let deadline: number | undefined;
     let controller: AbortController | null = null;
     let latest = initial.current;
 
@@ -79,13 +81,22 @@ export function useWorkflowRun(
       if (disposed || controller || document.visibilityState === "hidden")
         return;
       window.clearTimeout(timer);
-      controller = new AbortController();
+      const request = new AbortController();
+      controller = request;
+      let timedOut = false;
       setRefreshing(true);
       try {
-        const next = await api.getAttempt(attemptId, {
-          signal: controller.signal,
-        });
-        if (disposed || controller.signal.aborted) return;
+        const next = await Promise.race([
+          api.getAttempt(attemptId, { signal: request.signal }),
+          new Promise<never>((_, reject) => {
+            deadline = window.setTimeout(() => {
+              timedOut = true;
+              reject(new Error("The workflow request timed out."));
+              request.abort();
+            }, REQUEST_TIMEOUT_MS);
+          }),
+        ]);
+        if (disposed || request.signal.aborted) return;
         latest = next;
         setAttempt(next);
         setEvents((seen) =>
@@ -94,9 +105,14 @@ export function useWorkflowRun(
         setCheckedAt(Date.now());
         setError(null);
       } catch (cause) {
-        if (!disposed && !isAbortError(cause))
+        if (
+          !disposed &&
+          (timedOut || (!request.signal.aborted && !isAbortError(cause)))
+        )
           setError(requestErrorMessage(cause));
       } finally {
+        window.clearTimeout(deadline);
+        deadline = undefined;
         controller = null;
         if (!disposed) {
           setRefreshing(false);
@@ -117,6 +133,7 @@ export function useWorkflowRun(
     return () => {
       disposed = true;
       window.clearTimeout(timer);
+      window.clearTimeout(deadline);
       controller?.abort();
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };

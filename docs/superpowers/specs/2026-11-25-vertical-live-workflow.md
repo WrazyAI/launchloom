@@ -9,7 +9,8 @@ latest stages, live node updates, and continued access to run error evidence.
 - Use a downward dependency graph at every viewport. Pipeline depth advances
   vertically; sibling stages can share a row where there is room. Narrow screens
   stack siblings before the next depth. Connections never wrap to an earlier band
-  or pass through intervening stage cards.
+  or pass through intervening stage cards. Keyboard and screen-reader order follows
+  the displayed rows, then left to right, including when callbacks arrive late.
 - Keep the graph in a bounded vertical scroll region. Follow latest starts enabled
   and keeps the most recent row plus preceding context visible. Scrolling away or
   selecting a stage pauses following; an explicit control resumes it. Automatic
@@ -17,7 +18,9 @@ latest stages, live node updates, and continued access to run error evidence.
 - Use the existing authenticated attempt endpoint for live workflow evidence.
   Refresh sequentially every two seconds while queued/running, and every fifteen
   seconds after completion to pick up late reconciled diagnostics. Pause requests
-  in hidden tabs and refresh on return. Abort on unmount or run change.
+  in hidden tabs and refresh on return. Abort on unmount or run change. Bound each
+  detail read to ten seconds so a stalled response cannot stop future updates;
+  retain evidence and show a timeout message until a subsequent read succeeds.
 - Keep last-good evidence, manually selected stages, loaded older events and
   scroll position through updates and transient request errors. Incoming canonical
   evidence wins over older pages with the same event key. Show refresh health.

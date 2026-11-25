@@ -592,6 +592,9 @@ export function WorkflowGraph({
     anchorRef.current = visibleAnchor(host, selected);
   }, [following, chart.height, width, viewportHeight, progress, selected]);
   const edges = routeConnections(chart, width);
+  const readingOrder = [...chart.placed].sort(
+    (a, b) => a.row - b.row || a.x - b.x,
+  );
   return (
     <div className="flow-frame">
       <div className="flow-toolbar">
@@ -665,7 +668,7 @@ export function WorkflowGraph({
             style={{ height: chart.height, width }}
             aria-label={label}
           >
-            {chart.placed.map((item) => {
+            {readingOrder.map((item) => {
               const state = stageStatus(
                 item.stage.status,
                 active,

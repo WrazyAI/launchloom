@@ -1795,6 +1795,80 @@ describe("real admin workspace browser behavior", () => {
     },
   );
 
+  it("keeps three renderer choices on one measured desktop row", async () => {
+    workflowOverride = progressiveWorkflow("preview_deploy", "failed");
+    workflowOverride.events = workflowOverride.events
+      .flatMap((event) =>
+        event.stage === "authoring"
+          ? [
+              ...["pack_select", "foundation_select"].map((stage) => ({
+                ...event,
+                eventKey: `stage:${stage}`,
+                stage,
+                detail: `Evidence for ${stage}.`,
+              })),
+              event,
+            ]
+          : [event],
+      )
+      .map((event, index) => ({
+        ...event,
+        createdAt: workflowOverride!.updatedAt + index,
+        observedAt: workflowOverride!.updatedAt + index,
+      }));
+    workflowOverride.eventCount = workflowOverride.events.length;
+    const { page, errors } = await openPage({
+      viewport: { width: 1440, height: 960 },
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-0000",
+    });
+    try {
+      await page
+        .getByRole("button", { name: "View workflow", exact: true })
+        .click();
+      const workflow = page.locator("[data-workflow-view]");
+      await visible(workflow.locator('[data-stage="pack_select"]'));
+      const bounds = await workflow.locator(".flow-node").evaluateAll((nodes) =>
+        Object.fromEntries(
+          nodes.map((node) => {
+            const rect = node.getBoundingClientRect();
+            return [
+              node.getAttribute("data-stage"),
+              {
+                top: rect.top,
+                bottom: rect.bottom,
+                left: rect.left,
+                right: rect.right,
+              },
+            ];
+          }),
+        ),
+      );
+      expect(
+        await workflow
+          .locator("[data-flow-canvas]")
+          .evaluate((el) => el.clientWidth),
+      ).toBeGreaterThan(650);
+      expect(
+        Math.abs(bounds.pack_select.top - bounds.foundation_select.top),
+      ).toBeLessThan(1);
+      expect(
+        Math.abs(bounds.foundation_select.top - bounds.authoring.top),
+      ).toBeLessThan(1);
+      expect(bounds.pack_select.right).toBeLessThan(
+        bounds.foundation_select.left,
+      );
+      expect(bounds.foundation_select.right).toBeLessThan(
+        bounds.authoring.left,
+      );
+      expect(bounds.authored_evidence.top).toBeGreaterThan(
+        bounds.authoring.bottom,
+      );
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
   it.each(["sites", "clients"])(
     "updates the %s workflow live without losing inspected evidence",
     async (surface) => {
@@ -2234,6 +2308,74 @@ describe("real admin workspace browser behavior", () => {
     }
   });
 
+  it("aborts a stalled workflow read, retains evidence and resumes live polling", async () => {
+    workflowOverride = progressiveWorkflow(
+      "authoring",
+      "started",
+      "attempt-diagnostic",
+    );
+    const { page, errors } = await openPage({
+      clock: true,
+      path: "/admin/onboarding-invites?view=clients&client=submission:client-a",
+    });
+    try {
+      const workflow = page.locator("[data-workflow-view]");
+      await visible(
+        workflow.getByRole("button", {
+          name: "Authoring: Running",
+          exact: true,
+        }),
+      );
+      const held: Route[] = [];
+      await page.route("**/workspace/attempts/attempt-diagnostic", (route) => {
+        held.push(route);
+      });
+      await page.clock.runFor(2_100);
+      await expect.poll(() => held.length).toBe(1);
+      const aborted = page.waitForEvent("requestfailed", {
+        predicate: (request) => request === held[0].request(),
+        timeout: 5_000,
+      });
+      await page.clock.runFor(10_100);
+      expect((await aborted).failure()?.errorText).toBe("net::ERR_ABORTED");
+      await visible(
+        workflow.getByText("The workflow request timed out.", { exact: true }),
+      );
+      await visible(workflow.getByText(/Live updates interrupted/u));
+      await visible(
+        workflow.getByRole("button", {
+          name: "Authoring: Running",
+          exact: true,
+        }),
+      );
+      expect(
+        await workflow
+          .getByRole("button", { name: "Retry workflow run", exact: true })
+          .isEnabled(),
+      ).toBe(true);
+      expect(held).toHaveLength(1);
+      await page.unroute("**/workspace/attempts/attempt-diagnostic");
+      workflowOverride = progressiveWorkflow(
+        "creative_render",
+        "started",
+        "attempt-diagnostic",
+      );
+      await page.clock.runFor(2_100);
+      await visible(
+        workflow.getByRole("button", {
+          name: "Creative render: Running",
+          exact: true,
+        }),
+      );
+      expect(
+        await workflow.getByText(/Live updates interrupted/u).count(),
+      ).toBe(0);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
   it("pauses hidden workflow reads, avoids overlapping polls and isolates a changed run", async () => {
     workflowOverride = progressiveWorkflow(
       "authoring",
@@ -2292,24 +2434,23 @@ describe("real admin workspace browser behavior", () => {
       await expect.poll(() => held.length).toBe(1);
       await page.clock.runFor(6_100);
       expect(held).toHaveLength(1);
+      const aborted = page.waitForEvent("requestfailed", {
+        predicate: (request) => request === held[0].request(),
+        timeout: 5_000,
+      });
       await page
         .getByRole("button", {
           name: "Open attempt attempt-published-earlier from client history",
           exact: true,
         })
         .click();
+      expect((await aborted).failure()?.errorText).toBe("net::ERR_ABORTED");
       await visible(
         workflow.getByRole("heading", {
           name: "All recorded stages passed",
           exact: true,
         }),
       );
-      const delayed = progressiveWorkflow(
-        "preview_deploy",
-        "failed",
-        "attempt-diagnostic",
-      );
-      await held[0].fulfill({ json: { attempt: delayed } }).catch(() => {});
       await page.clock.runFor(100);
       expect(
         await workflow.locator('[data-stage="preview_deploy"]').count(),
@@ -2346,16 +2487,28 @@ describe("real admin workspace browser behavior", () => {
       const beforeList = requests.filter(
         (request) => request.path === "/attempts",
       ).length;
-      await page.clock.runFor(15_100);
+      await page.clock.runFor(6_100);
+      expect(held).toHaveLength(1);
+      workflowOverride = progressiveWorkflow("creative_render", "started");
+      await held[0].fulfill({ json: { attempt: workflowOverride } });
+      await visible(
+        page.locator("[data-workflow-view]").getByRole("button", {
+          name: "Creative render: Running",
+          exact: true,
+        }),
+      );
+      await page.clock.runFor(2_100);
+      await expect.poll(() => held.length).toBe(2);
+      await page.clock.runFor(6_900);
       await expect
         .poll(
           () =>
             requests.filter((request) => request.path === "/attempts").length,
         )
         .toBeGreaterThan(beforeList);
-      expect(held).toHaveLength(1);
+      expect(held).toHaveLength(2);
       workflowOverride = progressiveWorkflow("preview_deploy", "failed");
-      await held[0].fulfill({ json: { attempt: workflowOverride } });
+      await held[1].fulfill({ json: { attempt: workflowOverride } });
       await page.unroute("**/workspace/attempts/attempt-0000");
       await visible(
         page

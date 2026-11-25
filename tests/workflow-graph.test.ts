@@ -132,11 +132,18 @@ describe("workflow dependency layout", () => {
     ]);
   });
 
-  it("keeps the policy root above setup when callbacks arrive late", () => {
+  it("keeps stage buttons in visual reading order when callbacks arrive late", () => {
+    const arrivals = [
+      "setup",
+      "intake_handoff_check",
+      "intake",
+      "profile_policy",
+      "renderer_policy",
+    ];
     const { document } = parseHTML(
       renderToStaticMarkup(
         createElement(WorkflowGraph, {
-          stages: ["setup", "intake", "profile_policy"].map((stage) => ({
+          stages: arrivals.map((stage) => ({
             stage,
             status: "completed",
           })),
@@ -154,6 +161,18 @@ describe("workflow dependency layout", () => {
       );
     expect(top("setup")).toBeGreaterThan(top("profile_policy") + 68);
     expect(top("intake")).toBeGreaterThan(top("setup") + 68);
+    expect(top("intake_handoff_check")).toBe(top("renderer_policy"));
+    expect(
+      [...document.querySelectorAll("button[data-stage]")].map((button) =>
+        button.getAttribute("data-stage"),
+      ),
+    ).toEqual([
+      "profile_policy",
+      "intake_handoff_check",
+      "renderer_policy",
+      "setup",
+      "intake",
+    ]);
   });
 
   it("puts later stages below their dependencies even on a wide canvas", () => {
