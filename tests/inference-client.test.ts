@@ -8,6 +8,7 @@ import {
   requireCompletedInference,
   validateInferenceProfile,
 } from "../scripts/inference-client.mjs";
+import { TRACE_LIMITS, traceTextBytes } from "../src/lib/generation-activity-contract.mjs";
 import { openRouterChatCompletion } from "../scripts/openrouter-client.mjs";
 import { loadReferenceDossier } from "../scripts/reference-dossier.mjs";
 
@@ -841,6 +842,55 @@ describe("explicit transport and OpenRouter compatibility", () => {
     expect(progress.length).toBeGreaterThan(0);
     expect(progress.at(-1)).toMatchObject({ reasoningDeltas: 1 });
     expect(progress.at(-1).visibleChars).toBeGreaterThan(0);
+    expect(progress.map(({ deltaText }) => deltaText || "").join("")).toBe('{"source":"complete"}');
+    expect(JSON.stringify(progress)).not.toContain("checking");
+  });
+
+  it("flushes buffered visible frames on idle ticks and withholds oversized intervals", async () => {
+    vi.useFakeTimers();
+    try {
+      let stream!: ReadableStreamDefaultController<Uint8Array>;
+      const body = new ReadableStream<Uint8Array>({ start: (controller) => { stream = controller; } });
+      const push = (event: Record<string, unknown>) => {
+        const frame = new TextEncoder().encode(`data: ${JSON.stringify(event)}\r\n\r\n`);
+        stream.enqueue(frame.slice(0, frame.length - 3));
+        stream.enqueue(frame.slice(-3));
+      };
+      const progress = vi.fn();
+      const pending = inferenceCompletion({
+        profile: profileFor("responses"),
+        request: requestFor(),
+        apiKey: "fixture-only",
+        fetchImpl: async () => new Response(body, {
+          headers: { "content-type": "text/event-stream" },
+        }),
+        onProgress: progress,
+      });
+      push({ type: "response.output_text.delta", delta: '  <section>🙂' });
+      push({ type: "response.output_text.delta", delta: '\n    Hello' });
+      push({ type: "response.reasoning_summary_text.delta", delta: "reasoning fixture" });
+      await vi.advanceTimersByTimeAsync(999);
+      expect(progress).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(progress).toHaveBeenLastCalledWith(expect.objectContaining({
+        deltaText: '  <section>🙂\n    Hello',
+        reasoningDeltas: 1,
+      }));
+      push({ type: "response.output_text.delta", delta: "🙂".repeat(TRACE_LIMITS.maxDeltaBytes) });
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(progress.mock.lastCall?.[0]).toMatchObject({ deltaOmitted: true });
+      expect(progress.mock.lastCall?.[0]).not.toHaveProperty("deltaText");
+      push({ type: "response.output_text.delta", delta: '</section>' });
+      push({ type: "response.completed", response: completed("responses") });
+      stream.close();
+      expect(requireCompletedInference(await pending)).toBe('{"source":"complete"}');
+      expect(progress.mock.lastCall?.[0]).toMatchObject({ deltaText: '</section>' });
+      expect(progress.mock.calls.every(([chunk]) =>
+        traceTextBytes(chunk.deltaText || "") <= TRACE_LIMITS.maxDeltaBytes,
+      )).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("treats a stream without a completion event as a transport failure", async () => {

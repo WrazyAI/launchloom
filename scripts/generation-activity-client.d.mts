@@ -44,6 +44,8 @@ export type ActivityProducerStats = {
 
 export type ActivityChildProducer = {
   context(): TraceContext;
+  withContext(overrides: Partial<TraceContext>): ActivityChildProducer;
+  createDeltaProjector(): (value?: string, omitted?: boolean) => import("../src/lib/generation-activity").TraceText | undefined;
   addSensitiveValues(values: readonly unknown[]): void;
   emit<K extends TraceEventKind>(kind: K, payload: TracePayloads[K]): boolean;
   flush(): Promise<void>;
@@ -51,9 +53,7 @@ export type ActivityChildProducer = {
   stats(): ActivityProducerStats;
 };
 
-export type ActivityProducer = ActivityChildProducer & {
-  withContext(overrides: Partial<TraceContext>): ActivityChildProducer;
-};
+export type ActivityProducer = ActivityChildProducer;
 
 export function createActivityProducer(options: {
   context: TraceContext;

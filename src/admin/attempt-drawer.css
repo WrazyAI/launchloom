@@ -135,6 +135,7 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  overflow-anchor: none;
   overscroll-behavior: contain;
   padding: 12px 24px 18px;
   display: flex;

@@ -1,5 +1,6 @@
 import {
   buildTraceEvent,
+  createVisibleDeltaProjector,
   traceTextBytes,
 } from "../src/lib/generation-activity-contract.mjs";
 
@@ -94,6 +95,10 @@ export function createActivityProducer({
   function enqueue(event) {
     const size = traceTextBytes(JSON.stringify(event));
     const control = CONTROL_KINDS.has(event.kind);
+    if (size + 2 > limits.maxBatchBytes) {
+      dropped += 1;
+      return false;
+    }
     if (suppressed && !control) {
       dropped += 1;
       return false;
@@ -197,7 +202,14 @@ export function createActivityProducer({
 
   async function runFlush() {
     while (queue.length) {
-      const batch = queue.slice(0, limits.flushEvents);
+      const batch = [];
+      let batchBytes = 2; // JSON array brackets
+      for (const event of queue.slice(0, limits.flushEvents)) {
+        const bytes = event.byteSize + (batch.length ? 1 : 0);
+        if (batch.length && batchBytes + bytes > limits.maxBatchBytes) break;
+        batch.push(event);
+        batchBytes += bytes;
+      }
       const ids = batch.map((event) => event.eventId);
       try {
         await spool.write(batch);
@@ -257,13 +269,16 @@ export function createActivityProducer({
     withContext(overrides) {
       return {
         context: () => ({ ...base, ...overrides }),
+        withContext: (child) => api.withContext({ ...overrides, ...child }),
         emit: (kind, payload) => emit(kind, payload, { context: overrides }),
         addSensitiveValues: (values) => api.addSensitiveValues(values),
+        createDeltaProjector: () => api.createDeltaProjector(),
         flush,
         close: async () => {},
         stats: () => api.stats(),
       };
     },
+    createDeltaProjector: () => createVisibleDeltaProjector(effectivePrivacy),
     addSensitiveValues(values) {
       let changed = false;
       for (const value of values || []) {

@@ -74,6 +74,20 @@ function adapter(fail = "", authoredCandidateCount = 3) {
   );
   return { calls, dependencies };
 }
+it("records focused stage activity before work and records a terminal failure", async () => {
+  const { calls, dependencies } = adapter("research");
+  dependencies.recordStage = (stage: string, status: string) => {
+    calls.push(`${stage}:${status}`);
+  };
+  const report = await runPipelineTest(input, dependencies);
+  expect(calls).toEqual([
+    "prepare:started", "prepare", "prepare:completed",
+    "research:started", "research", "research:failed",
+    "persist:started", "persist", "persist:completed",
+  ]);
+  expect(report.verdict).toBe("failed");
+});
+
 describe("diagnostic selection after creative runs", () => {
   it("prefers the near-miss candidate when the summary delivered open findings", () => {
     expect(

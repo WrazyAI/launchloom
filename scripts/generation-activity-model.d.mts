@@ -15,6 +15,8 @@ export function observeModelCall<T>(options: {
     visibleChars: number;
     reasoningDeltas: number;
     elapsedMs: number;
+    deltaText?: string;
+    deltaOmitted?: boolean;
   }) => void): Promise<T>;
   normalize?(value: T): {
     status?: unknown;

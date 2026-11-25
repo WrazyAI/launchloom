@@ -6,6 +6,7 @@ import {
 } from "../scripts/generation-activity-client.mjs";
 import {
   TRACE_LIMITS,
+  traceTextBytes,
   createPrivacyPolicy,
 } from "../src/lib/generation-activity-contract.mjs";
 import type { TraceEvent } from "../src/lib/generation-activity";
@@ -80,6 +81,35 @@ describe("generation activity producer", () => {
       producer.emit("model_started", modelStarted());
     await vi.advanceTimersByTimeAsync(0);
     expect(sent[0]?.events).toHaveLength(TRACE_LIMITS.flushEvents);
+    await producer.close();
+  });
+
+  it("scrubs live output before delivery and splits batches by wire bytes", async () => {
+    const { producer, sent, spoolWrites } = harness(undefined, {
+      ...TRACE_LIMITS,
+      maxBatchBytes: 4_096,
+    });
+    const secret = "private-intake-address";
+    producer.addSensitiveValues([secret]);
+    const child = producer.withContext({ stage: "creative_render" })
+      .withContext({ candidateId: "candidate-a", repairPass: 1 });
+    for (let index = 0; index < 5; index += 1) {
+      expect(child.emit("output_delta", {
+        callId: BASE_CALL_ID,
+        visibleChars: 1280 * (index + 1),
+        reasoningTokens: 0,
+        elapsedMs: index * 1000,
+        delta: { kind: "text", text: `  ${secret} ${"\"".repeat(1_280)}\n` },
+      })).toBe(true);
+    }
+    await producer.flush();
+    expect(sent.flatMap(({ events }) => events)).toHaveLength(5);
+    expect(sent.every(({ events }) => traceTextBytes(JSON.stringify(events)) <= 4_096)).toBe(true);
+    expect(spoolWrites.join("")).not.toContain(secret);
+    expect(sent[0]?.events[0]).toMatchObject({
+      context: { stage: "creative_render", candidateId: "candidate-a", repairPass: 1 },
+      payload: { delta: { kind: "text", text: `  [redacted] ${"\"".repeat(1_280)}\n` } },
+    });
     await producer.close();
   });
 

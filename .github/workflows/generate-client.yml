@@ -490,6 +490,9 @@ jobs:
             --client-email "$CLIENT_EMAIL" \
             --status generating \
             --started-at "$(date +%s%3N)"
+      - name: Record intake start
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage intake --status started
       - name: Read and generate from intake
         id: intake
         env:
@@ -581,6 +584,10 @@ jobs:
       - name: Record intake stage
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage intake --status completed --detail "Intake parsed and site configuration prepared."
+      - name: Record intake failure
+        if: ${{ failure() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') && steps.intake.outcome == 'failure' }}
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage intake --status failed
       - name: Record SEO research result
         continue-on-error: true
         env:

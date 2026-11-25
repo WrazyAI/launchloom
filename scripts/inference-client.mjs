@@ -1,9 +1,13 @@
-// Provider-neutral, non-streaming text/image inference. Profiles are trusted
+// Provider-neutral text/image inference. Profiles are trusted
 // application configuration, never client input or inferred model capabilities.
 import {
   assertInferenceUpstreamAllowed,
   InferenceUpstreamDisabledError,
 } from "./inference-upstream-policy.mjs";
+import {
+  TRACE_LIMITS,
+  traceTextBytes,
+} from "../src/lib/generation-activity-contract.mjs";
 const PROTOCOLS = new Set(["chat-completions", "responses", "messages"]);
 const REQUEST_KEYS = [
   "messages",
@@ -774,26 +778,39 @@ async function readResponsesStream(response, { onProgress, now, signal }) {
   let reasoningDeltas = 0;
   let completed = null;
   const startedAt = now();
-  let lastEmitAt = 0;
-  let lastVisible = -1;
-  let lastReasoning = -1;
+  let lastEmitAt = startedAt;
+  let deltaText = "";
+  let deltaBytes = 0;
+  let deltaOmitted = false;
+  let pending = false;
+  let timer;
   const emit = () => {
-    if (signal?.aborted) return;
-    if (
-      visibleChars === lastVisible &&
-      reasoningDeltas === lastReasoning
-    )
-      return;
+    clearTimeout(timer);
+    timer = undefined;
+    if (signal?.aborted || !pending) return;
     const at = now();
-    if (at - lastEmitAt < 1_000) return;
     lastEmitAt = at;
-    lastVisible = visibleChars;
-    lastReasoning = reasoningDeltas;
-    onProgress({
-      visibleChars,
-      reasoningDeltas,
-      elapsedMs: Math.max(0, at - startedAt),
-    });
+    pending = false;
+    try {
+      onProgress({
+        visibleChars,
+        reasoningDeltas,
+        elapsedMs: Math.max(0, at - startedAt),
+        ...(deltaOmitted ? { deltaOmitted } : deltaText ? { deltaText } : {}),
+      });
+    } catch {
+      // Diagnostic delivery must not interrupt the authoritative response.
+    }
+    deltaText = "";
+    deltaBytes = 0;
+    deltaOmitted = false;
+  };
+  const schedule = () => {
+    pending = true;
+    if (timer) return;
+    const remaining = TRACE_LIMITS.flushIntervalMs - (now() - lastEmitAt);
+    if (remaining <= 0) emit();
+    else timer = setTimeout(emit, remaining);
   };
   const consume = (block) => {
     const data = block
@@ -813,12 +830,21 @@ async function readResponsesStream(response, { onProgress, now, signal }) {
       typeof event.delta === "string"
     ) {
       visibleChars += event.delta.length;
-      emit();
+      if (!deltaOmitted) {
+        deltaBytes += traceTextBytes(event.delta);
+        deltaOmitted = deltaBytes > TRACE_LIMITS.maxDeltaBytes;
+        // Drop the entire oversized interval to avoid leaking a cut-off secret.
+        deltaText = deltaOmitted ? "" : deltaText + event.delta;
+      }
+      schedule();
       return;
     }
-    if (event?.type === "response.reasoning_summary_text.delta") {
+    if (
+      event?.type === "response.reasoning_summary_text.delta" ||
+      event?.type === "response.reasoning_text.delta"
+    ) {
       reasoningDeltas += 1;
-      emit();
+      schedule();
       return;
     }
     if (
@@ -848,6 +874,7 @@ async function readResponsesStream(response, { onProgress, now, signal }) {
   } catch {
     return null;
   } finally {
+    clearTimeout(timer);
     reader.releaseLock?.();
   }
   return completed;
@@ -855,7 +882,7 @@ async function readResponsesStream(response, { onProgress, now, signal }) {
 
 /**
  * Explicit opt-in API for new callers; no environment-controlled provider cutover.
- * @param {{profile: Record<string, any>, request: Record<string, any>, apiKey: string, signal?: AbortSignal, fetchImpl?: typeof fetch, onProgress?: ((progress: {visibleChars: number, reasoningDeltas: number, elapsedMs: number}) => void) | null, now?: () => number}} options
+ * @param {{profile: Record<string, any>, request: Record<string, any>, apiKey: string, signal?: AbortSignal, fetchImpl?: typeof fetch, onProgress?: ((progress: {visibleChars: number, reasoningDeltas: number, elapsedMs: number, deltaText?: string, deltaOmitted?: boolean}) => void) | null, now?: () => number}} options
  */
 export async function inferenceCompletion({
   profile,

@@ -2,6 +2,7 @@ import {
   Fragment,
   type ReactNode,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -16,6 +17,7 @@ import type {
 import type { AdminApi } from "./api";
 import {
   actionChipText,
+  activityModelOutput,
   activityProgress,
   activityRoleLabel,
   activityStageLabel,
@@ -190,7 +192,13 @@ function UsageGrid({ usage }: { usage: TraceUsage }) {
   );
 }
 
-function Evidence({ event }: { event: StoredTraceEvent }) {
+function Evidence({
+  event,
+  formatOutput = false,
+}: {
+  event: StoredTraceEvent;
+  formatOutput?: boolean;
+}) {
   const meta = (
     <dl className="admin-activity__facts">
       <div>
@@ -284,9 +292,11 @@ function Evidence({ event }: { event: StoredTraceEvent }) {
       return (
         <>
           <h4>Visible output</h4>
-          <pre className="admin-activity__text">
-            {text(event.payload.message)}
-          </pre>
+          {formatOutput ? (
+            <ChatModelOutput rawText={text(event.payload.message)} fullProse />
+          ) : (
+            <pre className="admin-activity__text">{text(event.payload.message)}</pre>
+          )}
           <p className="admin-activity__note">
             Emitted model text, not private reasoning. Credentials and
             unapproved links are removed before storage.
@@ -554,7 +564,13 @@ function ModelThinkingTrace({
   );
 }
 
-function ChatModelOutput({ rawText }: { rawText: string }) {
+function ChatModelOutput({
+  rawText,
+  fullProse = false,
+}: {
+  rawText: string;
+  fullProse?: boolean;
+}) {
   const [copied, setCopied] = useState(false);
   const copyTimer = useRef<number | null>(null);
   const parsed = useMemo(() => parseModelOutputPreview(rawText), [rawText]);
@@ -570,7 +586,7 @@ function ChatModelOutput({ rawText }: { rawText: string }) {
   if (parsed.kind === "prose") {
     return (
       <p className="admin-activity__excerpt admin-chat__prose">
-        {parsed.text.length > 520
+        {!fullProse && parsed.text.length > 520
           ? `${parsed.text.slice(0, 520)}…`
           : parsed.text}
       </p>
@@ -642,6 +658,68 @@ function ChatModelOutput({ rawText }: { rawText: string }) {
   );
 }
 
+function atScrollBottom(element: HTMLElement) {
+  return element.scrollHeight - element.scrollTop - element.clientHeight <= 28;
+}
+
+function hasPausedPreview(scroller: HTMLElement) {
+  return scroller.querySelector("pre[data-preview-paused]") !== null;
+}
+
+function shouldShowJump(scroller: HTMLElement, following: boolean) {
+  return (
+    !atScrollBottom(scroller) ||
+    hasPausedPreview(scroller) ||
+    (!following && scroller.querySelector('.admin-chat__codeblock--live[data-streaming="true"]') !== null)
+  );
+}
+
+function LiveModelOutput({
+  text,
+  streaming,
+  follow,
+  onScroll,
+}: {
+  text: string;
+  streaming: boolean;
+  follow: { current: boolean };
+  onScroll: () => void;
+}) {
+  const previewRef = useRef<HTMLPreElement>(null);
+  useLayoutEffect(() => {
+    const preview = previewRef.current;
+    if (preview && streaming && follow.current && !preview.hasAttribute("data-preview-paused")) {
+      preview.scrollTop = preview.scrollHeight;
+    }
+  }, [text, streaming, follow]);
+
+  return (
+    <div
+      className="admin-chat__codeblock admin-chat__codeblock--live"
+      data-streaming={streaming || undefined}
+    >
+      <div className="admin-chat__codeblock-bar">
+        <span className="admin-activity__mono">Visible output</span>
+        <span className={streaming ? "admin-activity__status--live" : undefined}>
+          {streaming ? "Streaming" : "Partial output"}
+        </span>
+      </div>
+      <pre
+        ref={previewRef}
+        className="admin-chat__codeblock-pre"
+        tabIndex={0}
+        aria-label="Visible model output"
+        onScroll={({ currentTarget }) => {
+          currentTarget.toggleAttribute("data-preview-paused", !atScrollBottom(currentTarget));
+          onScroll();
+        }}
+      >
+        {text}
+      </pre>
+    </div>
+  );
+}
+
 function ThreadedEntry({
   entry,
   selected,
@@ -649,6 +727,8 @@ function ThreadedEntry({
   onSelect,
   onToggleThinking,
   active,
+  follow,
+  onPreviewScroll,
 }: {
   entry: ActivityEntry;
   selected: boolean;
@@ -656,12 +736,13 @@ function ThreadedEntry({
   onSelect: (id: string) => void;
   onToggleThinking: (key: string) => void;
   active: boolean;
+  follow: { current: boolean };
+  onPreviewScroll: () => void;
 }) {
   const open = isOpenEntry(entry);
   const progress = entry.kind === "model" ? activityProgress(entry) : null;
   const usage = entry.evidence.findLast((event) => event.kind === "usage");
-  const output = entry.evidence.findLast((event) => event.kind === "output");
-  const outputText = output ? text(output.payload.message) : "";
+  const output = entry.kind === "model" ? activityModelOutput(entry) : null;
   const latestProgress = entry.evidence.findLast(
     (event) => event.kind === "output_delta",
   );
@@ -676,6 +757,7 @@ function ThreadedEntry({
       : entry.evidence;
   const modelName =
     entry.primary.kind === "model_started" ? entry.primary.payload.model : null;
+  const { candidateId, repairPass } = entry.primary.context;
   const chip = entry.kind === "model" ? null : actionChipText(entry);
 
   const statusBadge =
@@ -718,6 +800,8 @@ function ThreadedEntry({
               </span>
               <span className="admin-activity__sub">
                 {activityStageLabel(entry.stage)}
+                {candidateId ? ` · ${candidateId}` : ""}
+                {repairPass === null ? "" : ` · Round ${repairPass}`}
               </span>
               {usage ? (
                 <span className="admin-activity__tokens">
@@ -753,8 +837,15 @@ function ThreadedEntry({
             onToggle={() => onToggleThinking(entry.key)}
           />
 
-          {outputText && !selected ? (
-            <ChatModelOutput rawText={outputText} />
+          {output?.kind === "preview" ? (
+            <LiveModelOutput
+              text={output.text}
+              streaming={open && active}
+              follow={follow}
+              onScroll={onPreviewScroll}
+            />
+          ) : output?.kind === "recorded" && !selected ? (
+            <ChatModelOutput rawText={output.text} />
           ) : null}
 
           {selected ? (
@@ -767,7 +858,7 @@ function ThreadedEntry({
                   className="admin-activity__evidence-block"
                   key={event.eventId}
                 >
-                  <Evidence event={event} />
+                  <Evidence event={event} formatOutput />
                 </div>
               ))}
               {entry.evidence.some(
@@ -1170,27 +1261,37 @@ export function GenerationActivity({
     feed.scrollTop = feed.scrollHeight;
   }, [threaded, visible.length]);
 
+  function syncPreviewScroll() {
+    const scroller = scrollRef.current;
+    if (scroller) {
+      setShowJumpToLatest(shouldShowJump(scroller, follow.current));
+    }
+  }
+
   function syncThreadScroll() {
-    if (!threaded) return;
     const scroller = scrollRef.current;
     if (!scroller) return;
-    const distanceFromBottom =
-      scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
-    const atBottom = distanceFromBottom <= 28;
-    follow.current = atBottom;
-    setShowJumpToLatest(!atBottom);
+    follow.current = atScrollBottom(scroller);
+    syncPreviewScroll();
   }
+
+  useLayoutEffect(() => {
+    if (!threaded) return;
+    const scroller = scrollRef.current;
+    if (scroller && follow.current && !hasPausedPreview(scroller)) {
+      scroller.scrollTop = scroller.scrollHeight;
+    }
+    syncPreviewScroll();
+  }, [threaded, events, visible.length, selectedKey]);
 
   useEffect(() => {
     if (!threaded) return;
     const scroller = scrollRef.current;
     if (!scroller) return;
     const update = () => {
-      const distanceFromBottom =
-        scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
-      const atBottom = distanceFromBottom <= 28;
-      follow.current = atBottom;
-      setShowJumpToLatest(!atBottom);
+      const previewPaused = hasPausedPreview(scroller);
+      if (follow.current && !previewPaused) scroller.scrollTop = scroller.scrollHeight;
+      setShowJumpToLatest(shouldShowJump(scroller, follow.current));
     };
     const frame = window.requestAnimationFrame(update);
     if (typeof ResizeObserver === "undefined") {
@@ -1203,14 +1304,7 @@ export function GenerationActivity({
       window.cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, [
-    threaded,
-    visible.length,
-    selectedKey,
-    thinkingState,
-    activeStageFilter,
-    filter,
-  ]);
+  }, [threaded, visible.length]);
 
   function select(key: string) {
     setSelectedKey((current) => (threaded && current === key ? null : key));
@@ -1224,13 +1318,14 @@ export function GenerationActivity({
     if (threaded) {
       const scroller = scrollRef.current;
       if (scroller) {
-        const reduced =
-          typeof window !== "undefined" &&
-          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        scroller.scrollTo({
-          top: scroller.scrollHeight,
-          behavior: reduced ? "auto" : "smooth",
-        });
+        for (const preview of scroller.querySelectorAll<HTMLPreElement>(
+          ".admin-chat__codeblock--live pre",
+        )) {
+          preview.removeAttribute("data-preview-paused");
+          preview.scrollTop = preview.scrollHeight;
+        }
+        // A new poll can change the target while a smooth scroll is in flight.
+        scroller.scrollTop = scroller.scrollHeight;
       }
       setShowJumpToLatest(false);
       return;
@@ -1522,6 +1617,8 @@ export function GenerationActivity({
                         onSelect={select}
                         onToggleThinking={toggleThinking}
                         active={active}
+                        follow={follow}
+                        onPreviewScroll={syncPreviewScroll}
                       />
                     ) : (
                       <EntryRow

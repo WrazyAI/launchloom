@@ -143,6 +143,7 @@ describe("model activity instrumentation", () => {
           visibleChars: 120,
           reasoningDeltas: 3,
           elapsedMs: 1400,
+          deltaText: "const intro = ",
         });
         return { status: "completed", text: "done", usage: {} };
       },
@@ -159,6 +160,7 @@ describe("model activity instrumentation", () => {
       visibleChars: 120,
       reasoningTokens: 3,
       elapsedMs: 1400,
+      delta: { kind: "text", text: "const intro = " },
     });
   });
 

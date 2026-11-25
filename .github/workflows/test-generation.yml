@@ -65,6 +65,8 @@ jobs:
       # identity. The run id and attempt come from GitHub; these values bind
       # the live thumbnail to this exact focused run.
       LAUNCHLOOM_API_URL: ${{ vars.LAUNCHLOOM_API_URL || 'https://api.launchloom.wrazyos.com' }}
+      OPERATIONS_API_URL: ${{ vars.LAUNCHLOOM_OPERATIONS_API_URL || vars.LAUNCHLOOM_API_URL || 'https://api.launchloom.wrazyos.com' }}
+      OPERATIONS_OIDC_AUDIENCE: ${{ vars.OPERATIONS_OIDC_AUDIENCE || 'launchloom-operations' }}
       TRACK_PROFILE: ${{ inputs.test_profile }}
       TRACK_ISSUE: ${{ inputs.issue }}
       TRACK_ATTEMPT: github:${{ github.run_id }}:${{ github.run_attempt }}
@@ -105,6 +107,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Register focused attempt and start setup
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage setup --status started
       - run: npm ci
       - name: Verify OpenCode Go credential
         run: |
@@ -119,6 +124,9 @@ jobs:
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       - name: Configure private QA repository authentication
         run: gh auth setup-git
+      - name: Record focused setup completion
+        continue-on-error: true
+        run: node scripts/record-generation-stage.mjs --stage setup --status completed
       - name: Run focused profile
         env:
           TEST_ISSUE: ${{ inputs.issue }}
@@ -136,3 +144,9 @@ jobs:
           node scripts/run-pipeline-test.mjs "${ARGS[@]}"
       # Evidence belongs in the isolated private QA repository. Never upload
       # intake, model responses, screenshots or reports to public artifacts.
+      - name: Finalize generation activity
+        if: always()
+        continue-on-error: true
+        env:
+          GENERATION_OUTCOME: ${{ job.status }}
+        run: node scripts/finalize-generation-activity.mjs
