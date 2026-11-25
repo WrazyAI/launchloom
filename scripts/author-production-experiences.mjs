@@ -415,7 +415,7 @@ ${SERVICE_PAGE_DIRECT_BINDING_CONTRACT}
 - Render the process sequence from service.process and the questions from service.faqs when present, without repeating homepage sentences.
 - Include a contact region with id="contact" and exactly one <LeadForm content={content} runtime={runtime} /> from @launchloom/runtime.
 - Include a native <nav> or header with a visible link back to "/" labeled with content.brand.name, and keep the page's primary action visible near the opening.
-- Put data-service-page on the page root element (use a <main> landmark), data-service-hero on the opening section, data-service-support on the decision-support region, and data-service-related on the related-services region.
+- Put data-service-page and data-service-slug={service.slug} on the page root element (use a <main> landmark), data-service-hero on the opening section, data-service-support on the decision-support region, and data-service-related on the related-services region.
 - Use the supplied imagery tokens (service.images.context or content.hero.*) or an inline graphic treatment; every <img> needs a usable alt attribute.
 - Bind every visitor-facing business sentence to sealed tokens. Do not hardcode service names, prices, hours, guarantees, or marketing sentences.
 - No remote URLs, network calls, inline styles, <style> elements, canvas, Three.js, or a second lead endpoint.
@@ -443,7 +443,7 @@ LOCATION PAGE RULES
 - Render other listed service areas from location.otherAreas as real links to /locations/<slug>/ when present, without claiming coverage beyond the listed areas.
 - Include a contact region with id="contact" and exactly one <LeadForm content={content} runtime={runtime} /> from @launchloom/runtime.
 - Include a native <nav> or header with a visible link back to "/" labeled with content.brand.name, and keep the page's primary action visible near the opening.
-- Put data-location-page on the page root element (use a <main> landmark), data-location-hero on the opening section, data-location-coverage on the coverage region, and data-location-related on the services or nearby-areas region.
+- Put data-location-page and data-location-slug={location.slug} on the page root element (use a <main> landmark), data-location-hero on the opening section, data-location-coverage on the coverage region, and data-location-related on the services or nearby-areas region.
 - Use the supplied imagery tokens (location.images.context or content.hero.*) or an inline graphic treatment; every <img> needs a usable alt attribute.
 - Bind every visitor-facing business sentence to sealed tokens. Do not hardcode service names, area names, prices, hours, guarantees, or marketing sentences.
 - No remote URLs, network calls, inline styles, <style> elements, canvas, Three.js, or a second lead endpoint.
