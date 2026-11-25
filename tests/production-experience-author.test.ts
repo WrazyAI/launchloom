@@ -3787,6 +3787,14 @@ export default function Experience`,
       /service\.related/u,
     );
 
+    const missingSlug = valid.replace(
+      " data-service-slug={service.slug}",
+      "",
+    );
+    expect(() => validateServicePage(missingSlug, route, {})).toThrow(
+      /service\.slug/u,
+    );
+
     const remoteImage = valid.replace(
       "</main>",
       '<img src="https://example.com/service.png" alt="Service context" /></main>',
