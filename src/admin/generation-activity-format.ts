@@ -57,6 +57,23 @@ export function activityProgress(
   return null;
 }
 
+export function activityModelOutput(entry: ActivityEntry) {
+  const output = entry.evidence.findLast((event) => event.kind === "output");
+  if (output) {
+    return { kind: "recorded", text: traceText(output.payload.message) } as const;
+  }
+  const deltas = entry.evidence
+    .filter((event) => event.kind === "output_delta")
+    .sort((left, right) => left.sequence - right.sequence)
+    .flatMap(({ payload: { delta } }) =>
+      delta?.kind === "text"
+        ? [delta.text]
+        : delta ? [`\n[Output withheld: ${delta.reason}]\n`] : [],
+    );
+  if (!deltas.length) return null;
+  return { kind: "preview", text: deltas.join("") } as const;
+}
+
 export type ActivityStage = {
   stage: string;
   label: string;
@@ -144,6 +161,7 @@ function entryTitle(event: StoredTraceEvent): string {
     case "action_started":
       return titleCase(event.payload.name);
     case "task_started":
+    case "task_finished":
       return event.payload.label;
     case "error":
       return traceText(event.payload.message) || "Error";

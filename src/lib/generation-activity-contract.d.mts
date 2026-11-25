@@ -33,6 +33,7 @@ export const TRACE_LIMITS: Readonly<{
   maxIdentifier: number;
   maxLabel: number;
   maxTextBytes: number;
+  maxDeltaBytes: number;
   maxEventBytes: number;
   maxBatchBytes: number;
   maxQueueBytes: number;
@@ -78,15 +79,19 @@ export function createPrivacyPolicy(options?: {
   sensitiveValues?: readonly string[];
   allowSourceText?: boolean;
 }): TracePrivacyPolicy;
+export function createVisibleDeltaProjector(
+  policy: TracePrivacyPolicy,
+): (value?: string, omitted?: boolean) => TraceText | undefined;
 export function scrubTraceText(
   value: string,
   policy: TracePrivacyPolicy,
   maxBytes?: number,
+  options?: { preserveWhitespace?: boolean },
 ): string;
 export function projectTraceText(
   value: unknown,
   policy: TracePrivacyPolicy,
-  options?: { mode?: "text" | "source" },
+  options?: { mode?: "text" | "source" | "error" | "delta" },
 ): TraceText;
 export function buildSafeFields(
   source: unknown,

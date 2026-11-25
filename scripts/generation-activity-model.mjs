@@ -1,4 +1,8 @@
 import crypto from "node:crypto";
+import {
+  createPrivacyPolicy,
+  createVisibleDeltaProjector,
+} from "../src/lib/generation-activity-contract.mjs";
 
 const MODEL_STATUSES = new Set([
   "completed",
@@ -62,8 +66,8 @@ function summarize(value) {
  *
  * The start event is written before the request. The completed visible text,
  * usage and terminal status are written as soon as the response is normalized.
- * The current transport is non-streaming, so nothing here claims token
- * streaming. Usage is deduplicated by the local dispatch ID at ingest.
+ * Provider-visible deltas are provisional. Usage is deduplicated by the local
+ * dispatch ID at ingest.
  */
 export async function observeModelCall({
   producer,
@@ -75,9 +79,13 @@ export async function observeModelCall({
 }) {
   if (!producer) return invoke();
   producer.emit("model_started", { callId, provider, model });
-  const onProgress = ({ visibleChars, reasoningDeltas, elapsedMs } = {}) => {
+  const projectDelta = producer.createDeltaProjector?.() ??
+    createVisibleDeltaProjector(createPrivacyPolicy({ allowSourceText: true }));
+  const onProgress = ({ visibleChars, reasoningDeltas, elapsedMs, deltaText, deltaOmitted } = {}) => {
+    const delta = projectDelta(deltaText, deltaOmitted);
     producer.emit("output_delta", {
       callId,
+      ...(delta ? { delta } : {}),
       visibleChars:
         Number.isSafeInteger(visibleChars) && visibleChars >= 0
           ? visibleChars

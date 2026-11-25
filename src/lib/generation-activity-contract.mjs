@@ -38,6 +38,8 @@ export const TRACE_LIMITS = Object.freeze({
   maxIdentifier: 200,
   maxLabel: 200,
   maxTextBytes: 8 * 1024,
+  // Leave room for JSON escaping and the event envelope.
+  maxDeltaBytes: 2 * 1024,
   maxEventBytes: 16 * 1024,
   maxBatchBytes: 128 * 1024,
   maxQueueBytes: 1024 * 1024,
@@ -142,10 +144,10 @@ function record(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function exactObject(value, keys, label) {
+function exactObject(value, keys, label, optional = []) {
   if (!record(value)) fail(`${label}_not_object`);
   for (const key of Object.keys(value))
-    if (!keys.includes(key)) fail(`${label}_unknown_field`);
+    if (!keys.includes(key) && !optional.includes(key)) fail(`${label}_unknown_field`);
   for (const key of keys)
     if (!Object.hasOwn(value, key)) fail(`${label}_missing_field`);
   return value;
@@ -214,7 +216,7 @@ const CREDENTIAL_PATTERNS = Object.freeze([
     "[credential redacted]",
   ],
   [
-    /(?:[A-Za-z0-9_]*(?:token|secret|password|passwd|api[_-]?key|authorization|signature|cookie))\s*[:=]\s*["']?[^\s"',;]{4,}/giu,
+    /(?:[A-Za-z0-9_]*(?:token|secret|password|passwd|api[_-]?key|authorization|signature|cookie))(?:\\*["'])?\s*[:=]\s*(?:\\*["'])?[^\s"',;]{4,}/giu,
     "[credential redacted]",
   ],
   [
@@ -272,24 +274,41 @@ export function scrubContactText(value) {
   return text;
 }
 
+function normalizeTraceText(value) {
+  return value
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/gu, " ")
+    .replace(/\r\n?/gu, "\n");
+}
+
+function exactSensitiveForms(policy) {
+  const forms = new Set();
+  for (const value of policy.sensitiveValues) {
+    const normalized = normalizeTraceText(value);
+    for (const form of [value, normalized]) {
+      if (form.length < 8) continue;
+      forms.add(form);
+      forms.add(JSON.stringify(form).slice(1, -1));
+    }
+  }
+  return [...forms].sort((left, right) => right.length - left.length);
+}
+
 export function scrubTraceText(
   value,
   policy,
   maxBytes = TRACE_LIMITS.maxTextBytes,
+  { preserveWhitespace = false } = {},
 ) {
-  let text = String(value)
-    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/gu, " ")
-    .replace(/\r\n?/gu, "\n");
-  for (const sensitive of policy.sensitiveValues)
-    text = text.replace(
-      new RegExp(escapeRegExp(sensitive), "gu"),
-      "[redacted]",
-    );
+  let text = String(value);
+  for (const sensitive of exactSensitiveForms(policy))
+    text = text.replaceAll(sensitive, "[redacted]");
+  text = normalizeTraceText(text);
   for (const [pattern, replacement] of CREDENTIAL_PATTERNS)
     text = text.replace(pattern, replacement);
   text = text.replace(URL_PATTERN, (url) =>
     GITHUB_EVIDENCE.test(url) ? url : "[link redacted]",
   );
+  if (preserveWhitespace) return truncateUtf8(text, maxBytes);
   return truncateUtf8(text.trim(), maxBytes).trim();
 }
 
@@ -299,12 +318,100 @@ export function projectTraceText(value, policy, { mode = "text" } = {}) {
     return { kind: "withheld", reason: "unclassified" };
   if (traceTextBytes(value) > TRACE_LIMITS.maxRawInputBytes)
     return { kind: "withheld", reason: "oversize" };
-  if (mode === "source" && policy.allowSourceText !== true)
+  if ((mode === "source" || mode === "delta") && policy.allowSourceText !== true)
     return { kind: "withheld", reason: "unsupported" };
-  let scrubbed = scrubTraceText(value, policy);
+  const delta = mode === "delta";
+  let scrubbed = scrubTraceText(
+    value,
+    policy,
+    delta ? TRACE_LIMITS.maxDeltaBytes : TRACE_LIMITS.maxTextBytes,
+    { preserveWhitespace: delta },
+  );
   if (mode === "error") scrubbed = scrubContactText(scrubbed);
   if (!scrubbed) return { kind: "withheld", reason: "sensitive" };
   return { kind: "text", text: scrubbed };
+}
+
+const DELTA_SENSITIVE_PREFIXES = [
+  "http://", "https://", "bearer", "ghp_", "gho_", "ghu_", "ghs_", "ghr_",
+  "github_pat_", "sk-", "eyj", "-----begin ", "token", "secret",
+  "password", "passwd", "apikey", "api_key", "api-key", "authorization",
+  "signature", "cookie",
+];
+
+const DELTA_OPEN_SENSITIVE = [
+  /https?:\/\/[^\s<>"'`]*$/iu,
+  /bearer\s+[A-Za-z0-9._~+/-]*={0,2}$/iu,
+  /(?:gh[pousr]_|github_pat_|sk-)[A-Za-z0-9_-]*$/iu,
+  /eyJ[A-Za-z0-9_.-]*$/u,
+  /(?:token|secret|password|passwd|api[_-]?key|authorization|signature|cookie)\\*["']?\s*(?:[:=]\s*\\*["']?[^\s"',;]*)?$/iu,
+  /-----BEGIN (?:(?!-----END [A-Z ]*PRIVATE KEY-----)[\s\S])*$/u,
+];
+
+function partialPrefixStart(text, prefix) {
+  let index = text.lastIndexOf(prefix[0]);
+  while (index >= 0 && text.length - index <= prefix.length) {
+    if (prefix.startsWith(text.slice(index))) return index;
+    if (!index) break;
+    index = text.lastIndexOf(prefix[0], index - 1);
+  }
+  return text.length;
+}
+
+/** Hold incomplete credential and known-value matches across progress ticks. */
+export function createVisibleDeltaProjector(policy) {
+  let tail = "";
+  let withheld = false;
+  return (value, omitted = false) => {
+    if (withheld) return undefined;
+    if (omitted) {
+      // The missing interval may include the opening of a sensitive value.
+      withheld = true;
+      tail = "";
+      return { kind: "withheld", reason: "oversize" };
+    }
+    if (!value) return undefined;
+    const text = tail + value;
+    let end = text.length;
+    const lower = text.replace(/[A-Z]/gu, (letter) => letter.toLowerCase());
+    for (const prefix of DELTA_SENSITIVE_PREFIXES)
+      end = Math.min(end, partialPrefixStart(lower, prefix));
+    for (const pattern of DELTA_OPEN_SENSITIVE) {
+      const start = text.search(pattern);
+      if (start !== -1) end = Math.min(end, start);
+    }
+    const secrets = exactSensitiveForms(policy);
+    for (const secret of secrets)
+      end = Math.min(end, partialPrefixStart(text, secret));
+
+    if (end < text.length) {
+      // Move the boundary left if it falls inside a complete redaction match.
+      const spans = [...CREDENTIAL_PATTERNS.map(([pattern]) => pattern), URL_PATTERN]
+        .flatMap((pattern) => [...text.matchAll(pattern)]);
+      for (const secret of secrets)
+        spans.push(...text.matchAll(new RegExp(escapeRegExp(secret), "gu")));
+      spans.sort((a, b) => b.index - a.index);
+      for (const match of spans)
+        if (match.index < end && end < match.index + match[0].length)
+          end = match.index;
+    }
+
+    tail = text.slice(end);
+    const visible = text.slice(0, end);
+    if (traceTextBytes(tail) > TRACE_LIMITS.maxDeltaBytes) {
+      withheld = true;
+      tail = "";
+      return { kind: "withheld", reason: "oversize" };
+    }
+    if (!visible) return undefined;
+    if (!policy.allowSourceText) return { kind: "withheld", reason: "unsupported" };
+    const scrubbed = scrubTraceText(visible, policy, TRACE_LIMITS.maxRawInputBytes, {
+      preserveWhitespace: true,
+    });
+    return traceTextBytes(scrubbed) > TRACE_LIMITS.maxDeltaBytes
+      ? { kind: "withheld", reason: "oversize" }
+      : { kind: "text", text: scrubbed };
+  };
 }
 
 function shortLabel(value, label) {
@@ -365,11 +472,13 @@ function traceText(value, policy, label, { nullable = false, mode } = {}) {
   if (nullable && (value === null || value === undefined)) return null;
   if (!record(value)) fail(`${label}_invalid`);
   if (value.kind === "withheld") {
+    if (mode === "delta") exactObject(value, ["kind", "reason"], label);
     if (!WITHHELD_REASONS.has(value.reason)) fail(`${label}_reason`);
     return { kind: "withheld", reason: value.reason };
   }
   if (value.kind !== "text" || typeof value.text !== "string")
     fail(`${label}_invalid`);
+  if (mode === "delta") exactObject(value, ["kind", "text"], label);
   return projectTraceText(value.text, policy, mode ? { mode } : undefined);
 }
 
@@ -526,6 +635,7 @@ function validatePayload(kind, payload, policy) {
         payload,
         ["callId", "visibleChars", "reasoningTokens", "elapsedMs"],
         kind,
+        ["delta"],
       );
       return {
         callId: uuid(payload.callId, "call_id"),
@@ -541,6 +651,9 @@ function validatePayload(kind, payload, policy) {
           min: 0,
           max: 86_400_000,
         }),
+        ...(Object.hasOwn(payload, "delta")
+          ? { delta: traceText(payload.delta, policy, "delta", { mode: "delta" }) }
+          : {}),
       };
     }
     case "usage": {

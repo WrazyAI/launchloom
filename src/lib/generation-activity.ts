@@ -91,6 +91,7 @@ export type TracePayloads = {
   output: { callId: string; message: TraceText };
   output_delta: {
     callId: string;
+    delta?: TraceText;
     visibleChars: number;
     reasoningTokens: number;
     elapsedMs: number;

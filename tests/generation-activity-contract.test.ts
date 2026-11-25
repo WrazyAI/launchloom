@@ -8,6 +8,7 @@ import {
   buildSafeFields,
   buildTraceEvent,
   createPrivacyPolicy,
+  createVisibleDeltaProjector,
   isTraceIdentity,
   projectTraceText,
   scrubTraceText,
@@ -115,6 +116,88 @@ describe("generation activity contract", () => {
       expect(() =>
         buildTraceEvent(traceEvent({ kind: "output_delta", payload }), policy),
       ).toThrow();
+  });
+
+  it("scrubs and byte-bounds optional visible text while preserving code whitespace", () => {
+    const raw = traceEvent({
+      kind: "output_delta",
+      payload: {
+        callId: BASE_CALL_ID,
+        visibleChars: 100,
+        reasoningTokens: 2,
+        elapsedMs: 1500,
+        delta: { kind: "text", text: "  private-intake-value https://private.invalid/a\n" },
+      },
+    });
+    const producerPolicy = createPrivacyPolicy({
+      allowSourceText: true,
+      sensitiveValues: ["private-intake-value"],
+    });
+    expect(buildTraceEvent(raw, producerPolicy).payload).toMatchObject({
+      delta: { kind: "text", text: "  [redacted] [link redacted]\n" },
+    });
+    expect(buildTraceEvent(raw).payload).toMatchObject({
+      delta: { kind: "withheld", reason: "unsupported" },
+    });
+    const oversized = {
+      ...raw,
+      payload: { ...raw.payload, delta: { kind: "text", text: "🙂".repeat(900) } },
+    };
+    const [bounded] = validateTraceBatch([oversized], policy);
+    expect(bounded?.payload).toMatchObject({
+      delta: { kind: "text", text: "🙂".repeat(TRACE_LIMITS.maxDeltaBytes / 4) },
+    });
+  });
+
+  it("holds split sensitive values and never emits their fragments", () => {
+    const project = createVisibleDeltaProjector(createPrivacyPolicy({
+      allowSourceText: true,
+      sensitiveValues: ["private exact value"],
+    }));
+    const visible = [
+      'const name = "priv',
+      'ate exact ',
+      'value";\nBearer',
+      ' abcde',
+      'f0123456\nconst contact = "htt',
+      'ps://private.invalid/p',
+      'ath";\n',
+    ].map((piece) => project(piece)).flatMap((delta) =>
+      delta?.kind === "text" ? [delta.text] : [],
+    );
+    expect(visible.join("")).toBe(
+      'const name = "[redacted]";\nBearer [redacted]\nconst contact = "[link redacted]";\n',
+    );
+    expect(project(undefined, true)).toEqual({ kind: "withheld", reason: "oversize" });
+    expect(project("discarded continuation")).toBeUndefined();
+  });
+
+  it("scrubs escaped quoted credentials and exact multiline values", () => {
+    const privacy = createPrivacyPolicy({
+      allowSourceText: true,
+      sensitiveValues: ["fixture exact\r\nmultiline value"],
+    });
+    const project = createVisibleDeltaProjector(privacy);
+    const pieces = [
+      'const settings = "{',
+      String.raw`\"password` + "\\",
+      String.raw`": \"synthetic-`,
+      String.raw`opaque-value\"}";`,
+    ];
+    const visible = pieces.map((piece) => project(piece)).flatMap((delta) =>
+      delta?.kind === "text" ? [delta.text] : [],
+    ).join("");
+    expect(visible).toContain("[credential redacted]");
+    expect(visible).not.toMatch(/synthetic-|opaque-value/u);
+    for (const text of [
+      "fixture exact\r\nmultiline value",
+      "fixture exact\nmultiline value",
+      String.raw`fixture exact\r\nmultiline value`,
+    ]) {
+      expect(projectTraceText(text, privacy, { mode: "delta" })).toEqual({
+        kind: "text", text: "[redacted]",
+      });
+    }
   });
 
   it("keeps zero usage at zero and missing usage unknown", () => {

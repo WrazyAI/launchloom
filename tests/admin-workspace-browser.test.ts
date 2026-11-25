@@ -3487,6 +3487,118 @@ it("renders model calls, actions, usage and inspectable evidence in a dedicated 
   }
 });
 
+it("streams Agent runs code across incremental polls and replaces it at completion on desktop and mobile", async () => {
+  activityEnabled = true;
+  const attemptId = "attempt-0005"; // Running fixture
+  const path = `/legacy/attempts/${attemptId}/activity`;
+  const initial = activityPageFor(attemptId);
+  const callId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+  const event = (sequence: number, overrides: Record<string, unknown> = {}) => {
+    const item = activityEvent(sequence, overrides);
+    return {
+      ...item,
+      context: { ...item.context, attemptId },
+      cursor: `v1.${sequence.toString(16)}.abcdabcd`,
+      receivedAt: Date.now() + sequence,
+    };
+  };
+  const delta = (sequence: number, text: string) => event(sequence, {
+    kind: "output_delta",
+    payload: {
+      callId, visibleChars: sequence * 100, reasoningTokens: 2,
+      elapsedMs: sequence * 1000, delta: { kind: "text", text },
+    },
+  });
+  const tasks = Array.from({ length: 22 }, (_, index) => event(index + 1, {
+    kind: "task_finished",
+    payload: { label: `Stage handoff ${index + 1}`, status: "succeeded", detail: null },
+  }));
+  const first = delta(24, 'export const headline = "Working";\n');
+  const longLine = "x".repeat(500);
+  const second = delta(25, `// ${longLine}\n`);
+  const third = delta(26, 'export const next = true;\n');
+  const finish = event(27, { kind: "model_finished", payload: { callId, status: "completed" } });
+  const output = event(28, {
+    kind: "output",
+    payload: {
+      callId,
+      message: { kind: "text", text: JSON.stringify({ designContract: "Authoritative rendered design" }) },
+    },
+  });
+  const respond = (items: ReturnType<typeof event>[]) => {
+    activityFixture = {
+      ...initial,
+      activity: { ...initial.activity, items, nextCursor: items.at(-1)!.cursor },
+    };
+  };
+
+  for (const width of [1512, 390]) {
+    requests = [];
+    respond([...tasks, event(23), first]);
+    const { page, errors } = await openPage({
+      viewport: { width, height: 844 },
+      path: `/admin/onboarding-invites?view=generations&attempt=${attemptId}`,
+    });
+    try {
+      const drawer = page.locator("#attempt-inspector");
+      await drawer.getByRole("button", { name: "Agent runs", exact: true }).click();
+      const scroll = drawer.locator(".admin-chat__scroll");
+      const live = drawer.locator(".admin-chat__codeblock--live");
+      const code = live.locator("pre");
+      const jump = drawer.getByRole("button", { name: "Jump to latest" });
+      const atBottom = () => scroll.evaluate(
+        (element) => element.scrollHeight - element.scrollTop - element.clientHeight <= 28,
+      );
+      await visible(live.getByText("Streaming", { exact: true }));
+      expect(await code.textContent()).toBe('export const headline = "Working";\n');
+      await expect.poll(atBottom).toBe(true);
+
+      respond([second]);
+      await expect.poll(() => code.textContent(), { timeout: 8_000 }).toContain(longLine);
+      expect(await code.textContent()).toBe(`export const headline = "Working";\n// ${longLine}\n`);
+      expect(requests.some(({ path: requestPath, params }) =>
+        requestPath.endsWith(path) && params.after === first.cursor,
+      )).toBe(true);
+      await expect.poll(atBottom).toBe(true);
+
+      await scroll.evaluate((element) => { element.scrollTop = 0; });
+      await visible(jump);
+      respond([third]);
+      await expect.poll(() => code.textContent(), { timeout: 8_000 }).toContain("export const next");
+      expect(await scroll.evaluate((element) => element.scrollTop)).toBe(0);
+      await jump.click();
+      await expect.poll(atBottom).toBe(true);
+      await expect.poll(() => jump.count()).toBe(0);
+
+      const expectNoOverflow = async () => {
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        expect(await scroll.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+      };
+      await expectNoOverflow();
+      if (process.env.ADMIN_DESIGN_CAPTURE_DIR) {
+        await page.screenshot({ path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-live-agent-${width}.png` });
+      }
+
+      const model = drawer.getByRole("button", { name: /Model request/u });
+      await model.click();
+      await visible(drawer.locator(".admin-activity__evidence"));
+      respond([finish, output]);
+      await visible(drawer.locator(".admin-activity__evidence .admin-chat__prose")
+        .getByText("Authoritative rendered design", { exact: true }));
+      expect(await live.count()).toBe(0);
+      await model.click();
+      await visible(drawer.getByText("Authoritative rendered design", { exact: true }));
+      await expectNoOverflow();
+      if (process.env.ADMIN_DESIGN_CAPTURE_DIR) {
+        await page.screenshot({ path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-completed-agent-${width}.png` });
+      }
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  }
+}, 50_000);
+
 it("shows recorded model output when its start is on an older activity page", async () => {
   activityEnabled = true;
   const initial = activityPageFor("attempt-diagnostic");

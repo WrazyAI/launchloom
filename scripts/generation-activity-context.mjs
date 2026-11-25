@@ -161,6 +161,7 @@ export function noopActivityProducer() {
     context: () => null,
     withContext: () => noop,
     addSensitiveValues: () => {},
+    createDeltaProjector: () => () => undefined,
     emit: () => false,
     flush: async () => {},
     close: async () => {},

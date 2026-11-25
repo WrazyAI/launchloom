@@ -93,6 +93,8 @@ export function inferenceCompletion(options: {
       visibleChars: number;
       reasoningDeltas: number;
       elapsedMs: number;
+      deltaText?: string;
+      deltaOmitted?: boolean;
     },
   ) => void;
   now?: () => number;

@@ -16,6 +16,7 @@ import {
   parsePipelineTestArgs,
   resolvePipelineTestPolicy,
 } from "./pipeline-test-policy.mjs";
+import { recordGenerationStage } from "./record-generation-stage.mjs";
 import { summarizeGenerationCosts } from "./generation-cost-summary.mjs";
 import { collectEvidenceSamples, summarizeGateHealth } from "./gate-health.mjs";
 import { resolvePreviewLink } from "./preview-link.mjs";
@@ -420,6 +421,7 @@ export async function runPipelineTest(input, dependencies) {
   let nearMissDelivery = false;
   let nearMissOpenFindings = 0;
   async function stage(name) {
+    await dependencies.recordStage?.(name, "started");
     const started = Date.now();
     try {
       const result = await dependencies[name](context);
@@ -486,6 +488,15 @@ export async function runPipelineTest(input, dependencies) {
           gates: error.gates,
         };
       return null;
+    } finally {
+      const recorded = report.stages[name];
+      const missingCandidates =
+        name === "author" && input.profile === "full-preview" &&
+        recorded.candidateCount !== policy.candidateCount;
+      await dependencies.recordStage?.(
+        name,
+        recorded.status === "passed" && !missingCandidates ? "completed" : "failed",
+      );
     }
   }
   try {
@@ -1664,6 +1675,7 @@ export function buildPipelineAttemptTracking(
     repository: environment.GITHUB_REPOSITORY || "WrazyAI/launchloom",
     runId: environment.GITHUB_RUN_ID,
     runAttempt: Number(environment.GITHUB_RUN_ATTEMPT || 1),
+    attemptId: environment.TRACK_ATTEMPT || null,
     profile: report.profile,
     issueNumber: Number(issueNumber) || null,
     triggeringActor: environment.GITHUB_TRIGGERING_ACTOR || null,
@@ -1766,6 +1778,7 @@ if (
     candidateRepository: args["candidate-repository"] || "",
   };
   validatePipelineTestInput(input);
+  let attemptRegistered = false;
   try {
     const runId = String(process.env.GITHUB_RUN_ID || "").trim();
     const runAttempt = Number(process.env.GITHUB_RUN_ATTEMPT || 1);
@@ -1779,7 +1792,7 @@ if (
         runId,
         runAttempt,
         requestId: null,
-        attemptId: null,
+        attemptId: process.env.TRACK_ATTEMPT || `github:${runId}:${runAttempt}`,
         profile: input.profile,
         issueNumber: Number(input.issue) || null,
         triggeringActor: process.env.GITHUB_TRIGGERING_ACTOR || null,
@@ -1790,8 +1803,15 @@ if (
         completedAt: null,
         failure: {},
       });
-      await postAttemptTracking({ observation, events: [] });
-      console.log(`attempt_start_tracking=posted profile=${input.profile}`);
+      const registration = await postAttemptTracking({ observation, events: [] });
+      if (registration.disabled) {
+        console.warn("attempt_start_tracking=disabled");
+      } else if (!registration.ok) {
+        console.warn(`attempt_start_tracking=rejected status=${registration.status}`);
+      } else {
+        attemptRegistered = true;
+        console.log(`attempt_start_tracking=posted profile=${input.profile}`);
+      }
     }
   } catch (error) {
     console.warn(
@@ -1800,8 +1820,31 @@ if (
       ).slice(0, 120)}`,
     );
   }
+  // Keep the diagnostic pipeline running during a ledger outage, with no
+  // activity batches sent until the runner can establish attempt ownership.
+  if (!attemptRegistered) process.env.GENERATION_ACTIVITY_ENABLED = "false";
   const dependencies = createCloudDependencies(input);
-  const report = await runPipelineTest(input, dependencies);
+  let stageTracking = Promise.resolve();
+  const report = await runPipelineTest(input, {
+    ...dependencies,
+    recordStage: (stage, status) => {
+      const observedAt = Date.now();
+      // Preserve chronological delivery without making pipeline stages wait on it.
+      stageTracking = stageTracking.then(async () => {
+        const result = await recordGenerationStage({
+          stage,
+          status,
+          issue: input.issue,
+          observedAt,
+        });
+        if (!result.ok) throw new Error("Stage tracking rejected.");
+      }).catch(() => {
+        console.warn(`attempt_stage_tracking=unavailable stage=${stage} status=${status}`);
+      });
+    },
+  });
+  // Finish stage writes before posting the terminal attempt observation.
+  await stageTracking;
   try {
     const tracking = buildPipelineAttemptTracking(
       report,

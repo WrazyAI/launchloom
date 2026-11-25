@@ -226,6 +226,40 @@ describe("generation activity ingest", () => {
     });
   });
 
+  it("re-scrubs visible deltas from a trusted legacy runner", async () => {
+    const identity = { namespace: "legacy" as const, attemptId: legacyAttempt };
+    const [started] = eventsFor(identity);
+    const store = new FakeStore();
+    const response = await generationActivityIngest(
+      ingestRequest({ identity, events: [{
+        ...started,
+        kind: "output_delta",
+        payload: {
+          callId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+          visibleChars: 72,
+          reasoningTokens: 1,
+          elapsedMs: 1000,
+          delta: { kind: "text", text: '  const api_key = "fixture-secret-token";\n' },
+        },
+      }] }, { Authorization: `Bearer ${await token()}` }),
+      enabledEnv,
+      {
+        store,
+        policy: policy(),
+        legacyOwner: async () => ({
+          repository: OPERATIONS_REPOSITORY,
+          runId: "424242",
+          runAttempt: 1,
+        }),
+      },
+    );
+    expect(response.status).toBe(200);
+    expect(JSON.stringify(store.appended)).not.toContain("fixture-secret-token");
+    expect(store.appended[0]?.events[0]).toMatchObject({
+      payload: { delta: { kind: "text", text: '  const [credential redacted]";\n' } },
+    });
+  });
+
   it("denies an unknown or differently-bound legacy attempt", async () => {
     const store = new FakeStore();
     const request = async () =>

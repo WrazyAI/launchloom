@@ -75,6 +75,7 @@ export async function completeGeneration({
     ...(activity.context || {}),
     actor: activity.context?.actor ?? { kind: "model", role: "model" },
   });
+  if (!producer.context()) return dispatch();
   return observeModelCall({
     producer,
     provider: inference ? inference.profile.provider : "openrouter",

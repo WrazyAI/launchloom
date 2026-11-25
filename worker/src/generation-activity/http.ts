@@ -31,6 +31,7 @@ const MAX_INGEST_BYTES = 256 * 1024;
 const WORKSPACE_PREFIX = "/api/admin/onboarding-invites/workspace";
 // Diagnostic output text is eligible evidence after the producer's scoped
 // redaction. Withholding it here would defeat the feature.
+// The shared validator re-scrubs visible output and deltas after runner OIDC.
 const INGEST_POLICY = createPrivacyPolicy({ allowSourceText: true });
 const ACTIVITY_ROUTE =
   /^\/(legacy\/attempts|operations\/records)\/([^/]+)\/activity$/u;

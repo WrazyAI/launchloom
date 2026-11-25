@@ -1,3 +1,4 @@
+import { observePipelineAction } from "./generation-activity-action.mjs";
 import {
   compilePageBriefs,
   pageBriefExpectedContent,
@@ -914,7 +915,7 @@ function renderedPairMetrics(visualDiversity, candidateIds) {
 }
 
 /**
- * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean, deferPromotion?: boolean, excludedCandidateIds?: string[], renderedReferenceEvaluator?: (input: any) => Promise<any>, renderedDiversityEvaluator?: (input: any) => Promise<any>, contrastEvaluator?: (input: any) => Promise<any>, requireDiversity?: boolean, evidenceCacheDir?: string | null, judgeConcurrency?: number | null}} options
+ * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean, deferPromotion?: boolean, excludedCandidateIds?: string[], renderedReferenceEvaluator?: (input: any) => Promise<any>, renderedDiversityEvaluator?: (input: any) => Promise<any>, contrastEvaluator?: (input: any) => Promise<any>, requireDiversity?: boolean, evidenceCacheDir?: string | null, judgeConcurrency?: number | null, activity?: import("./generation-activity-client.mjs").ActivityChildProducer | null}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function runCreativeBakeoff({
@@ -934,7 +935,15 @@ export async function runCreativeBakeoff({
   evidenceCacheDir = null,
   judgeConcurrency = null,
   unselectableCandidateIds = [],
+  activity = null,
 } = {}) {
+  const observe = (name, candidateId, invoke) =>
+    observePipelineAction({
+      producer: activity?.withContext({ candidateId }),
+      name,
+      input: { candidateId },
+      invoke,
+    });
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
   const reportFile = path.resolve(
@@ -1194,41 +1203,43 @@ export async function runCreativeBakeoff({
         scheduleJudgeTask(async () => {
           const judgeStartedAt = Date.now();
           try {
-            return await renderedReferenceEvaluator({
-              candidateId: candidate.manifest.candidateId,
-              sourceDigest: candidateResult.interactionEvidence?.sourceDigest,
-              interactionEvidence: candidateResult.interactionEvidence,
-              referenceDna: candidate.manifest.referenceDna,
-              visualBrief: candidate.contentManifest?.visualBrief || {},
-              candidateScreenshots: {
-                desktop: path.join(
-                  evidenceDir,
-                  `${candidate.manifest.candidateId}-desktop-viewport.png`,
+            return await observe("visual_reference_judge", candidate.manifest.candidateId, () =>
+              renderedReferenceEvaluator({
+                candidateId: candidate.manifest.candidateId,
+                sourceDigest: candidateResult.interactionEvidence?.sourceDigest,
+                interactionEvidence: candidateResult.interactionEvidence,
+                referenceDna: candidate.manifest.referenceDna,
+                visualBrief: candidate.contentManifest?.visualBrief || {},
+                candidateScreenshots: {
+                  desktop: path.join(
+                    evidenceDir,
+                    `${candidate.manifest.candidateId}-desktop-viewport.png`,
+                  ),
+                  compact: path.join(
+                    evidenceDir,
+                    `${candidate.manifest.candidateId}-compact-viewport.png`,
+                  ),
+                  mobile: path.join(
+                    evidenceDir,
+                    `${candidate.manifest.candidateId}-mobile-viewport.png`,
+                  ),
+                  fullDesktop: path.join(
+                    evidenceDir,
+                    `${candidate.manifest.candidateId}-desktop.png`,
+                  ),
+                },
+                renderedGeometry: Object.fromEntries(
+                  (candidateResult.viewports || []).map((viewport) => [
+                    viewport.name,
+                    {
+                      viewportWidth: viewport.width,
+                      viewportHeight: viewport.viewportHeight,
+                      heroBottom: viewport.heroBottom,
+                    },
+                  ]),
                 ),
-                compact: path.join(
-                  evidenceDir,
-                  `${candidate.manifest.candidateId}-compact-viewport.png`,
-                ),
-                mobile: path.join(
-                  evidenceDir,
-                  `${candidate.manifest.candidateId}-mobile-viewport.png`,
-                ),
-                fullDesktop: path.join(
-                  evidenceDir,
-                  `${candidate.manifest.candidateId}-desktop.png`,
-                ),
-              },
-              renderedGeometry: Object.fromEntries(
-                (candidateResult.viewports || []).map((viewport) => [
-                  viewport.name,
-                  {
-                    viewportWidth: viewport.width,
-                    viewportHeight: viewport.viewportHeight,
-                    heroBottom: viewport.heroBottom,
-                  },
-                ]),
-              ),
-            });
+              }),
+            );
           } finally {
             recordPhase("judge", judgeStartedAt, "judge");
           }
@@ -1348,7 +1359,11 @@ export async function runCreativeBakeoff({
               preview: true,
             }),
           );
-          await phase("build", () => run("npm", ["run", "build"], root));
+          await phase("build", () => observe(
+            "astro_build",
+            candidate.manifest.candidateId,
+            () => run("npm", ["run", "build"], root),
+          ));
           // Only the pages a creative candidate actually styles can carry its
           // corrections: the homepage and the authored service, service-index,
           // and location pages. Deterministic routes (contact, about, blog)
@@ -1379,7 +1394,11 @@ export async function runCreativeBakeoff({
                 `${candidate.manifest.candidateId}-contrast.json`,
               ),
               repair: allowContrastRepair,
-              build: () => run("npm", ["run", "build"], root),
+              build: () => observe(
+                "astro_build",
+                candidate.manifest.candidateId,
+                () => run("npm", ["run", "build"], root),
+              ),
             }),
           );
           if (!candidateResult.contrast.pass)
@@ -2025,7 +2044,7 @@ export async function runCreativeBakeoff({
       "diversity",
       "candidate-set",
       () =>
-        renderedDiversityEvaluator({
+        observe("visual_diversity_judge", null, () => renderedDiversityEvaluator({
           candidates: pixelCandidates.map((candidate) => ({
             candidateId: candidate.candidateId,
             desktop: path.join(
@@ -2037,7 +2056,7 @@ export async function runCreativeBakeoff({
               `${candidate.candidateId}-mobile-viewport.png`,
             ),
           })),
-        }),
+        })),
       {
         details: (result) => ({
           pass: result?.pass,

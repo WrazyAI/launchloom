@@ -85,6 +85,14 @@ async function emitStageActivity({ stage, status, detail, env, fetchImpl }) {
   }
 }
 
+async function mirrorStageActivity(options) {
+  try {
+    await emitStageActivity(options);
+  } catch {
+    // Diagnostic activity must never fail the pipeline.
+  }
+}
+
 /**
  * Emit one explicit pipeline stage transition through the trusted producer.
  * Legacy tracking is best effort; new-mode telemetry failures throw instead of
@@ -100,13 +108,10 @@ export async function recordGenerationStage({
   env = process.env,
   fetchImpl = fetch,
 } = {}) {
-  try {
-    await emitStageActivity({ stage, status, detail, env, fetchImpl });
-  } catch {
-    // Diagnostic activity is best effort and never blocks stage recording.
-  }
+  const mirror = () => mirrorStageActivity({ stage, status, detail, env, fetchImpl });
   if (env.OPERATION_ID) {
     await postOperationsEvent({ stage, 'stage-status': status }, { env, fetchImpl });
+    await mirror();
     return { ok: true };
   }
   const secret = clean(env.GENERATION_TRACKING_SECRET, 500);
@@ -130,11 +135,14 @@ export async function recordGenerationStage({
     "stage-detail": clean(detail, 2000),
   });
   if (!payload) return { ok: true, disabled: true };
-  return postAttemptTracking(payload, {
+  const result = await postAttemptTracking(payload, {
     secret,
     api: env.LAUNCHLOOM_API_URL,
     fetchImpl,
   });
+  // The successful ledger write binds legacy activity to the verified run.
+  if (result.ok) await mirror();
+  return result;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

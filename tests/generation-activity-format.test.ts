@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   actionChipText,
+  activityModelOutput,
   activityProgress,
   activityStages,
   filterActivity,
@@ -118,6 +119,34 @@ describe("generation activity presentation", () => {
     expect(activityProgress(partial[0]!)).toMatchObject({ visibleChars: 120 });
     // Loading older context replaces the partial entry, never duplicates it.
     expect(groupActivity([modelEvents[0]!, delta], true)).toHaveLength(1);
+  });
+
+  it("joins visible chunks in sequence and replaces them with completed output", () => {
+    function delta(sequence: number, text: string) {
+      return stored({
+        sequence,
+        kind: "output_delta",
+        payload: {
+          callId: BASE_CALL_ID,
+          visibleChars: 42,
+          reasoningTokens: 3,
+          elapsedMs: 1000 * sequence,
+          delta: { kind: "text", text },
+        },
+      }, sequence);
+    }
+    const start = modelEvents[0]!;
+    const early = delta(2, "const greeting = ");
+    const late = delta(3, "'hi';\n");
+    const provisional = groupActivity([start, late, early])[0]!;
+    expect(activityModelOutput(provisional)).toEqual({
+      kind: "preview", text: "const greeting = 'hi';\n",
+    });
+    const completed = groupActivity([start, early, late, ...modelEvents.slice(1)])[0]!;
+    const recorded = { kind: "recorded", text: "Visible generated copy." };
+    expect(activityModelOutput(completed)).toEqual(recorded);
+    const [partial] = groupActivity([modelEvents[2]!], true);
+    expect(activityModelOutput(partial!)).toEqual(recorded);
   });
 
   it("retains reported output and usage when the request is outside the loaded page", () => {

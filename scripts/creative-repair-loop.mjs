@@ -921,6 +921,7 @@ export function modelBoundRepairFindings(findings = []) {
  *   logger?: (message: string) => void,
  *   automaticSpanRepair?: boolean,
  *   fetchImpl?: typeof fetch,
+ *   activity?: import("./generation-activity-client.mjs").ActivityChildProducer | null,
  *   onUsage?: (record: Record<string, any>) => void | Promise<void> | null,
  * }} [options]
  * @returns {Promise<Record<string, any>>}
@@ -942,6 +943,7 @@ export async function requestRepair({
   automaticSpanRepair = false,
   fetchImpl = fetch,
   onUsage = null,
+  activity = null,
 }) {
   const humanReview = (findings || []).some(
     (finding) =>
@@ -1331,6 +1333,8 @@ Return a complete replacement for only this requested file. Keep source non-empt
           goResult = await completeGoCreative({
             logicalModel: model,
             fetchImpl,
+            activity,
+            activityStage: "creative_render",
             request: buildGoCreativeRequest({
             systemPrompt: REPAIR_SYSTEM_PROMPT,
             userContent: requestContent,

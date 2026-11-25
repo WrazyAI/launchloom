@@ -127,6 +127,10 @@ describe("private operations event producer", () => {
     const env = {
       GENERATION_ACTIVITY_ENABLED: "true",
       TRACK_ATTEMPT: "github:123:1",
+      GITHUB_RUN_ID: "123",
+      GITHUB_RUN_ATTEMPT: "1",
+      GENERATION_TRACKING_SECRET: "fixture-tracking-secret",
+      LAUNCHLOOM_API_URL: "https://worker.test",
       OPERATIONS_API_URL: "https://worker.test",
       ACTIONS_ID_TOKEN_REQUEST_URL:
         "https://pipelines.actions.githubusercontent.com/token",
@@ -150,6 +154,7 @@ describe("private operations event producer", () => {
         request.url.endsWith("/api/internal/generation-activity"),
       );
       expect(activity).toBeTruthy();
+      expect(requests[0]?.url).toBe("https://worker.test/api/internal/generation-attempts");
       expect(activity?.body).toContain('"kind":"task_finished"');
       expect(activity?.body).toContain('"label":"Intake"');
       expect(activity?.body).toContain('"namespace":"legacy"');
