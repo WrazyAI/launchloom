@@ -189,6 +189,31 @@ describe("SEO publication readiness", () => {
     });
   });
 
+  it("allows partial cited fallback research with valid HTTPS observations and bounded cost", () => {
+    expect(
+      seoResearchReadiness({
+        seoResearch: {
+          ...completeFallback,
+          fallbackSearch: {
+            ...completeFallback.fallbackSearch,
+            status: "partial",
+            queriesAttempted: 2,
+            failedQueries: 1,
+            costComplete: true,
+            budgetExhausted: false,
+          },
+          marketSnapshot: {
+            ...completeFallback.marketSnapshot,
+            confirmedServices: ["Drain cleaning", "Water heater repair"],
+          },
+        },
+      }),
+    ).toEqual({
+      allowed: true,
+      mode: "fallback",
+    });
+  });
+
   it("keeps an old context-only fallback reviewable but blocks production approval", () => {
     expect(seoResearchReadiness({ seoResearch: fallback })).toMatchObject({
       allowed: false,
@@ -197,7 +222,7 @@ describe("SEO publication readiness", () => {
     });
   });
 
-  it.each(["partial", "failed", "empty", "pending", "unavailable"])(
+  it.each(["failed", "empty", "pending", "unavailable"])(
     "blocks %s fallback research",
     (status) => {
       expect(
@@ -211,7 +236,7 @@ describe("SEO publication readiness", () => {
     },
   );
 
-  it("requires every confirmed service to have a cited fallback observation", () => {
+  it("requires every confirmed service to have a cited observation when marked complete", () => {
     expect(
       seoResearchReadiness({
         seoResearch: {

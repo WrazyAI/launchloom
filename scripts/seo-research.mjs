@@ -1460,18 +1460,18 @@ async function collectFallbackWebEvidence(
     } catch (error) {
       queriesAttempted += 1;
       failed += 1;
-      costComplete = false;
+      if (webSearch.planBasedCost !== true) {
+        costComplete = false;
+        warnings.push(
+          `Fallback web search unavailable for one bounded query: ${text(error instanceof Error ? error.message : error, 240)} Additional fallback queries were stopped because provider spend for the failed request is unknown.`,
+        );
+        break;
+      }
       warnings.push(
-        `Fallback web search unavailable for one bounded query: ${text(error instanceof Error ? error.message : error, 240)} Additional fallback queries were stopped because provider spend for the failed request is unknown.`,
+        `Fallback web search unavailable for one bounded query: ${text(error instanceof Error ? error.message : error, 240)}`,
       );
-      break;
     }
   }
-  const incomplete =
-    failed > 0 ||
-    budgetExhausted ||
-    !costComplete ||
-    queriesAttempted < selected.length;
   const serviceCoverage = [
     ...new Set(
       evidence
@@ -1479,6 +1479,15 @@ async function collectFallbackWebEvidence(
         .filter((service) => typeof service === "string" && service),
     ),
   ];
+  const missingServiceCoverage =
+    seo.services.length > 0 &&
+    !seo.services.every((service) => serviceCoverage.includes(service));
+  const incomplete =
+    failed > 0 ||
+    budgetExhausted ||
+    !costComplete ||
+    queriesAttempted < selected.length ||
+    missingServiceCoverage;
   return {
     evidence,
     status: evidence.length
@@ -1505,14 +1514,45 @@ async function collectFallbackWebEvidence(
 }
 
 function fallbackPublicationReady(seo, fallback) {
-  return (
-    fallback?.status === "complete" &&
-    fallback.failedQueries === 0 &&
-    fallback.budgetExhausted !== true &&
-    fallback.costComplete === true &&
-    Array.isArray(fallback.serviceCoverage) &&
-    seo.services.every((service) => fallback.serviceCoverage.includes(service))
-  );
+  if (!fallback || !["complete", "partial"].includes(fallback.status))
+    return false;
+  if (!Array.isArray(fallback.evidence) || !fallback.evidence.length)
+    return false;
+  if (
+    !Number.isInteger(fallback.queriesAttempted) ||
+    fallback.queriesAttempted < 1 ||
+    !Number.isInteger(fallback.maxQueries) ||
+    fallback.maxQueries < fallback.queriesAttempted ||
+    fallback.maxQueries > HARD_MAX_FALLBACK_SEARCH_QUERIES
+  )
+    return false;
+  if (
+    !Number.isInteger(fallback.failedQueries) ||
+    fallback.failedQueries < 0 ||
+    fallback.failedQueries >= fallback.queriesAttempted
+  )
+    return false;
+  if (
+    fallback.costComplete !== true ||
+    typeof fallback.costUsd !== "number" ||
+    !Number.isFinite(fallback.costUsd) ||
+    fallback.costUsd < 0 ||
+    typeof fallback.maxUsd !== "number" ||
+    !Number.isFinite(fallback.maxUsd) ||
+    fallback.maxUsd <= 0 ||
+    fallback.costUsd > fallback.maxUsd
+  )
+    return false;
+  if (fallback.status === "complete") {
+    return (
+      fallback.failedQueries === 0 &&
+      fallback.budgetExhausted !== true &&
+      fallback.costComplete === true &&
+      Array.isArray(fallback.serviceCoverage) &&
+      seo.services.every((service) => fallback.serviceCoverage.includes(service))
+    );
+  }
+  return true;
 }
 
 export async function researchSiteContext(intake = {}, options = {}) {
@@ -2807,12 +2847,20 @@ async function researchSingleCity(intake = {}, options = {}) {
     !cost.overBudget &&
     cost.complete &&
     cost.unreportedTasks === 0;
-  base.publishReady = requiredResearchComplete;
-  base.mode = requiredResearchComplete ? "researched" : "context-only";
-  if (!requiredResearchComplete)
+  if (requiredResearchComplete) {
+    base.publishReady = true;
+    base.mode = "researched";
+    base.researchBasis = "measured-dataforseo";
+  } else if (base.mode === "fallback" && base.publishReady === true) {
+    // Completed or partial cited fallback web research succeeded; preserve
+    // fallback approval readiness instead of clobbering back to context-only.
+  } else {
+    base.publishReady = false;
+    base.mode = "context-only";
     warnings.push(
-      "The complete measured market map is unavailable. Bounded cited web observations may inform private review, but production approval remains blocked until measured research is complete.",
+      "The complete measured market map is unavailable and no usable fallback web observations were collected; production approval remains blocked until research succeeds.",
     );
+  }
   base.cost = { ...cost, limitUsd: limits.maxUsd, stageCosts };
   base.warnings = [...new Set(warnings)];
   return base;

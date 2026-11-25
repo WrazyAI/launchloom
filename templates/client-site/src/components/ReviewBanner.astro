@@ -20,6 +20,7 @@ const factNotice = factReport ? [
 ].join(" ") : "";
 const webResearchComplete = hasCompletedFallbackResearch(site.seoResearch);
 const researchMode = site.seoResearch?.mode;
+const fallbackStatus = site.seoResearch?.fallbackSearch?.status || "";
 const cityResearch = site.seoResearch?.coverageResearch;
 const pendingCoverage = cityResearch && cityResearch.complete !== true;
 const completedCityCount = cityResearch?.cities?.filter((city) => city.status === "complete").length || 0;
@@ -625,7 +626,7 @@ const { diagnosticPreview = false } = Astro.props;
 
 </style>
 
-<script is:inline define:vars={{ launchloomUrl, publishReady, webResearchComplete, researchMode, pendingCoverage, completedCityCount, confirmedCityCount, factNotice, factBlocked, routeBlocked, routeNotice, pageBlocked, pageNotice, pageDraftCount, palette }}>
+<script is:inline define:vars={{ launchloomUrl, publishReady, webResearchComplete, researchMode, fallbackStatus, pendingCoverage, completedCityCount, confirmedCityCount, factNotice, factBlocked, routeBlocked, routeNotice, pageBlocked, pageNotice, pageDraftCount, palette }}>
   const root = document.querySelector("#ll-review");
   const diagnosticPreview = root?.getAttribute("data-diagnostic-preview") === "true";
   const token = new URLSearchParams(window.location.search).get("review");
@@ -1643,7 +1644,9 @@ const { diagnosticPreview = false } = Astro.props;
       researchNotice.hidden = false;
       researchNotice.textContent =
         citedFallback && publishReady
-          ? "Production approval uses cited Brave web fallback research. These are not measured SEO metrics; fallback mode is recorded in the admin view."
+          ? fallbackStatus === "partial"
+            ? "Production approval uses partial cited web fallback research. These are not measured SEO metrics; fallback mode is recorded in the admin view."
+            : "Production approval uses cited Brave web fallback research. These are not measured SEO metrics; fallback mode is recorded in the admin view."
           : "Cited web observations are available for review. They do not replace measured SEO, so production approval remains blocked.";
       root.dataset.researchMode = citedFallback ? "web-fallback" : "web-researched";
     }

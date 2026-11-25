@@ -123,12 +123,23 @@ function dimensionFindings(candidate) {
 }
 
 function candidateFindings(candidate) {
+  const structuredAuditFindings = (
+    candidate?.renderedReferenceFidelity?.audit?.findings || []
+  ).map(
+    (item) =>
+      `${item.severity || "major"} ${item.category || "reference"} ${item.viewport || "all"}: ${item.evidence || item.repair || "Rendered reference mismatch."}`,
+  );
+  // Avoid duplicating every rendered-reference finding in the repair prompt:
+  // bakeoff appends `rendered-reference: <evidence>` to `candidate.failures`
+  // alongside `renderedReferenceFidelity.audit.findings`.
+  const baseFailures = structuredAuditFindings.length
+    ? (candidate?.failures || []).filter(
+        (line) => !String(line || "").startsWith("rendered-reference:"),
+      )
+    : candidate?.failures || [];
   return unique([
-    ...(candidate?.failures || []),
-    ...(candidate?.renderedReferenceFidelity?.audit?.findings || []).map(
-      (item) =>
-        `${item.severity || "major"} ${item.category || "reference"} ${item.viewport || "all"}: ${item.evidence || item.repair || "Rendered reference mismatch."}`,
-    ),
+    ...baseFailures,
+    ...structuredAuditFindings,
     ...(candidate?.referenceFidelity?.renderedVisualFindings || []).map(
       (item) => item.message || item.code || "Reference contract mismatch.",
     ),
@@ -1792,8 +1803,12 @@ export async function runRenderedCreativeRepair({
           const permanent =
             /quota|billing|402/iu.test(String(error?.message || "")) ||
             /quota|billing/iu.test(String(error?.providerStatus || ""));
-          if (permanent)
-            rejectionCycles.set(candidateId, REPAIR_REJECTION_CYCLES_ALLOWED);
+          rejectionCycles.set(
+            candidateId,
+            permanent
+              ? REPAIR_REJECTION_CYCLES_ALLOWED
+              : (rejectionCycles.get(candidateId) || 0) + 1,
+          );
           rejectionContext.set(candidateId, message);
           rejectedCandidates[candidateId] = message;
           attempts.push({

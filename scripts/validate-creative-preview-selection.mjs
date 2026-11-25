@@ -49,7 +49,15 @@ export function validateCreativePreviewSelection({ config, bakeoff, gate } = {})
     reasons.push("selected candidate is missing from the bakeoff report");
   const warnings = [...gateResult.warnings];
   if (selectedCandidate) {
-    const { hard } = splitFailureLines(selectedCandidate.failures || []);
+    const split = splitFailureLines(selectedCandidate.failures || []);
+    const hard = [...split.hard];
+    if (selectionMode === "creative-near-miss") {
+      for (let index = hard.length - 1; index >= 0; index -= 1) {
+        if (/^contrast fail/u.test(hard[index])) {
+          warnings.push(...hard.splice(index, 1));
+        }
+      }
+    }
     if (hard.length)
       reasons.push("selected candidate has hard deterministic failures");
     if (

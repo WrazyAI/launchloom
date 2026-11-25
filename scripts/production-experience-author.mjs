@@ -4248,7 +4248,8 @@ export async function authorExperienceCandidates({
   testProfile = "full",
   fastLane = false,
   candidateCount = undefined,
-  visualReferenceAdvisory = process.env.PREVIEW_ONLY === "true",
+  visualReferenceAdvisory = process.env.PREVIEW_ONLY === "true" ||
+    process.env.CREATIVE_EXPERIENCE_MODE === "preview",
 }) {
   if (typeof generate !== "function")
     throw new Error("A generation adapter is required.");

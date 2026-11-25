@@ -246,6 +246,38 @@ describe("creative preview selection", () => {
     ).toBe("reject");
   });
 
+  it("accepts a near-miss with contrast warnings as warned while still rejecting non-contrast hard failures", () => {
+    const result = validateCreativePreviewSelection({
+      config: config({
+        design: {
+          experience: {
+            renderer: "creative-candidate",
+            candidateId: "candidate-a",
+            selectionMode: "creative-near-miss",
+          },
+        },
+      }),
+      bakeoff: bakeoff({
+        nearMissSelection: true,
+        fallback: true,
+        candidates: [
+          {
+            candidateId: "candidate-a",
+            failures: [
+              "contrast fail: / desktop default a.cta measured 2.8:1 (required 4.5)",
+            ],
+            renderedReferenceFidelity: { audit: { overallScore: 55, findings: [] } },
+          },
+        ],
+      }),
+      gate: gate(),
+    });
+    expect(result.decision).toBe("warned");
+    expect(result.warnings).toContain(
+      "contrast fail: / desktop default a.cta measured 2.8:1 (required 4.5)",
+    );
+  });
+
   it("rejects a strict selection whose gate only has open findings", () => {
     expect(
       validateCreativePreviewSelection({
