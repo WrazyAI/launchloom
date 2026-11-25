@@ -29,6 +29,7 @@ import {
   buildReviewInstructions,
   imageRetryPrompt,
   normalizeReviewChecks,
+  requiresIllustrativeTreatment,
   reviewPolicyFor,
   reviewSchema,
   reviewSessionKey,
@@ -53,7 +54,7 @@ const STOCK_FALLBACK_HOSTS = new Set(["images.unsplash.com"]);
 const GENERATED_ASSET_REVIEW_MODEL =
   process.env.FAL_IMAGE_REVIEW_MODEL || "deepseek/deepseek-v4.1-flash";
 const REVIEW_SYSTEM_PROMPT =
-  "You are a strict visual asset integrity reviewer. Evaluate only what is visible in the supplied pixels against the supplied intended scene. Reject fake website or app screenshots, interface chrome, collage panels, logos, watermarks, prominent headline or interface lettering, and people that the stated people policy does not allow. Allow small incidental labels, distant unreadable signage, photographic grain, motion blur, and a still life with several physical objects. A generic image that does not depict the intended scene is not relevant. Return only the required structured fields.";
+  "You are a strict visual asset integrity reviewer. Evaluate only what is visible in the supplied pixels against the supplied intended scene. Reject fake website or app screenshots, interface chrome, collage panels, logos, watermarks, prominent headline or interface lettering, and people that the stated people policy does not allow. Allow small incidental labels, distant unreadable signage, photographic grain, motion blur, and a still life with several physical objects. A generic image that does not depict the intended scene is not relevant. When the client requires illustrative concept imagery, a photorealistic finished interior or built-project scene is not acceptable. Return only the required structured fields.";
 
 const GENERATED_ASSET_REVIEW_FAILURE_CODES = new Set([
   "not_configured",
@@ -344,7 +345,7 @@ function normalizeImageReview(
  * the client config. Provider/model errors are represented as an unavailable
  * review so callers can fall back without leaking unsafe assets.
  *
- * @param {{ imageData: Buffer, placement: string, businessKind?: string, services?: string[], familyId?: string, scene?: string, model?: string, apiKey?: string, timeoutMs?: number }} input
+ * @param {{ imageData: Buffer, placement: string, businessKind?: string, services?: string[], familyId?: string, scene?: string, artDirection?: string, model?: string, apiKey?: string, timeoutMs?: number }} input
  */
 export async function reviewGeneratedAsset({
   imageData,
@@ -353,6 +354,7 @@ export async function reviewGeneratedAsset({
   services = [],
   familyId = "",
   scene = "",
+  artDirection = "",
   model = GENERATED_ASSET_REVIEW_MODEL,
   apiKey = process.env.OPENROUTER_API_KEY,
   timeoutMs = 45_000,
@@ -368,7 +370,12 @@ export async function reviewGeneratedAsset({
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const policy = reviewPolicyFor({ businessKind, placement, familyId });
+    const policy = reviewPolicyFor({
+      businessKind,
+      placement,
+      familyId,
+      artDirection,
+    });
     const instructions = buildReviewInstructions({
       placement,
       businessKind,
@@ -563,6 +570,24 @@ function visualDirection(site) {
     .join(", ");
 }
 
+/**
+ * Client art direction can ask for concept work instead of photography. The
+ * prompt used to hard-code "Photograph of", so a brief that required
+ * illustrative plans still produced finished interiors. Carry that policy into
+ * both the prompt medium and the reviewer.
+ */
+export function imageryPolicyFor(site = {}) {
+  const artDirection = String(site?.style?.artDirection || "").trim();
+  const illustrative = requiresIllustrativeTreatment(artDirection);
+  return {
+    illustrative,
+    artDirection,
+    promptClause: illustrative
+      ? "Explicitly illustrative concept, with visible drawing or diagram qualities, not a photorealistic scene."
+      : "",
+  };
+}
+
 export function promptFor(site, route, placement) {
   const business = site.business || {};
   const seo = site.seoResearch || {};
@@ -571,6 +596,7 @@ export function promptFor(site, route, placement) {
   const vocabulary = list(seo.copyVocabulary, 5);
   const problems = list(seo.customerQuestions, 3);
   const direction = visualDirection(site);
+  const imageryPolicy = imageryPolicyFor(site);
   const dna = route?.referenceDna || {};
   // The pack's referenceDna.familyId carries the dossier id, not the compiled
   // family. Looking up briefs by it always fell back to the generic prompt,
@@ -913,30 +939,45 @@ export function promptFor(site, route, placement) {
     services[0] || kindLabel || site.businessKind || "local service";
   const architectural = /architect|interior design/iu.test(kindLabel);
   const familyScene = familySceneNouns[routeFamilyId];
-  const sceneNoun = homeServices
-    ? "a close tactile still life of copper and brass pipe fittings, a well-used wrench, and a clean workbench in soft daylight"
-    : architectural
-      ? `an architectural scene showing ${familyScene || "a quiet interior with daylight, timber, stone, and generous negative space"}`
-      : familyScene
-        ? `a ${familyScene}`
-        : `a ${kindLabel || "local service"} setting for ${firstService}, with believable materials and natural light`;
+  const sceneNoun = imageryPolicy.illustrative
+    ? architectural
+      ? "a concept study with an abstract floor plan, axonometric linework, and a tactile material sample"
+      : `a concept study for ${firstService} with visible drawing and diagram qualities`
+    : homeServices
+      ? "a close tactile still life of copper and brass pipe fittings, a well-used wrench, and a clean workbench in soft daylight"
+      : architectural
+        ? `an architectural scene showing ${familyScene || "a quiet interior with daylight, timber, stone, and generous negative space"}`
+        : familyScene
+          ? `a ${familyScene}`
+          : `a ${kindLabel || "local service"} setting for ${firstService}, with believable materials and natural light`;
   // Reference geometry often describes typography ("oversized wordmark"),
   // and the image model renders those words as lettering. Strip them.
-  const physicalCue = cutWords(
-    sceneOnlyDirection(
-      `${dna.heroGeometry?.mode || ""} ${dna.imageTreatment?.mode || ""}`,
-      90,
-    )
-      .replace(
-        /\b(?:wordmark|serif|sans|title|typeface|typographic|lettering|monogram|logotype)\b/giu,
-        " ",
-      )
-      .replace(/\s+/gu, " ")
-      .trim(),
-    70,
-  );
+  // The illustrative scene is already explicit; DNA mode slugs such as
+  // "featured-project-tableau-with-metadata" are not physical cues and only
+  // add noise the image model can typeset.
+  const physicalCue = imageryPolicy.illustrative
+    ? ""
+    : cutWords(
+        sceneOnlyDirection(
+          `${dna.heroGeometry?.mode || ""} ${dna.imageTreatment?.mode || ""}`,
+          90,
+        )
+          .replace(
+            /\b(?:wordmark|serif|sans|title|typeface|typographic|lettering|monogram|logotype)\b/giu,
+            " ",
+          )
+          .replace(/\s+/gu, " ")
+          .trim(),
+        70,
+      );
+  const promptLead = imageryPolicy.illustrative
+    ? "Illustration of"
+    : "Photograph of";
+  const policyClause = imageryPolicy.promptClause
+    ? ` ${imageryPolicy.promptClause}`
+    : "";
   const prompt = text(
-    `Photograph of ${sceneNoun}.${physicalCue ? ` ${physicalCue}.` : ""} ${constraints}`.replace(
+    `${promptLead} ${sceneNoun}.${policyClause}${physicalCue ? ` ${physicalCue}.` : ""} ${constraints}`.replace(
       /\s+/gu,
       " ",
     ),
@@ -1247,6 +1288,7 @@ async function generateContextualAssetsForRoute({
       businessKind: site.businessKind || site.industry || "local business",
       placement: placement.id,
       familyId: routeContract.familyId,
+      artDirection: site.style?.artDirection || "",
     });
     // Bump this contract whenever image acceptance policy changes so a stale
     // unreviewed (or rejected) bitmap cannot be reused by its old prompt hash.
@@ -1467,6 +1509,7 @@ async function generateContextualAssetsForRoute({
                 .slice(0, 4),
               familyId: routeContract.familyId,
               scene: prompt,
+              artDirection: site.style?.artDirection || "",
               attempt: attempt + 1,
             });
           } catch {

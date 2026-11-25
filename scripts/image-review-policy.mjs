@@ -11,7 +11,7 @@ import { canonicalBusinessKind } from "./business-kind.mjs";
  * the prompt approved a generic craft still life as architecture, and a
  * blanket lettering ban threw away images with a small incidental label.
  */
-export const IMAGE_REVIEW_POLICY_VERSION = "visual-review-v2";
+export const IMAGE_REVIEW_POLICY_VERSION = "visual-review-v3";
 
 /**
  * Business kinds where ambient, unidentifiable people are normal editorial
@@ -36,6 +36,7 @@ export const REVIEW_REASON_CODES = new Set([
   "logo_or_watermark",
   "people_or_faces",
   "irrelevant_subject",
+  "illustrative_treatment_missing",
   "review_unavailable",
   "review_rejected",
 ]);
@@ -50,7 +51,23 @@ const REVIEW_FIELDS = [
   "containsPeople",
   "peopleAreIncidental",
   "matchesIntendedScene",
+  "illustrativeTreatmentVisible",
 ];
+
+/** Client art direction that asks for concept work rather than a photograph. */
+export function requiresIllustrativeTreatment(artDirection = "") {
+  const text = String(artDirection || "");
+  if (!/illustrat|abstract plan|concept imagery|diagram|drawing/iu.test(text))
+    return false;
+  // A prohibition such as "no illustrations" is not a requirement.
+  if (
+    /\b(?:no|not|avoid|without|never)\b[^.;]{0,40}\b(?:illustrat|drawing|diagram)/iu.test(
+      text,
+    )
+  )
+    return false;
+  return true;
+}
 
 /** Version-one field names remain readable when a cached verdict is loaded. */
 const LEGACY_FIELD_ALIASES = {
@@ -59,12 +76,14 @@ const LEGACY_FIELD_ALIASES = {
 };
 
 /**
- * @param {{businessKind?: string, placement?: string, familyId?: string}} [input]
+ * @param {{businessKind?: string, placement?: string, familyId?: string,
+ *   artDirection?: string}} [input]
  */
 export function reviewPolicyFor({
   businessKind = "",
   placement = "",
   familyId = "",
+  artDirection = "",
 } = {}) {
   const kind = canonicalBusinessKind(businessKind) || String(businessKind || "").toLowerCase();
   return {
@@ -72,6 +91,8 @@ export function reviewPolicyFor({
     businessKind: kind,
     placement,
     familyId,
+    artDirection: String(artDirection || ""),
+    illustrativeRequired: requiresIllustrativeTreatment(artDirection),
     peopleMode: INCIDENTAL_PEOPLE_KINDS.has(kind) ? "incidental" : "forbid",
     textMode: "prominent-only",
     sceneRequired: true,
@@ -93,6 +114,7 @@ export function reviewSchema() {
         containsPeople: { type: "boolean" },
         peopleAreIncidental: { type: "boolean" },
         matchesIntendedScene: { type: "boolean" },
+        illustrativeTreatmentVisible: { type: "boolean" },
       },
     },
   };
@@ -117,6 +139,8 @@ export function normalizeReviewChecks(value) {
       source[current] = source[legacy];
   if (source.peopleAreIncidental === undefined)
     source.peopleAreIncidental = false;
+  if (source.illustrativeTreatmentVisible === undefined)
+    source.illustrativeTreatmentVisible = false;
   const checks = {};
   for (const field of REVIEW_FIELDS) {
     const parsed = booleanValue(source[field]);
@@ -144,6 +168,11 @@ export function assetReviewReasonCodes(checks, policy = reviewPolicyFor({})) {
   )
     reasons.push("people_or_faces");
   if (checks.matchesIntendedScene !== true) reasons.push("irrelevant_subject");
+  if (
+    policy.illustrativeRequired &&
+    checks.illustrativeTreatmentVisible !== true
+  )
+    reasons.push("illustrative_treatment_missing");
   return reasons;
 }
 
@@ -168,13 +197,20 @@ export function buildReviewInstructions({
   const serviceList =
     services.map((service) => String(service || "").trim()).filter(Boolean).slice(0, 4).join(", ") ||
     "general business context";
+  const illustrativeInstruction = policy.illustrativeRequired
+    ? "Client imagery policy requires illustrative concept imagery. Mark illustrativeTreatmentVisible true only when the pixels are visibly illustrative: linework, an abstract plan, a diagram, a drawing, or a material study. Reject a photorealistic finished interior or a scene that reads as a built project."
+    : "No illustrative treatment is required. Mark illustrativeTreatmentVisible true.";
   return [
     `Review this generated ${placement || "image"} asset for a ${businessKind || "local business"} (${serviceList}; reference family ${familyId || "unspecified"}).`,
     `Intended scene: ${scene || "not supplied"}.`,
+    policy.artDirection
+      ? `Client art direction: ${policy.artDirection}`
+      : "Client art direction: not supplied.",
     "Judge only visible pixels against that intended scene, not the filename.",
     "Reject fake website or app screenshots, browser or interface chrome, collage panels, logos, watermarks, and any interface copy.",
     "Text: reject only prominent lettering. Prominent means a headline, interface copy, signage used as a focal element, or lettering covering a meaningful part of the frame. Allow small incidental labels, packaging type, distant unreadable signage, grain, and motion blur.",
     peopleInstruction(policy),
+    illustrativeInstruction,
     "Approve only a single standalone image that plausibly depicts the intended scene with no interface, no fake copy, no branding, and no policy-violating people.",
   ].join(" ");
 }
@@ -190,6 +226,8 @@ const RETRY_INSTRUCTIONS = {
     "Remove all logos, brand marks, watermarks, and packaging branding.",
   irrelevant_subject:
     "Depict the specific intended scene and its physical subject rather than a generic still life that could belong to any unrelated business.",
+  illustrative_treatment_missing:
+    "Render an explicitly illustrative concept with visible linework, an abstract plan, a diagram, or a material study. Do not render a photorealistic finished interior or a built-project scene.",
 };
 
 function peopleRetry(policy) {
@@ -210,7 +248,9 @@ export function retryDirectiveFor(reasonCodes = [], policy = reviewPolicyFor({})
   }
   if (!directives.length)
     directives.push(
-      "Regenerate a single standalone photographic asset that matches the intended scene, with no interface, no readable copy, no branding, and no people.",
+      policy.illustrativeRequired
+        ? "Regenerate a single standalone illustrative concept with visible drawing or diagram qualities that matches the intended scene, with no interface, no readable copy, no branding, and no people."
+        : "Regenerate a single standalone photographic asset that matches the intended scene, with no interface, no readable copy, no branding, and no people.",
     );
   return directives.join(" ");
 }
