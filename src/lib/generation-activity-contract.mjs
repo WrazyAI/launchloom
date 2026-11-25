@@ -360,13 +360,14 @@ const DELTA_OPEN_SENSITIVE = [
 ];
 
 function partialPrefixStart(text, prefix) {
+  let start = text.length;
   let index = text.lastIndexOf(prefix[0]);
   while (index >= 0 && text.length - index <= prefix.length) {
-    if (prefix.startsWith(text.slice(index))) return index;
-    if (!index) break;
+    if (prefix.startsWith(text.slice(index))) start = index;
+    if (index === 0) break;
     index = text.lastIndexOf(prefix[0], index - 1);
   }
-  return text.length;
+  return start;
 }
 
 /** Hold incomplete credential and known-value matches across progress ticks. */

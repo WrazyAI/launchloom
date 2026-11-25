@@ -178,12 +178,22 @@ describe("generation activity contract", () => {
     expect(projectTraceText(`Authorization: Basic ${credential}\n`, policy, { mode: "delta" }))
       .toEqual({ kind: "text", text: "[credential redacted]\n" });
 
-    const project = createVisibleDeltaProjector(policy);
-    const chunks = ["Author", "ization: Basic ", credential.slice(0, 5),
-      credential.slice(5) + "\n"];
-    expect(chunks.map((chunk) => project(chunk)).filter(Boolean)).toEqual([
-      { kind: "text", text: "[credential redacted]\n" },
-    ]);
+    for (const header of [
+      `Authorization: Basic ${credential}`,
+      `Proxy-Authorization: Basic ${credential}`,
+      String.raw`\"Authorization\": \"Basic ${credential}\"`,
+    ]) {
+      const input = `before: ${header}\nend\n`;
+      const scrubbed = scrubTraceText(input, policy, undefined, { preserveWhitespace: true });
+      for (let boundary = 1; boundary < input.length; boundary += 1) {
+        const project = createVisibleDeltaProjector(policy);
+        const output = [input.slice(0, boundary), input.slice(boundary)]
+          .map((chunk) => project(chunk))
+          .flatMap((delta) => delta?.kind === "text" ? [delta.text] : [])
+          .join("");
+        expect(output, `split at ${boundary} in ${header}`).toBe(scrubbed);
+      }
+    }
   });
 
   it("matches known multiline values through newline normalization and split CRLF", () => {
