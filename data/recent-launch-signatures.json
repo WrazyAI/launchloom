@@ -1,43 +1,7 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-25T19:02:39.530Z",
+  "updatedAt": "2026-11-25T19:37:08.468Z",
   "launches": [
-    {
-      "id": "2026-10-09-harbor-glow-plumbing-attempt-158-run-37981560267-attempt-1",
-      "launchedAt": "2026-10-09T19:42:11.981Z",
-      "stage": "attempt",
-      "reservationKey": "158-run-37981560267-attempt-1",
-      "businessName": "Harbor Glow Plumbing",
-      "businessKind": "home-services",
-      "recipe": "local-trades",
-      "packId": "results-ledger",
-      "variantId": "standard",
-      "layoutFingerprint": "results-ledger|standard|minimal-inline|results-ledger|confidential-request|oversized-rows|results-table|conversation-handoff|editorial-contrast|typographic-ledger|editorial|still|css|0|editorial-stack|hero/conversion/services/process/social-proof/faq/location-map/contact",
-      "creativeFamilyId": "",
-      "referenceFamilyId": "",
-      "routeFamilyIds": [
-        "market-collage",
-        "spicer-landscaping-season-wheel",
-        "typographic-poster",
-        "web-homeservices-mister-sparky",
-        "web-homeservices-roto-rooter"
-      ],
-      "heroArchetypes": [
-        "collage-mosaic",
-        "image-led-editorial",
-        "split-form"
-      ],
-      "referenceIds": [
-        "spicer-landscaping-season-wheel",
-        "web-homeservices-mister-sparky",
-        "web-homeservices-roto-rooter"
-      ],
-      "routeSignatures": [
-        "quiet-wordmark-and-direct-section-anchors|portfolio-led-landscape-hero-with-season-selector|project-grid-plus-seasonal-planning-and-maintenance-comparison|editorial-serif-with-neutral-sans|portfolio-to-season-wheel-to-plan-matrix-to-estimator-to-coverage|ai-generated-garden-hero-with-inline-svg-project-illustrations",
-        "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce",
-        "thin red availability strip over a white service bar with a yellow booking contr|a garage and electrician photograph is interrupted by a red halftone message cir|dark squared tiles with yellow line icons and short task labels|bold compact sans headings and short neutral supporting copy|service navigation -> photo and halftone opening -> black electrical service gri|uniformed electrician photographs in large circular crops plus household electri"
-      ]
-    },
     {
       "id": "2026-10-23-ridgeline-plumbing-drain-co-attempt-184-run-39971185509-attempt-1",
       "launchedAt": "2026-10-23T14:41:48.194Z",
@@ -1783,82 +1747,46 @@
         "Fine uppercase navigation and a monogram-like mark rest over a light, low-profil|An immersive warm interior opening with small centered serif copy gives way to a|Explain interior design and procurement in one considered editorial chapter, the|Small elegant serif headings and uppercase labels, with narrow calm paragraphs a|immersive opening photograph -> introductory statement band -> studio split -> s|Full-height residential interiors alternate with copy and a three-image project",
         "micro-wordmark-and-restrained-anchors|graphic-opening-field-before-practice-statement|type-led-service-index-after-project-collage|expressive-grotesk-with-editorial-accents|graphic-open-to-practice-to-asymmetric-projects-to-services-to-dark-close|asymmetric-project-collage-with-line-drawing-notes"
       ]
+    },
+    {
+      "id": "2026-11-25-crestline-electrical-attempt-367-run-45686030602-attempt-1",
+      "launchedAt": "2026-11-25T19:37:08.465Z",
+      "stage": "attempt",
+      "reservationKey": "367-run-45686030602-attempt-1",
+      "businessName": "Crestline Electrical",
+      "businessKind": "home-services",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "cinematic-stage",
+        "editorial-monument",
+        "htmlcodex-gardener-garden-services",
+        "orgarden-gardening-services",
+        "utility-diagnostic",
+        "web-homeservices-aptive"
+      ],
+      "heroArchetypes": [
+        "image-led-editorial",
+        "image-overlay",
+        "split-media-copy"
+      ],
+      "referenceIds": [
+        "htmlcodex-gardener-garden-services",
+        "orgarden-gardening-services",
+        "web-homeservices-aptive"
+      ],
+      "routeSignatures": [
+        "deep green wordmark and direct service navigation|split-media|service grid followed by a clear contact close|large clean sans heading with a calm local-service voice|navigation -> split-hero -> about -> service-grid -> team -> contact-form -> tes|wide garden photography and approved service imagery",
+        "light service navigation with a strong quote control and a slim offer strip|a dark-green photographic stage with a technician in a yard and a bright lime ca|small pest-category pictograms and a three-part inspection-treatment-communicati|rounded modern sans statements with calm small explanatory copy|service navigation -> technician-led image hero -> four prevention benefits -> p|technician and home-garden scenes framed by organic leaf and lawn imagery",
+        "wordmark and direct service navigation|media-overlay|service grid with concise scope and a clear contact close|bold sans headings with a direct local-service voice|navigation -> full-bleed-hero -> trust-band -> about -> service-grid -> project-|wide garden photography and approved service imagery"
+      ]
     }
   ],
   "launchesByBusinessKind": {
-    "legal-services": [
-      {
-        "id": "2026-10-07-juniper-grove-estate-law-attempt-93-run-37613635991-attempt-1",
-        "launchedAt": "2026-10-07T11:25:47.241Z",
-        "stage": "attempt",
-        "reservationKey": "93-run-37613635991-attempt-1",
-        "businessName": "Juniper Grove Estate Law",
-        "businessKind": "legal-services",
-        "recipe": "general-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "editorial-monument",
-          "legal-dark-illustrated-statement-hero",
-          "legal-three-part-reassurance-strip",
-          "spicer-law-firm-results-ledger",
-          "utility-diagnostic"
-        ],
-        "heroArchetypes": [
-          "split-media-copy",
-          "text-led-editorial"
-        ],
-        "referenceIds": [
-          "spicer-law-firm-results-ledger",
-          "web-legal-chaudhry-law",
-          "web-legal-valemus-law"
-        ],
-        "routeSignatures": [
-          "Narrow white row with small firm emblem, subdued legal-topic links, contact rout|A wide cityscape banner with centered firm introduction leads into three slim va|Use image-and-copy splits for practice areas and people so a visitor can tell ex|Compact uppercase sans section labels, restrained gray body copy and centered ch|firm navigation -> cityscape introduction -> three-value overview -> charcoal ne|Cityscape first, then legal-work and meeting photographs beside text; brochure m",
-          "Oversized firm identity on the left, utility email above and a practice/team/awa|A two-tier white header fronts a deep illustrated hero; a centered all-caps decl|Keep practice-area navigation direct and do not inflate a short homepage into a |Strong uppercase sans display, readable serif supporting statement, and compact |identity and utility navigation -> illustrated centered hero -> firm mission on |A dark justice illustration supplies atmosphere; below it, logo-like recognition",
-          "thin-availability-line-with-square-corner-practice-nav|dark-practice-statement-balanced-with-results-ledger|numbered-practice-rows-followed-by-auditable-outcomes-table|measured-legal-serif-with-neutral-sans|utility-to-promise-to-practices-to-results-to-team-to-process-to-consultation|typographic-proof-and-geometric-monogram-plates"
-        ]
-      },
-      {
-        "id": "2026-09-30-juniper-grove-estate-law-attempt-93",
-        "launchedAt": "2026-09-30T18:31:11.235Z",
-        "stage": "attempt",
-        "businessName": "Juniper Grove Estate Law",
-        "businessKind": "legal-services",
-        "recipe": "general-editorial",
-        "packId": "bold-utility",
-        "variantId": "standard",
-        "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "cinematic-stage",
-          "colorlib-caseworth-legal-ledger",
-          "direct-robins-kaplan-law",
-          "editorial-monument",
-          "guided-conversation",
-          "legal-coral-and-photo-split-opening"
-        ],
-        "heroArchetypes": [
-          "image-overlay",
-          "split-form",
-          "split-media-copy"
-        ],
-        "referenceIds": [
-          "colorlib-caseworth-legal-ledger",
-          "direct-robins-kaplan-law",
-          "web-legal-flip-family-law"
-        ],
-        "routeSignatures": [
-          "White nameplate navigation with slim gold and coral utility buttons before the m|A coral text half and London building photograph half create a strict split hero|Organize services by the visitor's family-law problem in a dark contrast band, w|Soft serif narrative type paired with direct small sans labels and dark navy pra|split introduction and dual action -> navy issue/service matrix -> recommendatio|Architecture, team and editorial insight photographs punctuate large typography",
-          "clean-professional-navigation-with-search-action|angled-city-image-with-editorial-practice-statement|headline-led-practice-index-with-feature-story|large-clean-grotesk-with-editorial-serif-accent|city-hero-to-practice-index-to-feature-to-proof-to-contact|cityscape-and-editorial-portrait-crops",
-          "utility-strip-and-restrained-practice-navigation|editorial-professional-statement-beside-portrait-image|two-column-ruled-practice-area-ledger|refined-serif-with-humanist-sans|positioning-to-practices-to-people-to-fees-to-enquiry|portrait-and-professional-detail-crops"
-        ]
-      }
-    ],
     "home-services": [
       {
         "id": "2026-10-09-harbor-glow-plumbing-attempt-158-run-37981560267-attempt-1",
@@ -2180,6 +2108,43 @@
           "call-forward-trade-utility-navigation|hero-integrated-quote-form|problem-oriented-service-index|bold-practical-grotesk|quote-opening-to-needs-to-coverage-to-process-to-questions|bright-work-context-image-with-soft-overlay",
           "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
           "stacked utility navigation with a location action, service menus, and a red sche|a pale-lavender split stage pairs a service van and technician with a large phon|four illustrated service tiles for urgent plumbing, water damage, drains, and wa|condensed uppercase sans headings with plain sans explanations|utility navigation -> split service hero -> diagonal purple service grid -> tech|documentary van and technician photographs, followed by service and customer sce"
+        ]
+      },
+      {
+        "id": "2026-11-25-crestline-electrical-attempt-367-run-45686030602-attempt-1",
+        "launchedAt": "2026-11-25T19:37:08.465Z",
+        "stage": "attempt",
+        "reservationKey": "367-run-45686030602-attempt-1",
+        "businessName": "Crestline Electrical",
+        "businessKind": "home-services",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "cinematic-stage",
+          "editorial-monument",
+          "htmlcodex-gardener-garden-services",
+          "orgarden-gardening-services",
+          "utility-diagnostic",
+          "web-homeservices-aptive"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-overlay",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "htmlcodex-gardener-garden-services",
+          "orgarden-gardening-services",
+          "web-homeservices-aptive"
+        ],
+        "routeSignatures": [
+          "deep green wordmark and direct service navigation|split-media|service grid followed by a clear contact close|large clean sans heading with a calm local-service voice|navigation -> split-hero -> about -> service-grid -> team -> contact-form -> tes|wide garden photography and approved service imagery",
+          "light service navigation with a strong quote control and a slim offer strip|a dark-green photographic stage with a technician in a yard and a bright lime ca|small pest-category pictograms and a three-part inspection-treatment-communicati|rounded modern sans statements with calm small explanatory copy|service navigation -> technician-led image hero -> four prevention benefits -> p|technician and home-garden scenes framed by organic leaf and lawn imagery",
+          "wordmark and direct service navigation|media-overlay|service grid with concise scope and a clear contact close|bold sans headings with a direct local-service voice|navigation -> full-bleed-hero -> trust-band -> about -> service-grid -> project-|wide garden photography and approved service imagery"
         ]
       }
     ],
@@ -3999,6 +3964,79 @@
           "A small emblem on the left and compact uppercase portfolio, studio, shop, news a|A full-width interior photograph carries a very large white serif studio title a|Lead with photographic discipline gateways, then explain the approach through a |Expressive high-contrast serif display and section titles paired with small, mea|room photograph and oversized title -> cream craft statement -> three-image disc|Immersive furnished-room photographs, three adjacent feature images, a maker por",
           "Fine uppercase navigation and a monogram-like mark rest over a light, low-profil|An immersive warm interior opening with small centered serif copy gives way to a|Explain interior design and procurement in one considered editorial chapter, the|Small elegant serif headings and uppercase labels, with narrow calm paragraphs a|immersive opening photograph -> introductory statement band -> studio split -> s|Full-height residential interiors alternate with copy and a three-image project",
           "micro-wordmark-and-restrained-anchors|graphic-opening-field-before-practice-statement|type-led-service-index-after-project-collage|expressive-grotesk-with-editorial-accents|graphic-open-to-practice-to-asymmetric-projects-to-services-to-dark-close|asymmetric-project-collage-with-line-drawing-notes"
+        ]
+      }
+    ],
+    "legal-services": [
+      {
+        "id": "2026-10-07-juniper-grove-estate-law-attempt-93-run-37613635991-attempt-1",
+        "launchedAt": "2026-10-07T11:25:47.241Z",
+        "stage": "attempt",
+        "reservationKey": "93-run-37613635991-attempt-1",
+        "businessName": "Juniper Grove Estate Law",
+        "businessKind": "legal-services",
+        "recipe": "general-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "editorial-monument",
+          "legal-dark-illustrated-statement-hero",
+          "legal-three-part-reassurance-strip",
+          "spicer-law-firm-results-ledger",
+          "utility-diagnostic"
+        ],
+        "heroArchetypes": [
+          "split-media-copy",
+          "text-led-editorial"
+        ],
+        "referenceIds": [
+          "spicer-law-firm-results-ledger",
+          "web-legal-chaudhry-law",
+          "web-legal-valemus-law"
+        ],
+        "routeSignatures": [
+          "Narrow white row with small firm emblem, subdued legal-topic links, contact rout|A wide cityscape banner with centered firm introduction leads into three slim va|Use image-and-copy splits for practice areas and people so a visitor can tell ex|Compact uppercase sans section labels, restrained gray body copy and centered ch|firm navigation -> cityscape introduction -> three-value overview -> charcoal ne|Cityscape first, then legal-work and meeting photographs beside text; brochure m",
+          "Oversized firm identity on the left, utility email above and a practice/team/awa|A two-tier white header fronts a deep illustrated hero; a centered all-caps decl|Keep practice-area navigation direct and do not inflate a short homepage into a |Strong uppercase sans display, readable serif supporting statement, and compact |identity and utility navigation -> illustrated centered hero -> firm mission on |A dark justice illustration supplies atmosphere; below it, logo-like recognition",
+          "thin-availability-line-with-square-corner-practice-nav|dark-practice-statement-balanced-with-results-ledger|numbered-practice-rows-followed-by-auditable-outcomes-table|measured-legal-serif-with-neutral-sans|utility-to-promise-to-practices-to-results-to-team-to-process-to-consultation|typographic-proof-and-geometric-monogram-plates"
+        ]
+      },
+      {
+        "id": "2026-09-30-juniper-grove-estate-law-attempt-93",
+        "launchedAt": "2026-09-30T18:31:11.235Z",
+        "stage": "attempt",
+        "businessName": "Juniper Grove Estate Law",
+        "businessKind": "legal-services",
+        "recipe": "general-editorial",
+        "packId": "bold-utility",
+        "variantId": "standard",
+        "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "cinematic-stage",
+          "colorlib-caseworth-legal-ledger",
+          "direct-robins-kaplan-law",
+          "editorial-monument",
+          "guided-conversation",
+          "legal-coral-and-photo-split-opening"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-form",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "colorlib-caseworth-legal-ledger",
+          "direct-robins-kaplan-law",
+          "web-legal-flip-family-law"
+        ],
+        "routeSignatures": [
+          "White nameplate navigation with slim gold and coral utility buttons before the m|A coral text half and London building photograph half create a strict split hero|Organize services by the visitor's family-law problem in a dark contrast band, w|Soft serif narrative type paired with direct small sans labels and dark navy pra|split introduction and dual action -> navy issue/service matrix -> recommendatio|Architecture, team and editorial insight photographs punctuate large typography",
+          "clean-professional-navigation-with-search-action|angled-city-image-with-editorial-practice-statement|headline-led-practice-index-with-feature-story|large-clean-grotesk-with-editorial-serif-accent|city-hero-to-practice-index-to-feature-to-proof-to-contact|cityscape-and-editorial-portrait-crops",
+          "utility-strip-and-restrained-practice-navigation|editorial-professional-statement-beside-portrait-image|two-column-ruled-practice-area-ledger|refined-serif-with-humanist-sans|positioning-to-practices-to-people-to-fees-to-enquiry|portrait-and-professional-detail-crops"
         ]
       }
     ]
