@@ -12,10 +12,17 @@ import {
   it,
   vi,
 } from "vitest";
-import { chromium, type Browser, type Locator, type Page } from "playwright";
+import {
+  chromium,
+  type Browser,
+  type Locator,
+  type Page,
+  type Route,
+} from "playwright";
 import sharp from "sharp";
 import { buildAdminWorkspace } from "../scripts/build-admin-workspace.mjs";
 import type {
+  AttemptDetail,
   AttemptSummary,
   Health,
   RelatedIssuePreview,
@@ -86,6 +93,7 @@ let delays = new Map<string, number>();
 let failAttemptListOnce = false;
 let failHealth = false;
 let legacyWorkflow = false;
+let workflowOverride: AttemptDetail | null = null;
 let attemptListDelay = 0;
 let relatedPreviews = new Map<string, RelatedIssuePreview>();
 let eventDetails = new Map<string, string>();
@@ -429,38 +437,40 @@ async function serve(
       return;
     }
     const detail =
-      legacyWorkflow && id === "attempt-0000"
-        ? {
-            ...attemptDetail(attempt),
-            executionStatus: "failed" as const,
-            failure: {
-              category: "workflow",
-              stage: "workflow",
-              summary: "The workflow stopped before a preview was ready.",
-              evidenceUrl: null,
-              nextStep: "Inspect the run.",
-            },
-            events: [
-              "intake",
-              "seo_research",
-              "inspiration_selection",
-              "reference_analysis",
-              "workflow",
-            ].map((stage, index) => ({
-              ...attemptDetail(attempt).events[0],
-              eventKey: `github-step:${stage}`,
-              stage,
-              status: stage === "workflow" ? "failed" : "completed",
-              source: "github-reconcile" as const,
-              detail:
-                stage === "workflow"
-                  ? "The workflow stopped before a preview was ready."
-                  : null,
-              createdAt: attempt.updatedAt + index,
-            })),
-          }
-        : attemptDetail(attempt);
-    if (id === "attempt-diagnostic") {
+      workflowOverride?.attemptId === id
+        ? structuredClone(workflowOverride)
+        : legacyWorkflow && id === "attempt-0000"
+          ? {
+              ...attemptDetail(attempt),
+              executionStatus: "failed" as const,
+              failure: {
+                category: "workflow",
+                stage: "workflow",
+                summary: "The workflow stopped before a preview was ready.",
+                evidenceUrl: null,
+                nextStep: "Inspect the run.",
+              },
+              events: [
+                "intake",
+                "seo_research",
+                "inspiration_selection",
+                "reference_analysis",
+                "workflow",
+              ].map((stage, index) => ({
+                ...attemptDetail(attempt).events[0],
+                eventKey: `github-step:${stage}`,
+                stage,
+                status: stage === "workflow" ? "failed" : "completed",
+                source: "github-reconcile" as const,
+                detail:
+                  stage === "workflow"
+                    ? "The workflow stopped before a preview was ready."
+                    : null,
+                createdAt: attempt.updatedAt + index,
+              })),
+            }
+          : attemptDetail(attempt);
+    if (id === "attempt-diagnostic" && workflowOverride?.attemptId !== id) {
       const base = detail.events[0];
       detail.events = [
         {
@@ -608,6 +618,7 @@ beforeEach(() => {
   failAttemptListOnce = false;
   failHealth = false;
   legacyWorkflow = false;
+  workflowOverride = null;
   attemptListDelay = 0;
   heroMode = "ok";
   relatedPreviews = new Map();
@@ -617,6 +628,7 @@ beforeEach(() => {
 type OpenOptions = {
   viewport?: { width: number; height: number };
   path?: string;
+  clock?: boolean;
 };
 
 function activityEvent(index: number, overrides: Record<string, unknown> = {}) {
@@ -644,6 +656,75 @@ function activityEvent(index: number, overrides: Record<string, unknown> = {}) {
       model: "deepseek-v4.1-flash",
     },
     ...overrides,
+  };
+}
+
+function progressiveWorkflow(
+  lastStage: string,
+  status: "started" | "failed",
+  attemptId = "attempt-0000",
+): AttemptDetail {
+  const base = attemptDetail(
+    ATTEMPTS.find((attempt) => attempt.attemptId === attemptId)!,
+  );
+  const stages = [
+    "profile_policy",
+    "renderer_policy",
+    "intake_handoff_check",
+    "setup",
+    "intake",
+    "seo_research",
+    "seo_telemetry",
+    "inspiration_selection",
+    "reference_analysis",
+    "client_repo",
+    "review_branch",
+    "imagery",
+    "authoring",
+    "authored_evidence",
+    "creative_render",
+    "preview_deploy",
+  ];
+  const events = stages
+    .slice(0, stages.indexOf(lastStage) + 1)
+    .map((stage, index) => ({
+      ...base.events[0],
+      eventKey: `stage:${stage}`,
+      stage,
+      status: stage === lastStage ? status : "completed",
+      source: "callback" as const,
+      detail:
+        stage === lastStage && status === "failed"
+          ? "The upload failed after rendering."
+          : `Evidence for ${stage}.`,
+      createdAt: base.updatedAt + index,
+      observedAt: base.updatedAt + index,
+    }));
+  return {
+    ...base,
+    stale: false,
+    executionStatus: status === "failed" ? "failed" : "running",
+    deliveryStatus: "none",
+    completedAt: status === "failed" ? base.updatedAt : null,
+    failure:
+      status === "failed"
+        ? {
+            ...base.failure,
+            stage: lastStage,
+            category: "deploy",
+            summary: "The upload failed after rendering.",
+          }
+        : {
+            stage: null,
+            category: null,
+            summary: null,
+            evidenceUrl: null,
+            nextStep: null,
+          },
+    events,
+    eventCount: events.length,
+    eventsNextCursor: null,
+    workflowEvents: [],
   };
 }
 
@@ -774,6 +855,7 @@ async function openPage(options: OpenOptions = {}) {
     viewport: options.viewport || { width: 1512, height: 960 },
   });
   const errors: string[] = [];
+  if (options.clock) await page.clock.install();
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
   });
@@ -1558,6 +1640,559 @@ describe("real admin workspace browser behavior", () => {
           .getByText("The workflow stopped before a preview was ready.")
           .count(),
       ).toBe(1);
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it.each([390, 1440])(
+    "lays out workflow stages downward and follows recent nodes at %ipx",
+    async (width) => {
+      workflowOverride = progressiveWorkflow("preview_deploy", "failed");
+      const { page, errors } = await openPage({
+        viewport: { width, height: 960 },
+        path: "/admin/onboarding-invites?view=generations&attempt=attempt-0000",
+      });
+      try {
+        await page
+          .getByRole("button", { name: "View workflow", exact: true })
+          .click();
+        const workflow = page.locator("[data-workflow-view]");
+        const canvas = workflow.locator("[data-flow-canvas]");
+        await visible(canvas);
+        const positions = await workflow
+          .locator(".flow-node")
+          .evaluateAll((nodes) =>
+            Object.fromEntries(
+              nodes.map((node) => [
+                node.getAttribute("data-stage"),
+                node.getBoundingClientRect().top,
+              ]),
+            ),
+          );
+        for (const [before, after] of [
+          ["renderer_policy", "setup"],
+          ["intake_handoff_check", "setup"],
+          ["intake", "seo_research"],
+          ["seo_telemetry", "inspiration_selection"],
+          ["reference_analysis", "client_repo"],
+          ["imagery", "authoring"],
+          ["creative_render", "preview_deploy"],
+        ])
+          expect(positions[after]).toBeGreaterThan(positions[before] + 68);
+        expect(
+          await canvas.evaluate((el) => el.scrollWidth <= el.clientWidth),
+        ).toBe(true);
+        expect(
+          await canvas.evaluate((el) => el.scrollHeight > el.clientHeight),
+        ).toBe(true);
+        const isLatestVisible = () =>
+          canvas.evaluate((el) => {
+            const last = el.querySelector(".flow-nodes > li:last-child")!;
+            const frame = el.getBoundingClientRect();
+            const node = last.getBoundingClientRect();
+            return node.top >= frame.top && node.bottom <= frame.bottom;
+          });
+        await expect.poll(isLatestVisible).toBe(true);
+        const follow = workflow.getByRole("button", {
+          name: "Follow latest",
+          exact: true,
+        });
+        expect(await follow.getAttribute("aria-pressed")).toBe("true");
+        const edgesGoDown = await workflow
+          .locator(".flow-edge")
+          .evaluateAll((paths) =>
+            paths.every((path) => {
+              const edge = path as SVGPathElement;
+              return (
+                edge.getPointAtLength(edge.getTotalLength()).y >
+                edge.getPointAtLength(0).y
+              );
+            }),
+          );
+        expect(edgesGoDown).toBe(true);
+        await canvas.evaluate((el) => {
+          el.scrollTop = 0;
+        });
+        await expect
+          .poll(() => follow.getAttribute("aria-pressed"))
+          .toBe("false");
+        await workflow
+          .getByRole("button", { name: "Run policy: Passed", exact: true })
+          .click();
+        await visible(
+          workflow.getByRole("heading", { name: "Run policy", exact: true }),
+        );
+        await follow.click();
+        await expect.poll(isLatestVisible).toBe(true);
+        expect(await follow.getAttribute("aria-pressed")).toBe("true");
+        // Following affects only the graph viewport, never keyboard focus.
+        await focused(follow);
+        await page.setViewportSize({ width, height: 720 });
+        await expect.poll(isLatestVisible).toBe(true);
+        await page.setViewportSize({ width, height: 960 });
+        await expect.poll(isLatestVisible).toBe(true);
+        const captures = process.env.CLIENT_WORKFLOW_SCREENSHOTS;
+        if (captures)
+          await page.screenshot({
+            path: path.join(captures, `vertical-workflow-${width}.png`),
+            animations: "disabled",
+          });
+        autoErrors(errors);
+      } finally {
+        await page.close();
+      }
+    },
+  );
+
+  it.each(["sites", "clients"])(
+    "updates the %s workflow live without losing inspected evidence",
+    async (surface) => {
+      const attemptId =
+        surface === "sites" ? "attempt-0000" : "attempt-diagnostic";
+      workflowOverride = progressiveWorkflow("authoring", "started", attemptId);
+      const { page, errors } = await openPage({
+        clock: true,
+        path:
+          surface === "sites"
+            ? "/admin/onboarding-invites?view=generations&attempt=attempt-0000"
+            : "/admin/onboarding-invites?view=clients&client=submission:client-a",
+      });
+      try {
+        if (surface === "sites")
+          await page
+            .getByRole("button", { name: "View workflow", exact: true })
+            .click();
+        const workflow = page.locator("[data-workflow-view]");
+        await visible(
+          workflow.getByRole("button", {
+            name: "Authoring: Running",
+            exact: true,
+          }),
+        );
+        workflowOverride = progressiveWorkflow(
+          "creative_render",
+          "started",
+          attemptId,
+        );
+        await page.clock.runFor(2_100);
+        await visible(
+          workflow.getByRole("button", {
+            name: "Authoring: Passed",
+            exact: true,
+          }),
+        );
+        await visible(
+          workflow.getByRole("button", {
+            name: "Creative render: Running",
+            exact: true,
+          }),
+        );
+        const canvas = workflow.locator("[data-flow-canvas]");
+        await canvas.evaluate((el) => {
+          el.scrollTop = 0;
+        });
+        await workflow
+          .getByRole("button", { name: "Run policy: Passed", exact: true })
+          .click();
+        await visible(
+          workflow.getByRole("heading", { name: "Run policy", exact: true }),
+        );
+        const position = await canvas.evaluate((el) => el.scrollTop);
+        workflowOverride = progressiveWorkflow(
+          "preview_deploy",
+          "failed",
+          attemptId,
+        );
+        await page.clock.runFor(2_100);
+        await visible(
+          workflow.getByRole("button", {
+            name: "Preview deploy: Failed",
+            exact: true,
+          }),
+        );
+        await visible(
+          workflow.getByRole("heading", { name: "Run policy", exact: true }),
+        );
+        expect(await canvas.evaluate((el) => el.scrollTop)).toBe(position);
+        await workflow
+          .getByRole("button", { name: "Follow latest", exact: true })
+          .click();
+        await workflow
+          .getByRole("button", { name: "Preview deploy: Failed", exact: true })
+          .click();
+        await visible(
+          workflow.getByText("The upload failed after rendering.", {
+            exact: true,
+          }),
+        );
+        expect(
+          await workflow
+            .getByRole("link", { name: "View run on GitHub" })
+            .getAttribute("href"),
+        ).toContain(`/actions/runs/${workflowOverride.runId}/attempts/1`);
+        // Later reconciliation can enrich the same terminal snapshot/version.
+        workflowOverride.failure.code = "LL_STAGE_PREVIEW_DEPLOY_FAILED";
+        workflowOverride.failure.detail =
+          "Upload rejected: missing project binding.";
+        await page.clock.runFor(15_100);
+        await visible(
+          workflow.getByText("Upload rejected: missing project binding.", {
+            exact: true,
+          }),
+        );
+        await visible(
+          workflow.getByText("LL_STAGE_PREVIEW_DEPLOY_FAILED", { exact: true }),
+        );
+        autoErrors(errors);
+      } finally {
+        await page.close();
+      }
+    },
+  );
+
+  it("shows new terminal evidence instead of an older start message", async () => {
+    workflowOverride = progressiveWorkflow("authoring", "started");
+    const start = workflowOverride.events.at(-1)!;
+    start.eventKey = "authoring-start";
+    start.detail = "Authoring started; waiting for result.";
+    const { page, errors } = await openPage({
+      clock: true,
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-0000",
+    });
+    try {
+      await page
+        .getByRole("button", { name: "View workflow", exact: true })
+        .click();
+      const workflow = page.locator("[data-workflow-view]");
+      await workflow
+        .getByRole("button", { name: "Authoring: Running", exact: true })
+        .click();
+      await visible(workflow.getByText(start.detail, { exact: true }));
+      const terminal = {
+        ...start,
+        eventKey: "authoring-done",
+        status: "completed",
+        detail: "All three candidates were written.",
+        createdAt: start.createdAt + 1,
+        observedAt: start.observedAt + 1,
+      };
+      workflowOverride.events = [terminal];
+      await page.clock.runFor(2_100);
+      await visible(
+        workflow.getByRole("button", {
+          name: "Authoring: Passed",
+          exact: true,
+        }),
+      );
+      await visible(workflow.getByText(terminal.detail, { exact: true }));
+      // Early stages remain available after they leave the newest events page.
+      expect(
+        await workflow
+          .getByRole("button", { name: "Run policy: Passed", exact: true })
+          .count(),
+      ).toBe(1);
+      workflowOverride.executionStatus = "failed";
+      workflowOverride.failure = {
+        category: null,
+        stage: "authoring",
+        summary: null,
+        evidenceUrl: null,
+        nextStep: null,
+      };
+      workflowOverride.events = [
+        {
+          ...terminal,
+          eventKey: "authoring-failed",
+          status: "failed",
+          detail: "Renderer exited 137.",
+          observedAt: terminal.observedAt + 1,
+          createdAt: terminal.createdAt + 1,
+        },
+      ];
+      await page.clock.runFor(2_100);
+      await visible(
+        workflow.getByText("Renderer exited 137.", { exact: true }),
+      );
+      workflowOverride.workflowEvents = [
+        {
+          ...terminal,
+          eventKey: "github-step:authoring",
+          source: "github-reconcile",
+          status: "failed",
+          detail: JSON.stringify({
+            errorCode: "LL_STAGE_AUTHORING_FAILED",
+            diagnosticExcerpt: "Authoring runner exited with code 1.",
+          }),
+        },
+      ];
+      await page.clock.runFor(15_100);
+      await visible(
+        workflow.getByRole("button", {
+          name: "Authoring: Failed",
+          exact: true,
+        }),
+      );
+      await visible(
+        workflow.getByText("LL_STAGE_AUTHORING_FAILED", { exact: true }),
+      );
+      await visible(
+        workflow.getByText("Authoring runner exited with code 1.", {
+          exact: true,
+        }),
+      );
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("retains workflow history and selection through refresh failures and stale history pages", async () => {
+    workflowOverride = progressiveWorkflow("authoring", "started");
+    workflowOverride.eventsNextCursor = "history-page";
+    const stale = { ...workflowOverride.events.at(-1)! };
+    const earlier = {
+      ...stale,
+      eventKey: "preflight-evidence",
+      stage: "preflight",
+      status: "completed",
+      detail: "Retained earlier diagnostic.",
+      createdAt: stale.createdAt - 100,
+      observedAt: stale.observedAt - 100,
+    };
+    const { page, errors } = await openPage({
+      clock: true,
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-0000",
+    });
+    try {
+      let historyPage = { items: [earlier, stale], nextCursor: null, total: 2 };
+      await page.route(
+        "**/workspace/attempts/attempt-0000/events?**",
+        (route) =>
+          route.fulfill({
+            json: historyPage,
+          }),
+      );
+      await page
+        .getByRole("button", { name: "View workflow", exact: true })
+        .click();
+      const workflow = page.locator("[data-workflow-view]");
+      await workflow
+        .getByRole("button", { name: "Load earlier stage events", exact: true })
+        .click();
+      await workflow.locator('[data-stage="preflight"]').click();
+      await visible(workflow.getByText(earlier.detail, { exact: true }));
+      let fail = true;
+      await page.route("**/workspace/attempts/attempt-0000", (route) =>
+        fail
+          ? route.fulfill({
+              status: 503,
+              json: {
+                error: {
+                  code: "temporarily_unavailable",
+                  message: "Temporary workflow read failure.",
+                },
+              },
+            })
+          : route.fallback(),
+      );
+      await page.clock.runFor(2_100);
+      await visible(workflow.getByText(/Live updates interrupted/u));
+      await visible(workflow.getByText(earlier.detail, { exact: true }));
+      fail = false;
+      workflowOverride = progressiveWorkflow("creative_render", "started");
+      await page.clock.runFor(2_100);
+      await visible(
+        workflow.getByRole("button", {
+          name: "Authoring: Passed",
+          exact: true,
+        }),
+      );
+      await visible(workflow.getByText(earlier.detail, { exact: true }));
+      expect(
+        await workflow.getByText(/Live updates interrupted/u).count(),
+      ).toBe(0);
+      await workflow
+        .getByRole("button", { name: "Refresh workflow", exact: true })
+        .click();
+      await expect
+        .poll(() =>
+          workflow
+            .getByRole("button", { name: "Refresh workflow", exact: true })
+            .isEnabled(),
+        )
+        .toBe(true);
+      await visible(workflow.getByText(earlier.detail, { exact: true }));
+      // More than a page can arrive between polls, including while a tab is hidden.
+      // Exhausting an earlier traversal must not make that gap unreachable.
+      historyPage = {
+        items: [
+          {
+            ...earlier,
+            eventKey: "missed-repair",
+            stage: "repair",
+            detail: "Missed repair diagnostic.",
+          },
+        ],
+        nextCursor: null,
+        total: 1,
+      };
+      workflowOverride.events = Array.from({ length: 50 }, (_, index) => ({
+        ...stale,
+        eventKey: `cost:new:${index}`,
+        observedAt: stale.observedAt + 100 + index,
+        createdAt: stale.createdAt + 100 + index,
+      }));
+      workflowOverride.eventsNextCursor = "missed-page";
+      await page.clock.runFor(2_100);
+      await workflow
+        .getByRole("button", { name: "Load earlier stage events", exact: true })
+        .click();
+      await workflow.locator('[data-stage="repair"]').click();
+      await visible(
+        workflow.getByText("Missed repair diagnostic.", { exact: true }),
+      );
+      autoErrors(errors.filter((error) => !error.includes("503")));
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("pauses hidden workflow reads, avoids overlapping polls and isolates a changed run", async () => {
+    workflowOverride = progressiveWorkflow(
+      "authoring",
+      "started",
+      "attempt-diagnostic",
+    );
+    const { page, errors } = await openPage({
+      clock: true,
+      path: "/admin/onboarding-invites?view=clients&client=submission:client-a",
+    });
+    try {
+      const workflow = page.locator("[data-workflow-view]");
+      await visible(
+        workflow.getByRole("button", {
+          name: "Authoring: Running",
+          exact: true,
+        }),
+      );
+      const countReads = () =>
+        requests.filter(
+          (request) => request.path === "/attempts/attempt-diagnostic",
+        ).length;
+      const initialReads = countReads();
+      await page.evaluate(() => {
+        Object.defineProperty(document, "visibilityState", {
+          configurable: true,
+          value: "hidden",
+        });
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      await page.clock.runFor(6_100);
+      expect(countReads()).toBe(initialReads);
+      workflowOverride = progressiveWorkflow(
+        "creative_render",
+        "started",
+        "attempt-diagnostic",
+      );
+      await page.evaluate(() => {
+        Object.defineProperty(document, "visibilityState", {
+          configurable: true,
+          value: "visible",
+        });
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      await visible(
+        workflow.getByRole("button", {
+          name: "Creative render: Running",
+          exact: true,
+        }),
+      );
+      const held: Route[] = [];
+      await page.route("**/workspace/attempts/attempt-diagnostic", (route) => {
+        held.push(route);
+      });
+      await page.clock.runFor(2_100);
+      await expect.poll(() => held.length).toBe(1);
+      await page.clock.runFor(6_100);
+      expect(held).toHaveLength(1);
+      await page
+        .getByRole("button", {
+          name: "Open attempt attempt-published-earlier from client history",
+          exact: true,
+        })
+        .click();
+      await visible(
+        workflow.getByRole("heading", {
+          name: "All recorded stages passed",
+          exact: true,
+        }),
+      );
+      const delayed = progressiveWorkflow(
+        "preview_deploy",
+        "failed",
+        "attempt-diagnostic",
+      );
+      await held[0].fulfill({ json: { attempt: delayed } }).catch(() => {});
+      await page.clock.runFor(100);
+      expect(
+        await workflow.locator('[data-stage="preview_deploy"]').count(),
+      ).toBe(0);
+      expect(
+        await workflow
+          .getByRole("link", { name: "View run on GitHub" })
+          .getAttribute("href"),
+      ).toContain(
+        `/actions/runs/${ATTEMPTS.find((attempt) => attempt.attemptId === "attempt-published-earlier")!.runId}/`,
+      );
+      autoErrors(errors);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it("uses one selected-attempt reader in Sites and refreshes Overview on return", async () => {
+    workflowOverride = progressiveWorkflow("authoring", "started");
+    const { page, errors } = await openPage({
+      clock: true,
+      path: "/admin/onboarding-invites?view=generations&attempt=attempt-0000",
+    });
+    try {
+      await page
+        .getByRole("button", { name: "View workflow", exact: true })
+        .click();
+      const held: Route[] = [];
+      await page.route("**/workspace/attempts/attempt-0000", (route) => {
+        held.push(route);
+      });
+      await page.clock.runFor(2_100);
+      await expect.poll(() => held.length).toBe(1);
+      const beforeList = requests.filter(
+        (request) => request.path === "/attempts",
+      ).length;
+      await page.clock.runFor(15_100);
+      await expect
+        .poll(
+          () =>
+            requests.filter((request) => request.path === "/attempts").length,
+        )
+        .toBeGreaterThan(beforeList);
+      expect(held).toHaveLength(1);
+      workflowOverride = progressiveWorkflow("preview_deploy", "failed");
+      await held[0].fulfill({ json: { attempt: workflowOverride } });
+      await page.unroute("**/workspace/attempts/attempt-0000");
+      await visible(
+        page
+          .locator("[data-workflow-view]")
+          .getByRole("button", { name: "Preview deploy: Failed", exact: true }),
+      );
+      await page.getByRole("button", { name: "Overview", exact: true }).click();
+      await visible(
+        page
+          .locator('[aria-labelledby="attempt-failure-title"]')
+          .getByText("The upload failed after rendering.", { exact: true }),
+      );
       autoErrors(errors);
     } finally {
       await page.close();

@@ -35,9 +35,11 @@ const LABELS: Record<string, string> = {
 };
 
 const DEPENDENCIES: Record<string, string[]> = {
+  profile_policy: [],
+  renderer_policy: ["profile_policy"],
   seo_research: ["intake"],
   workflow: ["handoff"],
-  setup: ["profile_policy"],
+  setup: ["renderer_policy", "intake_handoff_check"],
   intake_handoff_check: ["profile_policy"],
   intake: ["setup"],
   seo_telemetry: ["intake"],
@@ -231,13 +233,13 @@ type Placed = {
   x: number;
   y: number;
   depth: number;
-  band: number;
+  row: number;
   key: string;
 };
 
-const NODE_H = 68;
-const PAD = 12;
-const BAND_GAP = 20;
+const NODE_H = 72;
+const PAD = 28;
+const ROW_GAP = 36;
 
 function layout(stages: WorkflowStage[], width: number) {
   const visibleSet = new Set(stages.map((item) => item.stage));
@@ -268,21 +270,13 @@ function layout(stages: WorkflowStage[], width: number) {
     depths.set(stage, depth);
     return depth;
   };
-  const vertical = width < 520;
-  const columns = vertical
-    ? 1
-    : Math.max(2, Math.min(5, Math.floor((width - PAD * 2 + 16) / 132)));
-  const nodeWidth = vertical
-    ? Math.min(width - PAD * 2, 320)
-    : Math.min(
-        150,
-        Math.max(
-          118,
-          Math.floor((width - PAD * 2 - (columns - 1) * 26) / columns),
-        ),
-      );
-  const laneGap = 14;
-  const byBand = new Map<number, Map<number, Placed[]>>();
+  const columnGap = 20;
+  const available = Math.max(0, width - PAD * 2);
+  const columns = Math.max(
+    1,
+    Math.min(3, Math.floor((available + columnGap) / 204)),
+  );
+  const byDepth = new Map<number, Placed[]>();
   const placed: Placed[] = [];
   let previousDepth = -1;
   for (const stage of stages) {
@@ -290,50 +284,46 @@ function layout(stages: WorkflowStage[], width: number) {
       ? depthOf(stage.stage)
       : previousDepth + 1;
     previousDepth = d;
-    const band = Math.floor(d / columns);
-    const column = d % columns;
-    const lanes = byBand.get(band) ?? new Map<number, Placed[]>();
-    byBand.set(band, lanes);
+    depths.set(stage.stage, d);
     const item: Placed = {
       stage,
       depth: d,
-      band,
+      row: 0,
       key: stage.stage,
       x: 0,
       y: 0,
     };
-    lanes.set(column, [...(lanes.get(column) ?? []), item]);
+    byDepth.set(d, [...(byDepth.get(d) ?? []), item]);
     placed.push(item);
   }
-  const bandHeights = new Map<number, number>();
-  for (const [band, columnsMap] of byBand) {
-    const lanes = Math.max(1, ...[...columnsMap.values()].map((n) => n.length));
-    bandHeights.set(band, lanes * (NODE_H + laneGap));
-  }
-  const bandTop = new Map<number, number>();
-  let top = PAD;
-  for (const band of [...bandHeights.keys()].sort((a, b) => a - b)) {
-    bandTop.set(band, top);
-    top += bandHeights.get(band)! + BAND_GAP;
-  }
-  const colGap =
-    columns > 1
-      ? Math.max(22, (width - PAD * 2 - columns * nodeWidth) / (columns - 1))
-      : 0;
-  for (const item of placed) {
-    const column = item.depth % columns;
-    const lanes = byBand.get(item.band)?.get(column) ?? [item];
-    const lane = lanes.indexOf(item);
-    item.x = vertical
-      ? (width - nodeWidth) / 2
-      : PAD + column * (nodeWidth + colGap);
-    item.y = (bandTop.get(item.band) ?? PAD) + lane * (NODE_H + laneGap);
+  const widestRow = Math.min(
+    columns,
+    Math.max(1, ...[...byDepth.values()].map((row) => row.length)),
+  );
+  const nodeWidth = Math.min(
+    300,
+    (available - (widestRow - 1) * columnGap) / widestRow,
+  );
+  let row = 0;
+  for (const depth of [...byDepth.keys()].sort((a, b) => a - b)) {
+    const siblings = byDepth.get(depth)!;
+    // Finish every sibling row before advancing to the next pipeline depth.
+    for (let start = 0; start < siblings.length; start += columns) {
+      const items = siblings.slice(start, start + columns);
+      const rowWidth =
+        items.length * nodeWidth + (items.length - 1) * columnGap;
+      items.forEach((item, index) => {
+        item.row = row;
+        item.x = (width - rowWidth) / 2 + index * (nodeWidth + columnGap);
+        item.y = PAD + row * (NODE_H + ROW_GAP);
+      });
+      row += 1;
+    }
   }
   return {
     placed,
     nodeWidth,
-    height: Math.max(120, top - BAND_GAP + PAD),
-    bands: bandTop.size,
+    height: Math.max(120, PAD * 2 + row * (NODE_H + ROW_GAP) - ROW_GAP),
   };
 }
 
@@ -346,7 +336,7 @@ function nearestVisibleAncestors(
   visited.add(stage);
   const found: Placed[] = [];
   for (const candidate of DEPENDENCIES[stage] ?? []) {
-    const hit = byStage.get(candidate);
+    const hit = byStage.get(candidate) ?? byStage.get(ALIASES[candidate]);
     if (hit) found.push(hit);
     else found.push(...nearestVisibleAncestors(candidate, byStage, visited));
   }
@@ -359,6 +349,8 @@ export type WorkflowGraphProps = {
   delivery: DeliveryStatus;
   selected: string | null;
   onSelect: (stage: string) => void;
+  following?: boolean;
+  onFollowingChange?: (following: boolean) => void;
   label?: string;
 };
 
@@ -368,21 +360,41 @@ export function WorkflowGraph({
   delivery,
   selected,
   onSelect,
+  following = true,
+  onFollowingChange,
   label = "Workflow graph",
 }: WorkflowGraphProps) {
   const markerId = `flow-arrow-${useId().replace(/[^a-zA-Z0-9-]/gu, "")}`;
   const hostRef = useRef<HTMLDivElement>(null);
+  const followedViewport = useRef({ width: 0, height: 0 });
   const [width, setWidth] = useState(560);
+  const [viewportHeight, setViewportHeight] = useState(0);
   useLayoutEffect(() => {
     const host = hostRef.current;
     if (!host) return;
-    const measure = () => setWidth(Math.max(280, host.clientWidth - 20));
+    const measure = () => {
+      setWidth(Math.max(0, host.clientWidth - 20));
+      setViewportHeight(host.clientHeight);
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(host);
     return () => observer.disconnect();
   }, []);
   const chart = layout(stages, width);
+  const progress = stages
+    .map((stage) => `${stage.stage}:${stage.status}`)
+    .join("|");
+  useLayoutEffect(() => {
+    const host = hostRef.current;
+    if (host && following)
+      host.scrollTop = host.scrollHeight - host.clientHeight;
+    if (host)
+      followedViewport.current = {
+        width: host.clientWidth,
+        height: host.clientHeight,
+      };
+  }, [following, chart.height, width, viewportHeight, progress]);
   const byStage = new Map(chart.placed.map((item) => [item.stage.stage, item]));
   const edges = chart.placed.flatMap((item, index) => {
     const parents = new Map<string, Placed>();
@@ -399,113 +411,145 @@ export function WorkflowGraph({
       const previous = chart.placed[index - 1];
       if (previous) parents.set(previous.key, previous);
     }
-    const vertical = width < 520;
     return [...parents.values()].map((parent) => {
-      if (vertical) {
-        const x1 = parent.x + chart.nodeWidth / 2;
-        const y1 = parent.y + NODE_H;
-        const x2 = item.x + chart.nodeWidth / 2;
-        const y2 = item.y;
-        const curve = Math.max(14, Math.min(28, (y2 - y1) / 2));
-        return {
-          key: `${parent.key}->${item.key}`,
-          path: `M ${x1} ${y1} C ${x1} ${y1 + curve}, ${x2} ${y2 - curve}, ${x2} ${y2}`,
-          wraps: false,
-        };
-      }
-      const x1 = parent.x + chart.nodeWidth;
-      const y1 = parent.y + NODE_H / 2;
-      const x2 = item.x;
-      const y2 = item.y + NODE_H / 2;
-      const wraps = x2 <= x1;
-      const curve = wraps
-        ? Math.max(36, chart.nodeWidth * 0.5)
-        : Math.max(24, Math.min(60, (x2 - x1) / 2));
+      const x1 = parent.x + chart.nodeWidth / 2;
+      const y1 = parent.y + NODE_H;
+      const x2 = item.x + chart.nodeWidth / 2;
+      const y2 = item.y;
+      // Long connections use the side gutter, never the intervening cards.
+      const lane = x1 + x2 < width ? 10 : width - 10;
+      const path =
+        item.row - parent.row > 1
+          ? `M ${x1} ${y1} C ${x1} ${y1 + 18}, ${lane} ${y1 + 18}, ${lane} ${y1 + 26} L ${lane} ${y2 - 26} C ${lane} ${y2 - 18}, ${x2} ${y2 - 18}, ${x2} ${y2}`
+          : `M ${x1} ${y1} C ${x1} ${y1 + ROW_GAP / 2}, ${x2} ${y2 - ROW_GAP / 2}, ${x2} ${y2}`;
       return {
         key: `${parent.key}->${item.key}`,
-        path: `M ${x1} ${y1} C ${x1 + curve} ${y1}, ${x2 - curve} ${y2}, ${x2} ${y2}`,
-        wraps,
+        path,
       };
     });
   });
   return (
-    <div className="flow-shell" ref={hostRef} data-flow-canvas>
-      <svg
-        className="flow-edges"
-        data-orientation={width < 520 ? "vertical" : "horizontal"}
-        width={width}
-        height={chart.height}
-        viewBox={`0 0 ${width} ${chart.height}`}
-        aria-hidden="true"
-        focusable="false"
+    <div className="flow-frame">
+      <div className="flow-toolbar">
+        <span aria-live="polite">
+          {following ? "Auto-scroll on" : "Paused for inspection"}
+        </span>
+        <button
+          type="button"
+          className="flow-follow"
+          aria-pressed={following}
+          onClick={() => onFollowingChange?.(!following)}
+        >
+          <span aria-hidden="true">↓</span> Follow latest
+        </button>
+      </div>
+      <div
+        className="flow-shell"
+        ref={hostRef}
+        data-flow-canvas
+        data-orientation="vertical"
+        role="region"
+        aria-label={`${label} scroll area`}
+        tabIndex={0}
+        onScroll={(event) => {
+          const host = event.currentTarget;
+          if (
+            following &&
+            host.clientWidth === followedViewport.current.width &&
+            host.clientHeight === followedViewport.current.height &&
+            host.scrollHeight - host.clientHeight - host.scrollTop > 24
+          )
+            onFollowingChange?.(false);
+        }}
       >
-        <defs>
-          <marker
-            id={markerId}
-            viewBox="0 0 8 8"
-            refX="7"
-            refY="4"
-            markerWidth="7"
-            markerHeight="7"
-            orient="auto-start-reverse"
+        <div className="flow-content" style={{ width, height: chart.height }}>
+          <svg
+            className="flow-edges"
+            data-orientation="vertical"
+            width={width}
+            height={chart.height}
+            viewBox={`0 0 ${width} ${chart.height}`}
+            aria-hidden="true"
+            focusable="false"
           >
-            <path d="M 0 0 L 8 4 L 0 8 z" className="flow-arrowhead" />
-          </marker>
-        </defs>
-        {edges.map((edge) => (
-          <path
-            key={edge.key}
-            d={edge.path}
-            className={`flow-edge${edge.wraps ? " flow-edge--wrap" : ""}`}
-            markerEnd={`url(#${markerId})`}
-          />
-        ))}
-      </svg>
-      <ol
-        className="flow-nodes"
-        style={{ height: chart.height, width }}
-        aria-label={label}
-      >
-        {chart.placed.map((item) => {
-          const state = stageStatus(
-            item.stage.status,
-            active,
-            item.stage.stage,
-            delivery,
-          );
-          return (
-            <li
-              key={item.key}
-              style={{
-                left: item.x,
-                top: item.y,
-                width: chart.nodeWidth,
-                height: NODE_H,
-              }}
-            >
-              <button
-                type="button"
-                className="flow-node"
-                data-tone={state.tone}
-                data-stage={item.stage.stage}
-                aria-pressed={selected === item.stage.stage}
-                aria-label={`${stageLabel(item.stage.stage)}: ${state.label}`}
-                onClick={() => onSelect(item.stage.stage)}
+            <defs>
+              <marker
+                id={markerId}
+                viewBox="0 0 8 8"
+                refX="7"
+                refY="4"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
               >
-                <span className="flow-node__glyph" aria-hidden="true">
-                  {state.glyph}
-                </span>
-                <span className="flow-node__copy">
-                  <span>{stageLabel(item.stage.stage)}</span>
-                  <small>{state.label}</small>
-                </span>
-                <span className="flow-port flow-port--in" aria-hidden="true" />
-                <span className="flow-port flow-port--out" aria-hidden="true" />
-              </button>
-            </li>
-          );
-        })}
-      </ol>
+                <path d="M 0 0 L 8 4 L 0 8 z" className="flow-arrowhead" />
+              </marker>
+            </defs>
+            {edges.map((edge) => (
+              <path
+                key={edge.key}
+                d={edge.path}
+                className="flow-edge"
+                markerEnd={`url(#${markerId})`}
+              />
+            ))}
+          </svg>
+          <ol
+            className="flow-nodes"
+            style={{ height: chart.height, width }}
+            aria-label={label}
+          >
+            {chart.placed.map((item) => {
+              const state = stageStatus(
+                item.stage.status,
+                active,
+                item.stage.stage,
+                delivery,
+              );
+              return (
+                <li
+                  key={item.key}
+                  style={{
+                    left: item.x,
+                    top: item.y,
+                    width: chart.nodeWidth,
+                    height: NODE_H,
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="flow-node"
+                    data-tone={state.tone}
+                    data-stage={item.stage.stage}
+                    aria-pressed={selected === item.stage.stage}
+                    aria-label={`${stageLabel(item.stage.stage)}: ${state.label}`}
+                    onClick={() => {
+                      onFollowingChange?.(false);
+                      onSelect(item.stage.stage);
+                    }}
+                  >
+                    <span className="flow-node__glyph" aria-hidden="true">
+                      {state.glyph}
+                    </span>
+                    <span className="flow-node__copy">
+                      <span>{stageLabel(item.stage.stage)}</span>
+                      <small>{state.label}</small>
+                    </span>
+                    <span
+                      className="flow-port flow-port--in"
+                      aria-hidden="true"
+                    />
+                    <span
+                      className="flow-port flow-port--out"
+                      aria-hidden="true"
+                    />
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      </div>
     </div>
   );
 }

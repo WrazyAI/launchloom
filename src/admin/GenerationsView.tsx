@@ -138,6 +138,9 @@ export function GenerationsView({
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detailToken, setDetailToken] = useState(0);
+  const [workflowAttemptId, setWorkflowAttemptId] = useState<string | null>(
+    null,
+  );
   const [events, setEvents] = useState<AttemptEventRecord[]>([]);
   const [eventsNextCursor, setEventsNextCursor] = useState<string | null>(null);
   const [eventCount, setEventCount] = useState(0);
@@ -304,6 +307,9 @@ export function GenerationsView({
   ]);
 
   const selectedId = state.attemptId;
+  const workflowOwnsDetail = Boolean(
+    selectedId && workflowAttemptId === selectedId,
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -319,6 +325,11 @@ export function GenerationsView({
       setEventCount(0);
       setEventsLoading(false);
       setEventsError(null);
+      return () => controller.abort();
+    }
+    // The open Workflow panel owns live reads until another detail view opens.
+    if (workflowOwnsDetail) {
+      setDetailLoading(false);
       return () => controller.abort();
     }
     const requestId = ++detailRequest.current;
@@ -365,7 +376,7 @@ export function GenerationsView({
         silentDetailRef.current = false;
       });
     return () => controller.abort();
-  }, [api, selectedId, detailToken]);
+  }, [api, selectedId, detailToken, workflowOwnsDetail]);
 
   useEffect(() => {
     const clientId = detail?.clientId;
@@ -430,12 +441,13 @@ export function GenerationsView({
     const timer = window.setInterval(() => {
       if (document.visibilityState !== "visible") return;
       silentRefreshRef.current = true;
-      silentDetailRef.current = Boolean(selectedId);
+      silentDetailRef.current = Boolean(selectedId && !workflowOwnsDetail);
       setRefreshToken((value) => value + 1);
-      if (selectedId) setDetailToken((value) => value + 1);
+      if (selectedId && !workflowOwnsDetail)
+        setDetailToken((value) => value + 1);
     }, interval);
     return () => window.clearInterval(timer);
-  }, [hasActiveRun, selectedId]);
+  }, [hasActiveRun, selectedId, workflowOwnsDetail]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -1059,6 +1071,7 @@ export function GenerationsView({
           eventsLoading={eventsLoading}
           eventsError={eventsError}
           activityEnabled={activityEnabled}
+          onWorkflowPollingChange={setWorkflowAttemptId}
           headingRef={headingRef}
           onClose={() => navigate({ ...state, attemptId: null })}
           onRetry={() => setDetailToken((token) => token + 1)}
