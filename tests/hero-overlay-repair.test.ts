@@ -93,6 +93,7 @@ describe("media focus plate correction", () => {
     expect(css).toContain("form :is(input, textarea, select):focus-visible");
     expect(css).toContain("background-color: #f8f6f0 !important");
     expect(css).toContain("outline: 2px solid #14201d !important");
+    expect(css).toContain("outline-offset: -4px !important");
   });
 
   it("replaces the managed block without duplicating it", () => {
