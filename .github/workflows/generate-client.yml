@@ -372,10 +372,14 @@ jobs:
       # Code authoring and repair are hard-pinned to DeepSeek V4.1 Flash.
       # GLM and DeepSeek v4-pro are visual-judge/trial models only.
       CREATIVE_EXPERIENCE_MODEL: deepseek/deepseek-v4.1-flash
-      CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'max' }}
-      # Repairs are bounded edits; high effort leaves output headroom for
-      # max-effort-adjacent reasoning without truncating the answer.
-      CREATIVE_REPAIR_EFFORT: ${{ vars.CREATIVE_REPAIR_EFFORT || 'high' }}
+      CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'high' }}
+      # Repairs are bounded edits; medium effort keeps latency and output
+      # headroom healthy without provider timeouts.
+      CREATIVE_REPAIR_EFFORT: ${{ vars.CREATIVE_REPAIR_EFFORT || 'medium' }}
+      # Vision judges emit small structured audits; low effort avoids repeated
+      # 180s transport timeouts caused by inheriting the authoring effort.
+      CREATIVE_REFERENCE_JUDGE_EFFORT: ${{ vars.CREATIVE_REFERENCE_JUDGE_EFFORT || 'low' }}
+      VISUAL_GATE_EFFORT: ${{ vars.VISUAL_GATE_EFFORT || 'low' }}
       # The reference analyzer is a structured-vision extraction, not code
       # authoring. Medium effort finishes inside the provider gateway deadline;
       # max effort repeatedly hit the five-minute transport timeout and forced
@@ -573,7 +577,7 @@ jobs:
           echo "issue=$ISSUE" >> "$GITHUB_OUTPUT"
           echo "intake_ref=$INTAKE_REF" >> "$GITHUB_OUTPUT"
           echo "intake_key=$INTAKE_KEY" >> "$GITHUB_OUTPUT"
-          node -e 'const x=require("/tmp/seo-research.json"); const web=x.fallbackSearch || {}; const observed=(x.externalSearchEvidence || []).length; const state=x.publishReady ? "Measured SEO research is complete. Production approval is available." : observed ? "Cited web observations are available for review, but measured SEO is incomplete. Production approval remains blocked." : "SEO research is incomplete. This preview can be reviewed; production approval remains blocked until measured research completes."; const fallback=web.status && web.status !== "unavailable" ? `\nFallback web search: ${web.status}; ${observed} cited observation(s) from ${web.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(web.costUsd || 0).toFixed(5)} / USD ${Number(web.maxUsd || 0).toFixed(2)} cap${web.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}.` : "\nFallback web search: unavailable."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}${fallback}\nMeasured queries: ${(x.validatedQueries || []).filter(item => item.volume !== null || item.kd !== null || item.intent !== null).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "None"}\nRecorded DataForSEO cost: ${Number(x.cost?.usd || 0).toFixed(5)}`)'
+          node -e 'const x=require("/tmp/seo-research.json"); const web=x.fallbackSearch || {}; const observed=(x.externalSearchEvidence || []).length; const state=x.publishReady ? (x.mode === "fallback" ? `Cited fallback web research (${web.status || "complete"}) is ready. Production approval is available; measured SEO metrics remain unavailable.` : "Measured SEO research is complete. Production approval is available.") : observed ? "Cited web observations are available for review, but fallback research is incomplete. Production approval remains blocked." : "SEO research is incomplete. This preview can be reviewed; production approval remains blocked until measured or fallback research completes."; const fallback=web.status && web.status !== "unavailable" ? `\nFallback web search: ${web.status}; ${observed} cited observation(s) from ${web.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(web.costUsd || 0).toFixed(5)} / USD ${Number(web.maxUsd || 0).toFixed(2)} cap${web.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}.` : "\nFallback web search: unavailable."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}${fallback}\nMeasured queries: ${(x.validatedQueries || []).filter(item => item.volume !== null || item.kd !== null || item.intent !== null).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "None"}\nRecorded DataForSEO cost: ${Number(x.cost?.usd || 0).toFixed(5)}`)'
       - name: Record intake stage
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage intake --status completed --detail "Intake parsed and site configuration prepared."
@@ -1460,12 +1464,14 @@ jobs:
           echo "generation_delivery=$CREATIVE_DECISION"
           echo "generation_warnings=$CREATIVE_WARNINGS"
           CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
-          # Service and location detail routes intentionally retain their
-          # deterministic SEO renderer. The homepage itself must be the authored
-          # candidate after the fresh production build below.
-          git add src/site.config.json
+          # Commit every creative selection and evidence file before capturing
+          # FINAL_BUILD_SHA so the signed developer review token matches the
+          # exact review/initial PR head commit when the admin clicks Approve.
+          rm -rf .launchloom/generated-experiences
+          cp -R /tmp/generated-experiences .launchloom/generated-experiences
+          git add .launchloom/delivery-warnings.json .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
           if ! git diff --cached --quiet; then
-            git commit -m "Select reviewed experience candidate"
+            git commit -m "Record repaired creative candidate"
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
           FINAL_BUILD_SHA=$(git rev-parse HEAD)
@@ -1474,21 +1480,12 @@ jobs:
           grep -I -F -q "data-creative-candidate=\"$CANDIDATE_ID\"" dist/index.html || { echo "Fresh build does not contain selected creative candidate $CANDIDATE_ID"; exit 1; }
           if grep -I -E -q 'data-experience-pack|legacy-design-family' dist/index.html; then echo "Legacy renderer marker found in creative preview"; exit 1; fi
           PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
-          node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist --report "$RUNNER_TEMP/route-technical-report.json"
-          CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
           REPAIR_SCREENSHOTS=.launchloom/creative-repair/final/screenshots
           for VIEWPORT in desktop compact mobile; do
             if [ -f "$REPAIR_SCREENSHOTS/${CANDIDATE_ID}-${VIEWPORT}.png" ]; then
               cp "$REPAIR_SCREENSHOTS/${CANDIDATE_ID}-${VIEWPORT}.png" "$RUNNER_TEMP/initial-screenshots/${VIEWPORT}.png"
             fi
           done
-          rm -rf .launchloom/generated-experiences
-          cp -R /tmp/generated-experiences .launchloom/generated-experiences
-          git add .launchloom/delivery-warnings.json .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
-          if ! git diff --cached --quiet; then
-            git commit -m "Record repaired creative candidate"
-            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
-          fi
           git fetch --no-tags origin refs/heads/review/initial:refs/remotes/origin/review/initial
           if ! git diff --quiet "$FINAL_BUILD_SHA" origin/review/initial -- . ':(exclude).launchloom/**'; then
             echo "Review source changed during the final build; refusing to deploy stale preview output from $FINAL_BUILD_SHA." >&2
@@ -1497,9 +1494,14 @@ jobs:
           # Scan rendered text assets only. Binary generated imagery can contain
           # the UTF-8 byte sequence by coincidence and is not page copy.
           if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
-          npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$FINAL_BUILD_SHA" --commit-message "Initial LaunchLoom preview"
-          echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
-          echo "sha=$FINAL_BUILD_SHA" >> "$GITHUB_OUTPUT"
+          if run_seo_gate; then
+            npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$FINAL_BUILD_SHA" --commit-message "Initial LaunchLoom preview"
+            echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
+            echo "diagnostic=false" >> "$GITHUB_OUTPUT"
+            echo "sha=$FINAL_BUILD_SHA" >> "$GITHUB_OUTPUT"
+          else
+            deploy_review_preview review-diagnostic "Diagnostic LaunchLoom creative preview"
+          fi
           echo "delivery=$CREATIVE_DECISION" >> "$GITHUB_OUTPUT"
       # Recording previews keeps rotation useful during internal testing. A
       # failure here must not block generation, preview deployment, or handoff.

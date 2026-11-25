@@ -2006,8 +2006,9 @@ describe("SEO market map", () => {
         provenance: "external_search_observation",
       }),
     ]);
-    expect(dossier.publishReady).toBe(false);
-    expect(dossier.mode).toBe("context-only");
+    expect(dossier.publishReady).toBe(true);
+    expect(dossier.mode).toBe("fallback");
+    expect(dossier.researchBasis).toBe("cited-web-fallback");
     expect(dossier.validatedQueries.every((item) =>
       item.metricSources?.volume === "dataforseo_google_ads_location",
     )).toBe(true);

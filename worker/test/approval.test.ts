@@ -423,25 +423,65 @@ describe("developer approval", () => {
       allowed: true,
     },
     {
-      name: "completed cited fallback without measured metrics",
+      name: "completed cited fallback",
+      research: {
+        ...fallback,
+        mode: "fallback",
+        researchBasis: "cited-web-fallback",
+        publishReady: true,
+        marketSnapshot: {
+          primaryCity: "Cookeville, TN",
+          confirmedServices: ["Drain cleaning"],
+        },
+        externalSearchEvidence: [
+          {
+            ...fallback.externalSearchEvidence[0],
+            confirmedService: "Drain cleaning",
+          },
+        ],
+        fallbackSearch: {
+          ...fallback.fallbackSearch,
+          queriesAttempted: 1,
+          serviceCoverage: ["Drain cleaning"],
+          servicesRequired: 1,
+        },
+      },
+      allowed: true,
+    },
+    {
+      name: "partial cited fallback",
+      research: {
+        ...fallback,
+        mode: "fallback",
+        researchBasis: "cited-web-fallback",
+        publishReady: true,
+        fallbackSearch: {
+          ...fallback.fallbackSearch,
+          status: "partial",
+          queriesAttempted: 2,
+          failedQueries: 1,
+          costComplete: true,
+        },
+      },
+      allowed: true,
+    },
+    {
+      name: "legacy context-only fallback without publishReady",
       research: fallback,
       allowed: false,
     },
     {
-      name: "partial fallback",
+      name: "missing fallback citations",
       research: {
         ...fallback,
-        fallbackSearch: { ...fallback.fallbackSearch, status: "partial" },
+        mode: "fallback",
+        publishReady: true,
+        externalSearchEvidence: [],
       },
       allowed: false,
     },
-    {
-      name: "missing fallback citations",
-      research: { ...fallback, externalSearchEvidence: [] },
-      allowed: false,
-    },
   ])(
-    "allows publication only for measured research ($name)",
+    "allows publication for measured and cited fallback research ($name)",
     async ({ research, allowed }) => {
       let mergeRequest: Record<string, unknown> = {};
       let dispatchRequest: Record<string, any> = {};

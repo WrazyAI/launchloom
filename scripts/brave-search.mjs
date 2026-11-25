@@ -36,6 +36,7 @@ export function createBraveSearchClient({
   if (!apiKey) throw new Error("Brave Search API key is required.");
   return {
     provider: "Brave Search API",
+    planBasedCost: true,
     // The free Brave plan throttles at roughly one request per second.
     minIntervalMs: 1_200,
     async search({ query, maxResults = 4 }) {

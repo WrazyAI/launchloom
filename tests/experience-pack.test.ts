@@ -331,8 +331,12 @@ describe("experience-pack compiler", () => {
     expect(workflow).toContain("CANDIDATE_ID=$(jq -r");
     expect(workflow).toContain("deepseek/deepseek-v4.1-flash");
     expect(workflow).toContain(
-      "vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'max'",
+      "vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'high'",
     );
+    expect(workflow).toContain(
+      "vars.CREATIVE_REFERENCE_JUDGE_EFFORT || 'low'",
+    );
+    expect(workflow).toContain("vars.VISUAL_GATE_EFFORT || 'low'");
     expect(workflow).toContain(".launchloom/creative-bakeoff.json");
     expect(workflow).not.toContain("experience-bakeoff-screenshots");
     expect(workflow).not.toContain("Upload experience bakeoff evidence");

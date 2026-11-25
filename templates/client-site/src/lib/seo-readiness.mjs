@@ -256,6 +256,8 @@ function hasCompleteVersionTwoMap(config, research) {
 }
 
 // Web observations permit human release review, never measured SEO claims.
+// Both completed and partial cited fallback runs with valid HTTPS observations
+// are approvable; zero-citation context-only runs remain blocked.
 export function hasCompletedFallbackResearch(research) {
   if (
     !research ||
@@ -267,15 +269,16 @@ export function hasCompletedFallbackResearch(research) {
   const evidence = research.externalSearchEvidence;
   if (
     !fallback ||
-    fallback.status !== "complete" ||
+    !["complete", "partial"].includes(fallback.status) ||
     fallback.costComplete !== true ||
-    fallback.budgetExhausted !== false ||
-    fallback.failedQueries !== 0 ||
     !Number.isInteger(fallback.queriesAttempted) ||
     fallback.queriesAttempted < 1 ||
     !Number.isInteger(fallback.maxQueries) ||
     fallback.maxQueries < fallback.queriesAttempted ||
     fallback.maxQueries > 5 ||
+    !Number.isInteger(fallback.failedQueries) ||
+    fallback.failedQueries < 0 ||
+    fallback.failedQueries >= fallback.queriesAttempted ||
     typeof fallback.costUsd !== "number" ||
     !Number.isFinite(fallback.costUsd) ||
     fallback.costUsd < 0 ||
@@ -287,14 +290,18 @@ export function hasCompletedFallbackResearch(research) {
     !evidence.length
   )
     return false;
-  const services = research.marketSnapshot?.confirmedServices;
-  if (Array.isArray(services) && services.length) {
-    const covered = new Set(
-      evidence
-        .map((item) => item.confirmedService)
-        .filter((service) => typeof service === "string" && service),
-    );
-    if (!services.every((service) => covered.has(service))) return false;
+  if (fallback.status === "complete") {
+    if (fallback.budgetExhausted !== false || fallback.failedQueries !== 0)
+      return false;
+    const services = research.marketSnapshot?.confirmedServices;
+    if (Array.isArray(services) && services.length) {
+      const covered = new Set(
+        evidence
+          .map((item) => item.confirmedService)
+          .filter((service) => typeof service === "string" && service),
+      );
+      if (!services.every((service) => covered.has(service))) return false;
+    }
   }
   return evidence.every((item) => {
     if (

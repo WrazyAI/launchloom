@@ -30,5 +30,18 @@ describe("creative preview workflow", () => {
     expect(workflow).toContain('data-creative-host="true"');
     expect(workflow).toContain("data-foundation-dossier");
     expect(workflow).toContain("data-experience-pack");
+
+    const creativeDeploy = workflow.slice(
+      workflow.indexOf('test -f .launchloom/creative-bakeoff.json'),
+      workflow.indexOf('- name: Record preview deploy stage'),
+    );
+    const warningsCommit = creativeDeploy.indexOf(
+      'git commit -m "Record repaired creative candidate"',
+    );
+    const finalSha = creativeDeploy.indexOf(
+      'FINAL_BUILD_SHA=$(git rev-parse HEAD)',
+    );
+    expect(warningsCommit).toBeGreaterThan(-1);
+    expect(finalSha).toBeGreaterThan(warningsCommit);
   });
 });
