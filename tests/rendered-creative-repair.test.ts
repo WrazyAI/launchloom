@@ -678,6 +678,30 @@ describe("rendered creative repair orchestration", () => {
     }
   });
 
+  it("applies the hero overlay for a solid dark copy panel finding", async () => {
+    const dir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-hero-panel-"),
+    );
+    try {
+      await fs.writeFile(
+        path.join(dir, "styles.css"),
+        "body { color: #111; }",
+      );
+      const result = await applyDeterministicHeroOverlay({
+        candidateDir: dir,
+        findings: [
+          "The hero uses a full-width image but places copy in a solid dark panel over the left third rather than anchoring a project title and compact metadata near the image's lower edge.",
+        ],
+      });
+      expect(result.applied).toBe(true);
+      const css = await fs.readFile(path.join(dir, "styles.css"), "utf8");
+      expect(css).toContain("bounded hero overlay correction");
+      expect(css).toContain("[data-hero-copy]");
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it("applies the media focus plate once for a contrast finding", async () => {
     const dir = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-media-focus-"),

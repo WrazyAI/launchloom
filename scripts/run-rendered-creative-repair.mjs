@@ -1054,7 +1054,7 @@ function reportCandidate(report, candidateId) {
 }
 
 const HERO_CARD_FINDING_PATTERN =
-  /large bordered card|bordered hero card|hero copy is a large/iu;
+  /large bordered card|bordered hero card|hero copy is a large|copy in a solid dark panel|solid dark panel over the (?:left|right)/iu;
 
 const DETERMINISTIC_PAINT_FINDING_PATTERN =
   /contrast (?:fail|unresolved)\b|heading (?:typeface|weight) drifts/iu;
