@@ -355,6 +355,8 @@ describe("trusted attempt producer", () => {
       ).toThrow();
   });
   it("records failed focused reports with diagnostic delivery without private report text", () => {
+    const completedAt = Date.parse("2026-10-01T00:01:00Z");
+    const persistObservedAt = completedAt + 30_000;
     const payload = buildPipelineAttemptTracking(
       {
         profile: "seo-only",
@@ -377,11 +379,14 @@ describe("trusted attempt producer", () => {
         GITHUB_TRIGGERING_ACTOR: "qa-operator",
       },
       5,
+      persistObservedAt + 1,
     );
     expect(payload.observation).toMatchObject({
       executionStatus: "failed",
       deliveryStatus: "diagnostic",
       runAttempt: 2,
+      observedAt: persistObservedAt + 1,
+      completedAt,
     });
     expect(JSON.stringify(payload)).not.toContain("private intake");
   });

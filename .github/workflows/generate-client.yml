@@ -585,7 +585,7 @@ jobs:
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage intake --status completed --detail "Intake parsed and site configuration prepared."
       - name: Record intake failure
-        if: ${{ failure() && steps.intake.outcome == 'failure' }}
+        if: ${{ failure() && (inputs.operation_id == '' || steps.claim.outputs.claimed == 'true') && steps.intake.outcome == 'failure' }}
         continue-on-error: true
         run: node scripts/record-generation-stage.mjs --stage intake --status failed
       - name: Record SEO research result

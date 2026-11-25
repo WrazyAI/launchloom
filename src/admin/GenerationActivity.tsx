@@ -652,19 +652,31 @@ function ChatModelOutput({ rawText }: { rawText: string }) {
   );
 }
 
+function atScrollBottom(element: HTMLElement) {
+  return element.scrollHeight - element.scrollTop - element.clientHeight <= 28;
+}
+
+function hasPausedPreview(scroller: HTMLElement) {
+  return scroller.querySelector("pre[data-preview-paused]") !== null;
+}
+
 function LiveModelOutput({
   text,
   streaming,
   follow,
+  onScroll,
 }: {
   text: string;
   streaming: boolean;
   follow: { current: boolean };
+  onScroll: () => void;
 }) {
   const previewRef = useRef<HTMLPreElement>(null);
   useLayoutEffect(() => {
     const preview = previewRef.current;
-    if (preview && streaming && follow.current) preview.scrollTop = preview.scrollHeight;
+    if (preview && streaming && follow.current && !preview.hasAttribute("data-preview-paused")) {
+      preview.scrollTop = preview.scrollHeight;
+    }
   }, [text, streaming, follow]);
 
   return (
@@ -675,7 +687,18 @@ function LiveModelOutput({
           {streaming ? "Streaming" : "Partial output"}
         </span>
       </div>
-      <pre ref={previewRef} className="admin-chat__codeblock-pre">{text}</pre>
+      <pre
+        ref={previewRef}
+        className="admin-chat__codeblock-pre"
+        tabIndex={0}
+        aria-label="Visible model output"
+        onScroll={({ currentTarget }) => {
+          currentTarget.toggleAttribute("data-preview-paused", !atScrollBottom(currentTarget));
+          onScroll();
+        }}
+      >
+        {text}
+      </pre>
     </div>
   );
 }
@@ -688,6 +711,7 @@ function ThreadedEntry({
   onToggleThinking,
   active,
   follow,
+  onPreviewScroll,
 }: {
   entry: ActivityEntry;
   selected: boolean;
@@ -696,6 +720,7 @@ function ThreadedEntry({
   onToggleThinking: (key: string) => void;
   active: boolean;
   follow: { current: boolean };
+  onPreviewScroll: () => void;
 }) {
   const open = isOpenEntry(entry);
   const progress = entry.kind === "model" ? activityProgress(entry) : null;
@@ -796,7 +821,12 @@ function ThreadedEntry({
           />
 
           {output?.kind === "preview" ? (
-            <LiveModelOutput text={output.text} streaming={open && active} follow={follow} />
+            <LiveModelOutput
+              text={output.text}
+              streaming={open && active}
+              follow={follow}
+              onScroll={onPreviewScroll}
+            />
           ) : output?.kind === "recorded" && !selected ? (
             <ChatModelOutput rawText={output.text} />
           ) : null}
@@ -1214,21 +1244,27 @@ export function GenerationActivity({
     feed.scrollTop = feed.scrollHeight;
   }, [threaded, visible.length]);
 
+  function syncPreviewScroll() {
+    const scroller = scrollRef.current;
+    if (scroller) {
+      setShowJumpToLatest(!atScrollBottom(scroller) || hasPausedPreview(scroller));
+    }
+  }
+
   function syncThreadScroll() {
-    if (!threaded) return;
     const scroller = scrollRef.current;
     if (!scroller) return;
-    const distanceFromBottom =
-      scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
-    const atBottom = distanceFromBottom <= 28;
-    follow.current = atBottom;
-    setShowJumpToLatest(!atBottom);
+    follow.current = atScrollBottom(scroller);
+    syncPreviewScroll();
   }
 
   useLayoutEffect(() => {
-    if (!threaded || !follow.current) return;
+    if (!threaded) return;
     const scroller = scrollRef.current;
-    if (scroller) scroller.scrollTop = scroller.scrollHeight;
+    if (scroller && follow.current && !hasPausedPreview(scroller)) {
+      scroller.scrollTop = scroller.scrollHeight;
+    }
+    syncPreviewScroll();
   }, [threaded, events, visible.length]);
 
   useEffect(() => {
@@ -1236,9 +1272,9 @@ export function GenerationActivity({
     const scroller = scrollRef.current;
     if (!scroller) return;
     const update = () => {
-      if (follow.current) scroller.scrollTop = scroller.scrollHeight;
-      const gap = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
-      setShowJumpToLatest(gap > 28);
+      const previewPaused = hasPausedPreview(scroller);
+      if (follow.current && !previewPaused) scroller.scrollTop = scroller.scrollHeight;
+      setShowJumpToLatest(!atScrollBottom(scroller) || previewPaused);
     };
     const frame = window.requestAnimationFrame(update);
     if (typeof ResizeObserver === "undefined") {
@@ -1268,6 +1304,7 @@ export function GenerationActivity({
         for (const preview of scroller.querySelectorAll<HTMLPreElement>(
           ".admin-chat__codeblock--live pre",
         )) {
+          preview.removeAttribute("data-preview-paused");
           preview.scrollTop = preview.scrollHeight;
         }
         // A new poll can change the target while a smooth scroll is in flight.
@@ -1564,6 +1601,7 @@ export function GenerationActivity({
                         onToggleThinking={toggleThinking}
                         active={active}
                         follow={follow}
+                        onPreviewScroll={syncPreviewScroll}
                       />
                     ) : (
                       <EntryRow

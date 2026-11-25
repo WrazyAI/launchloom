@@ -1657,11 +1657,17 @@ export function createCloudDependencies(
   };
 }
 
-/** @param {any} report @param {Record<string,string|undefined>} environment @param {number|string|null} issueNumber */
+/**
+ * @param {any} report
+ * @param {Record<string,string|undefined>} environment
+ * @param {number|string|null} issueNumber
+ * @param {number} observedAt
+ */
 export function buildPipelineAttemptTracking(
   report,
   environment = process.env,
   issueNumber = null,
+  observedAt = Date.parse(report.finishedAt),
 ) {
   const failed =
     report.verdict !== "passed" ||
@@ -1684,7 +1690,7 @@ export function buildPipelineAttemptTracking(
     previewUrl: report.previewDelivered
       ? safeDiagnosticPreviewUrl(report.previewUrl)
       : null,
-    observedAt: Date.parse(report.finishedAt),
+    observedAt,
     startedAt: Date.parse(report.startedAt),
     completedAt: Date.parse(report.finishedAt),
     failure: failed
@@ -1779,6 +1785,7 @@ if (
   };
   validatePipelineTestInput(input);
   let attemptRegistered = false;
+  let latestObservedAt = Date.now();
   try {
     const runId = String(process.env.GITHUB_RUN_ID || "").trim();
     const runAttempt = Number(process.env.GITHUB_RUN_ATTEMPT || 1);
@@ -1798,8 +1805,8 @@ if (
         triggeringActor: process.env.GITHUB_TRIGGERING_ACTOR || null,
         executionStatus: "running",
         deliveryStatus: "none",
-        observedAt: Date.now(),
-        startedAt: Date.now(),
+        observedAt: latestObservedAt,
+        startedAt: latestObservedAt,
         completedAt: null,
         failure: {},
       });
@@ -1828,7 +1835,8 @@ if (
   const report = await runPipelineTest(input, {
     ...dependencies,
     recordStage: (stage, status) => {
-      const observedAt = Date.now();
+      const observedAt = Math.max(Date.now(), latestObservedAt + 1);
+      latestObservedAt = observedAt;
       // Preserve chronological delivery without making pipeline stages wait on it.
       stageTracking = stageTracking.then(async () => {
         const result = await recordGenerationStage({
@@ -1850,6 +1858,7 @@ if (
       report,
       process.env,
       input.issue,
+      Math.max(Date.now(), latestObservedAt + 1),
     );
     await postAttemptTracking(tracking);
     const thumbnail = diagnosticThumbnailStatus({

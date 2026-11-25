@@ -3515,10 +3515,12 @@ it("streams Agent runs code across incremental polls and replaces it at completi
   }));
   const first = delta(24, 'export const headline = "Working";\n');
   const longLine = "x".repeat(500);
-  const second = delta(25, `// ${longLine}\n`);
+  const earlierCode = `// ${longLine}\n${"// Earlier code\n".repeat(22)}`;
+  const second = delta(25, earlierCode);
   const third = delta(26, 'export const next = true;\n');
-  const finish = event(27, { kind: "model_finished", payload: { callId, status: "completed" } });
-  const output = event(28, {
+  const fourth = delta(27, "export const last = 1;\n");
+  const finish = event(28, { kind: "model_finished", payload: { callId, status: "completed" } });
+  const output = event(29, {
     kind: "output",
     payload: {
       callId,
@@ -3555,16 +3557,30 @@ it("streams Agent runs code across incremental polls and replaces it at completi
 
       respond([second]);
       await expect.poll(() => code.textContent(), { timeout: 8_000 }).toContain(longLine);
-      expect(await code.textContent()).toBe(`export const headline = "Working";\n// ${longLine}\n`);
+      expect(await code.textContent()).toBe(`export const headline = "Working";\n${earlierCode}`);
       expect(requests.some(({ path: requestPath, params }) =>
         requestPath.endsWith(path) && params.after === first.cursor,
       )).toBe(true);
       await expect.poll(atBottom).toBe(true);
 
-      await scroll.evaluate((element) => { element.scrollTop = 0; });
+      const codeAtBottom = () => code.evaluate(
+        (element) => element.scrollHeight - element.scrollTop - element.clientHeight <= 28,
+      );
+      await expect.poll(codeAtBottom).toBe(true);
+      await code.evaluate((element) => { element.scrollTop = 0; });
       await visible(jump);
+      expect(await atBottom()).toBe(true);
       respond([third]);
       await expect.poll(() => code.textContent(), { timeout: 8_000 }).toContain("export const next");
+      expect(await code.evaluate((element) => element.scrollTop)).toBe(0);
+      await jump.click();
+      await expect.poll(codeAtBottom).toBe(true);
+      await expect.poll(() => jump.count()).toBe(0);
+
+      await scroll.evaluate((element) => { element.scrollTop = 0; });
+      await visible(jump);
+      respond([fourth]);
+      await expect.poll(() => code.textContent(), { timeout: 8_000 }).toContain("export const last");
       expect(await scroll.evaluate((element) => element.scrollTop)).toBe(0);
       await jump.click();
       await expect.poll(atBottom).toBe(true);
