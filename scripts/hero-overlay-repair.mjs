@@ -154,11 +154,16 @@ export const MEDIA_FOCUS_CORRECTION_END =
  */
 export function mediaFocusRepairCss() {
   return `${MEDIA_FOCUS_CORRECTION_START}
-/* Inner pages resolve the display stack directly; the homepage h1 inherits a
-   different family, so the identity gate reports a typeface drift even though
-   the visible wordmark uses the display face. Anchor the homepage heading to
-   the same token the authored inner pages use. */
+/* The identity gate compares computed heading strings. The homepage h1 can
+   inherit the template serif while inner pages use the sans stack, or the
+   reverse. Anchor every authored h1 to one display token and weight so the
+   pages cannot drift. */
 body[data-ll-route="/"] [data-hero] h1 {
+  font-family: var(--ll-creative-display, Georgia, serif) !important;
+  font-weight: 400 !important;
+}
+body[data-ll-route^="/services"] h1,
+body[data-ll-route^="/locations"] h1 {
   font-family: var(--ll-creative-display, Georgia, serif) !important;
   font-weight: 400 !important;
 }
@@ -178,6 +183,15 @@ body[data-ll-route^="/services"] form small {
   padding: 2px 6px;
   background: #f7f3e8 !important;
   color: #14201d !important;
+}
+body[data-ll-route="/"] form :is(input, textarea, select):focus-visible,
+body[data-ll-route^="/services"] form :is(input, textarea, select):focus-visible,
+body[data-ll-route^="/locations"] form :is(input, textarea, select):focus-visible {
+  background-color: #f8f6f0 !important;
+  color: #14201d !important;
+  outline: 2px solid #14201d !important;
+  outline-offset: -2px !important;
+  box-shadow: none !important;
 }
 ${MEDIA_FOCUS_CORRECTION_END}
 `;

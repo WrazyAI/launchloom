@@ -81,6 +81,20 @@ describe("media focus plate correction", () => {
     expect(css).toContain("font-weight: 400 !important");
   });
 
+  it("anchors inner-page headings to the same token", () => {
+    const css = mediaFocusRepairCss();
+    expect(css).toContain('body[data-ll-route^="/services"] h1');
+    expect(css).toContain('body[data-ll-route^="/locations"] h1');
+    expect(css).toContain("font-weight: 400 !important");
+  });
+
+  it("gives form controls an opaque focus pair", () => {
+    const css = mediaFocusRepairCss();
+    expect(css).toContain("form :is(input, textarea, select):focus-visible");
+    expect(css).toContain("background-color: #f8f6f0 !important");
+    expect(css).toContain("outline: 2px solid #14201d !important");
+  });
+
   it("replaces the managed block without duplicating it", () => {
     const first = withMediaFocusCorrection("body { color: #111; }");
     const second = withMediaFocusCorrection(first);
