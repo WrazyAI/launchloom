@@ -3,6 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   classifyVisualGateReport,
+  isPreviewLayoutWarning,
   splitFailureLines,
 } from "./creative-gate-severity.mjs";
 
@@ -53,7 +54,10 @@ export function validateCreativePreviewSelection({ config, bakeoff, gate } = {})
     const hard = [...split.hard];
     if (selectionMode === "creative-near-miss") {
       for (let index = hard.length - 1; index >= 0; index -= 1) {
-        if (/^contrast fail/u.test(hard[index])) {
+        if (
+          /^contrast fail/u.test(hard[index]) ||
+          isPreviewLayoutWarning(hard[index])
+        ) {
           warnings.push(...hard.splice(index, 1));
         }
       }

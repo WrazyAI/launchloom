@@ -277,6 +277,37 @@ describe("creative preview selection", () => {
     expect(result.warnings).toContain(
       "contrast fail: / desktop default a.cta measured 2.8:1 (required 4.5)",
     );
+
+    const layoutWarned = validateCreativePreviewSelection({
+      config: config({
+        design: {
+          experience: {
+            renderer: "creative-candidate",
+            candidateId: "candidate-a",
+            selectionMode: "creative-near-miss",
+          },
+        },
+      }),
+      bakeoff: bakeoff({
+        nearMissSelection: true,
+        fallback: true,
+        candidates: [
+          {
+            candidateId: "candidate-a",
+            failures: [
+              "desktop: empty media frame has no image, label, or caption",
+              "mobile: hero action exceeds mobile viewport for an image-overlay route",
+            ],
+            renderedReferenceFidelity: { audit: { overallScore: 55, findings: [] } },
+          },
+        ],
+      }),
+      gate: gate(),
+    });
+    expect(layoutWarned.decision).toBe("warned");
+    expect(layoutWarned.warnings).toContain(
+      "desktop: empty media frame has no image, label, or caption",
+    );
   });
 
   it("rejects a strict selection whose gate only has open findings", () => {

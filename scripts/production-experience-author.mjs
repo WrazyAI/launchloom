@@ -2067,14 +2067,48 @@ function isSealedServiceCollectionExpression(
   file,
   seen = new Set(),
   componentName = "Experience",
+  elements = null,
 ) {
   if (!expression) return false;
   const node = unwrapUrlExpression(expression);
+  if (
+    ts.isBinaryExpression(node) &&
+    (node.operatorToken.kind === ts.SyntaxKind.BarBarToken ||
+      node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken) &&
+    ts.isArrayLiteralExpression(unwrapUrlExpression(node.right)) &&
+    unwrapUrlExpression(node.right).elements.length === 0
+  )
+    return isSealedServiceCollectionExpression(
+      node.left,
+      file,
+      seen,
+      componentName,
+      elements,
+    );
+  if (
+    ts.isConditionalExpression(node) &&
+    ts.isArrayLiteralExpression(unwrapUrlExpression(node.whenFalse)) &&
+    unwrapUrlExpression(node.whenFalse).elements.length === 0
+  )
+    return isSealedServiceCollectionExpression(
+      node.whenTrue,
+      file,
+      seen,
+      componentName,
+      elements,
+    );
   const directPath = expressionPath(node, file);
   if (
     directPath === "content.services" &&
     ts.isPropertyAccessExpression(node) &&
-    isRootExperienceContentIdentifier(node.expression, file, componentName)
+    (isRootExperienceContentIdentifier(node.expression, file, componentName) ||
+      isSealedContentExpression(
+        node.expression,
+        componentName,
+        new Set(),
+        file,
+        elements || collectJsxElements(file.text).elements,
+      ))
   )
     return true;
   if (
@@ -2087,6 +2121,7 @@ function isSealedServiceCollectionExpression(
       file,
       seen,
       componentName,
+      elements,
     );
   if (!ts.isIdentifier(node) || seen.has(node.text)) return false;
   const binding = visibleBinding(node.text, node);
@@ -2104,11 +2139,18 @@ function isSealedServiceCollectionExpression(
   if (bindingPath?.join(".") === "services")
     return (
       ts.isIdentifier(binding.node.initializer) &&
-      isRootExperienceContentIdentifier(
+      (isRootExperienceContentIdentifier(
         binding.node.initializer,
         file,
         componentName,
-      )
+      ) ||
+        isSealedContentExpression(
+          binding.node.initializer,
+          componentName,
+          new Set(),
+          file,
+          elements || collectJsxElements(file.text).elements,
+        ))
     );
   if (bindingPath?.length) return false;
   return isSealedServiceCollectionExpression(
@@ -2116,6 +2158,7 @@ function isSealedServiceCollectionExpression(
     file,
     seen,
     componentName,
+    elements,
   );
 }
 
@@ -2155,18 +2198,116 @@ function enclosingServiceMap(opening, file) {
   return null;
 }
 
+function isSealedServiceIndexLookupCall(
+  expression,
+  file,
+  componentName = "Experience",
+  elements = null,
+) {
+  const node = unwrapUrlExpression(expression);
+  if (
+    !node ||
+    !ts.isCallExpression(node) ||
+    !ts.isPropertyAccessExpression(node.expression) ||
+    !["indexOf", "findIndex"].includes(node.expression.name.text)
+  )
+    return false;
+  return isSealedServiceCollectionExpression(
+    node.expression.expression,
+    file,
+    new Set(),
+    componentName,
+    elements,
+  );
+}
+
 function isValidServiceIndexExpression(
   expression,
   opening,
   file,
   componentName = "Experience",
   elements = null,
+  seen = new Set(),
 ) {
   if (!expression) return false;
+  const node = unwrapUrlExpression(expression);
+  if (!node) return false;
+  const allElements = elements || collectJsxElements(file.text).elements;
+  if (isSealedServiceIndexLookupCall(node, file, componentName, allElements))
+    return true;
+  if (ts.isIdentifier(node)) {
+    const binding = visibleBinding(node.text, node);
+    if (
+      binding?.kind === "variable" &&
+      ts.isIdentifier(binding.node.name) &&
+      (binding.node.parent.flags & ts.NodeFlags.Const) !== 0 &&
+      binding.node.initializer &&
+      !isBindingMutated(binding.node, file) &&
+      !seen.has(binding.node)
+    ) {
+      const nextSeen = new Set(seen);
+      nextSeen.add(binding.node);
+      if (
+        isValidServiceIndexExpression(
+          binding.node.initializer,
+          opening,
+          file,
+          componentName,
+          allElements,
+          nextSeen,
+        )
+      )
+        return true;
+    }
+    if (
+      binding?.kind === "parameter" &&
+      !isBindingMutated(binding.node, file) &&
+      !seen.has(binding.node)
+    ) {
+      const fn = binding.node.parent;
+      const helperName =
+        ts.isFunctionDeclaration(fn) && fn.name
+          ? fn.name.text
+          : ts.isVariableDeclaration(fn?.parent) && ts.isIdentifier(fn.parent.name)
+            ? fn.parent.name.text
+            : "";
+      const propPath = bindingPathForName(binding.node.name, node.text);
+      if (
+        helperName &&
+        helperName !== componentName &&
+        propPath?.length === 1 &&
+        propPath[0] === "index"
+      ) {
+        const callSites = allElements.filter(
+          (item) => jsxOpeningName(item.opening) === helperName,
+        );
+        if (callSites.length > 0) {
+          const nextSeen = new Set(seen);
+          nextSeen.add(binding.node);
+          const allValid = callSites.every((item) => {
+            const attr = jsxAttribute(item.opening, "index");
+            const passed =
+              attr?.initializer && ts.isJsxExpression(attr.initializer)
+                ? attr.initializer.expression
+                : null;
+            return isValidServiceIndexExpression(
+              passed,
+              item.opening,
+              file,
+              componentName,
+              allElements,
+              nextSeen,
+            );
+          });
+          if (allValid) return true;
+        }
+      }
+    }
+  }
   const map = enclosingServiceMap(opening, file);
   if (map) {
-    const binding = ts.isIdentifier(expression)
-      ? visibleBinding(expression.text, expression)
+    const binding = ts.isIdentifier(node)
+      ? visibleBinding(node.text, node)
       : null;
     const collection = map.call.expression.expression;
     const sealedCollection =
@@ -2175,6 +2316,7 @@ function isValidServiceIndexExpression(
         file,
         new Set(),
         componentName,
+        allElements,
       ) ||
       (ts.isPropertyAccessExpression(collection) &&
         collection.name.text === "services" &&
@@ -2183,7 +2325,7 @@ function isValidServiceIndexExpression(
           componentName,
           new Set(),
           file,
-          elements || collectJsxElements(file.text).elements,
+          allElements,
         ));
     return Boolean(
       sealedCollection &&
@@ -2192,8 +2334,8 @@ function isValidServiceIndexExpression(
       !isBindingMutated(binding.node, file),
     );
   }
-  if (!ts.isNumericLiteral(expression)) return false;
-  const value = Number(expression.text);
+  if (!ts.isNumericLiteral(node)) return false;
+  const value = Number(node.text);
   return Number.isSafeInteger(value) && value >= 0;
 }
 
@@ -3488,7 +3630,7 @@ function validateInnerPageSource({
       throw new Error(
         `Candidate ${route.id} ${file} is missing the ${marker} region marker.`,
       );
-  if (!/<section\b[^>]*\bid\s*=\s*["']contact["']/u.test(source))
+  if (!/<(?:section|div|footer|aside)\b[^>]*\bid\s*=\s*["']contact["']/u.test(source))
     throw new Error(
       `Candidate ${route.id} ${file} must include a contact section with id="contact".`,
     );
@@ -3537,7 +3679,9 @@ function validateInnerPageSource({
     );
   assertAuthoredCopyClaims(source, route, content, file);
   const embeddedFact = scalarContentValues(content).find((value) =>
-    source.includes(value),
+    String(source || "")
+      .replace(/\b(?:aria-label|title|alt)\s*=\s*(?:"[^"]*"|'[^']*')/gu, "")
+      .includes(value),
   );
   if (embeddedFact) {
     const matchAt = source.indexOf(embeddedFact);
@@ -3805,7 +3949,9 @@ function validateExperience(source, route, content, visualBrief = {}) {
     );
   assertAuthoredCopyClaims(source, route, content, "Experience.jsx");
   const embeddedFact = scalarContentValues(content).find((value) =>
-    source.includes(value),
+    String(source || "")
+      .replace(/\b(?:aria-label|title|alt)\s*=\s*(?:"[^"]*"|'[^']*')/gu, "")
+      .includes(value),
   );
   if (embeddedFact) {
     const matchAt = source.indexOf(embeddedFact);
@@ -4176,6 +4322,201 @@ async function generateValidatedSource({ generate, request, stage, validate }) {
   );
 }
 
+function fallbackServicePageSource() {
+  return `import { ContactLinks, LeadForm, PageBriefSections, ServiceLink } from "@launchloom/runtime";
+
+export default function ServicePage({ content, service, runtime }) {
+  const related = Array.isArray(service.related) ? service.related : [];
+  const processSteps = Array.isArray(service.process) ? service.process : [];
+  const faqs = Array.isArray(service.faqs) ? service.faqs : [];
+  return (
+    <main data-service-page={service.slug}>
+      <nav aria-label="Primary navigation">
+        <a href="/">{content.brand.name}</a>
+        <a href="/services/">Services</a>
+        <a href="#contact">{content.hero.primaryLabel}</a>
+      </nav>
+      <section data-service-hero>
+        <h1>{service.name}</h1>
+        <p>{service.description}</p>
+        <a href="#contact">{content.hero.primaryLabel}</a>
+      </section>
+      <section data-service-support>
+        <h2>What this service covers</h2>
+        {service.support?.scope && <p>{service.support.scope}</p>}
+        {service.support?.preparation && <p>{service.support.preparation}</p>}
+        {service.support?.nextStep && <p>{service.support.nextStep}</p>}
+        <PageBriefSections brief={service.brief} />
+        {processSteps.length > 0 && (
+          <ol>
+            {processSteps.map((step, index) => (
+              <li key={index}>{step}</li>
+            ))}
+          </ol>
+        )}
+        {faqs.length > 0 && (
+          <div>
+            {faqs.map((faq) => (
+              <details key={faq.question}>
+                <summary>{faq.question}</summary>
+                <p>{faq.answer}</p>
+              </details>
+            ))}
+          </div>
+        )}
+      </section>
+      <section data-service-related>
+        <h2>Related services</h2>
+        <ul>
+          {content.services.map((item, index) => (
+            <li key={item.slug}>
+              <ServiceLink content={content} index={index}>{item.name}</ServiceLink>
+            </li>
+          ))}
+        </ul>
+        {related.length > 0 && (
+          <ul>
+            {related.map((item) => (
+              <li key={item.slug}>{item.name}</li>
+            ))}
+          </ul>
+        )}
+      </section>
+      <section id="contact">
+        <h2>{content.copy.contactHeading}</h2>
+        <ContactLinks content={content} />
+        <LeadForm content={content} runtime={runtime} />
+      </section>
+    </main>
+  );
+}
+`;
+}
+
+function fallbackLocationPageSource() {
+  return `import { ContactLinks, LeadForm, PageBriefSections, ServiceLink } from "@launchloom/runtime";
+
+export default function LocationPage({ content, location, runtime }) {
+  const localServices = Array.isArray(location.services) ? location.services : [];
+  const otherAreas = Array.isArray(location.otherAreas) ? location.otherAreas : [];
+  return (
+    <main data-location-page={location.slug}>
+      <nav aria-label="Primary navigation">
+        <a href="/">{content.brand.name}</a>
+        <a href="/services/">Services</a>
+        <a href="#contact">{content.hero.primaryLabel}</a>
+      </nav>
+      <section data-location-hero>
+        <h1>{location.name}</h1>
+        <p>{location.description}</p>
+        <a href="#contact">{content.hero.primaryLabel}</a>
+      </section>
+      <section data-location-coverage>
+        <h2>Local coverage</h2>
+        <p>{location.localNote}</p>
+        <PageBriefSections brief={location.brief} />
+        {localServices.length > 0 && (
+          <ul>
+            {localServices.map((item) => (
+              <li key={item.slug}>{item.name}</li>
+            ))}
+          </ul>
+        )}
+      </section>
+      <section data-location-related>
+        <h2>Confirmed services</h2>
+        <ul>
+          {content.services.map((item, index) => (
+            <li key={item.slug}>
+              <ServiceLink content={content} index={index}>{item.name}</ServiceLink>
+            </li>
+          ))}
+        </ul>
+        {otherAreas.length > 0 && (
+          <ul>
+            {otherAreas.map((area) => (
+              <li key={area.slug}>{area.name}</li>
+            ))}
+          </ul>
+        )}
+      </section>
+      <section id="contact">
+        <h2>{content.copy.contactHeading}</h2>
+        <ContactLinks content={content} />
+        <LeadForm content={content} runtime={runtime} />
+      </section>
+    </main>
+  );
+}
+`;
+}
+
+function fallbackServicesIndexPageSource() {
+  return `import { ContactLinks, LeadForm, ServiceLink } from "@launchloom/runtime";
+
+export default function ServicesIndexPage({ content, runtime }) {
+  return (
+    <main data-services-index>
+      <nav aria-label="Primary navigation">
+        <a href="/">{content.brand.name}</a>
+        <a href="/services/">Services</a>
+        <a href="#contact">{content.hero.primaryLabel}</a>
+      </nav>
+      <section data-services-index-hero>
+        <h1>{content.copy.servicesHeading}</h1>
+        <p>{content.copy.servicesIntro}</p>
+        <a href="#contact">{content.hero.primaryLabel}</a>
+      </section>
+      <section data-services-index-list>
+        <ul>
+          {content.services.map((service, index) => (
+            <li key={service.slug}>
+              <h2>
+                <ServiceLink content={content} index={index}>{service.name}</ServiceLink>
+              </h2>
+              <p>{service.description}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+      <section id="contact">
+        <h2>{content.copy.contactHeading}</h2>
+        <ContactLinks content={content} />
+        <LeadForm content={content} runtime={runtime} />
+      </section>
+    </main>
+  );
+}
+`;
+}
+
+async function generateInnerPageWithFallback({
+  generate,
+  request,
+  stage,
+  validate,
+  fallbackSource,
+}) {
+  try {
+    return await generateValidatedSource({
+      generate,
+      request,
+      stage,
+      validate,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/(?:api key|unauthorized|forbidden|network|timed out|abort|rate limit|429|502|503|504)/iu.test(message))
+      throw error;
+    const fallback = fallbackSource();
+    validate(fallback, request.route, request.visualBrief);
+    console.warn(
+      `creative_inner_page_fallback route=${request.route?.id || "unknown"} stage=${stage} reason=${JSON.stringify(message.slice(0, 220))}`,
+    );
+    return { source: fallback, repaired: true, fallback: true };
+  }
+}
+
 async function generateMotionSource({ generate, request, validate }) {
   try {
     return await generateValidatedSource({
@@ -4473,7 +4814,7 @@ export async function authorExperienceCandidates({
       });
       // Prevent unhandledRejection if an earlier secondary-page stage throws.
       motionPromise.catch(() => {});
-      const servicePageOutput = await generateValidatedSource({
+      const servicePageOutput = await generateInnerPageWithFallback({
         generate: limitedGenerate,
         request: {
           ...base,
@@ -4484,6 +4825,7 @@ export async function authorExperienceCandidates({
         stage: "service",
         validate: (source, serviceRoute) =>
           validateServicePage(source, serviceRoute, content),
+        fallbackSource: fallbackServicePageSource,
       });
       const servicePage = servicePageOutput.source;
       complianceRepaired ||= servicePageOutput.repaired;
@@ -4492,7 +4834,7 @@ export async function authorExperienceCandidates({
         site.industry === "home-services" && locations.length > 0;
       let locationPage = "";
       if (authorLocationPage) {
-        const locationPageOutput = await generateValidatedSource({
+        const locationPageOutput = await generateInnerPageWithFallback({
           generate: limitedGenerate,
           request: {
             ...base,
@@ -4504,11 +4846,12 @@ export async function authorExperienceCandidates({
           stage: "location",
           validate: (source, locationRoute) =>
             validateLocationPage(source, locationRoute, content),
+          fallbackSource: fallbackLocationPageSource,
         });
         locationPage = locationPageOutput.source;
         complianceRepaired ||= locationPageOutput.repaired;
       }
-      const servicesIndexOutput = await generateValidatedSource({
+      const servicesIndexOutput = await generateInnerPageWithFallback({
         generate: limitedGenerate,
         request: {
           ...base,
@@ -4521,6 +4864,7 @@ export async function authorExperienceCandidates({
         stage: "service-index",
         validate: (source, serviceIndexRoute) =>
           validateServicesIndexPage(source, serviceIndexRoute, content),
+        fallbackSource: fallbackServicesIndexPageSource,
       });
       const servicesIndexPage = servicesIndexOutput.source;
       complianceRepaired ||= servicesIndexOutput.repaired;

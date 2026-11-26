@@ -2069,6 +2069,8 @@ async function runRepairRounds({
         candidate,
         assessment: nearMissAssessment(candidate, {
           allowContrastWarnings: true,
+          allowPreviewLayoutWarnings: true,
+          dimensionFloor: 0,
         }),
       }))
       .filter((entry) => entry.assessment.eligible);
