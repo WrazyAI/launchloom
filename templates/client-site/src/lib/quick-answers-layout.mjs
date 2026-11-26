@@ -12,6 +12,17 @@ export function installQuickAnswersLayout(root) {
     'a[href], button, input, select, textarea, summary, [role="button"], [tabindex]:not([tabindex="-1"])';
   const positioned = ["left", "right", "top", "bottom"];
   let frame = 0;
+  let suppressOwnResize = false;
+  let lastBodyWidth = document.body.clientWidth;
+
+  const markOwnLayoutChange = () => {
+    suppressOwnResize = true;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        suppressOwnResize = false;
+      });
+    });
+  };
 
   const clearPosition = () => {
     for (const property of positioned) root.style.removeProperty(property);
@@ -100,11 +111,13 @@ export function installQuickAnswersLayout(root) {
     const height = launcherRect.height;
     const margin = window.innerWidth <= 760 ? 14 : 24;
     const top = window.innerHeight - margin - height;
+    const wasColliding = root.classList.contains("is-colliding");
+    const pad = wasColliding ? 24 : 8;
     const safe = {
-      left: margin - 8,
-      right: margin + width + 8,
-      top: top - 8,
-      bottom: top + height + 8,
+      left: margin - pad,
+      right: margin + width + pad,
+      top: top - pad,
+      bottom: top + height + pad,
     };
     const collides = obstacles().some(
       (rect) =>
@@ -114,12 +127,14 @@ export function installQuickAnswersLayout(root) {
         rect.bottom > safe.top,
     );
     if (collides) {
+      if (!wasColliding) markOwnLayoutChange();
       clearPosition();
       root.classList.add("is-colliding");
       return;
     }
-    if (root.classList.contains("is-colliding") && root.contains(document.activeElement))
+    if (wasColliding && root.contains(document.activeElement))
       return;
+    if (wasColliding) markOwnLayoutChange();
     root.style.setProperty("left", `${margin}px`, "important");
     root.style.setProperty("right", "auto", "important");
     root.style.setProperty("bottom", `${margin}px`, "important");
@@ -141,7 +156,12 @@ export function installQuickAnswersLayout(root) {
   root.addEventListener("focusout", schedule);
   document.fonts?.ready.then(schedule).catch(() => {});
   if ("ResizeObserver" in window)
-    new ResizeObserver(schedule).observe(document.body);
+    new ResizeObserver(() => {
+      const nextWidth = document.body.clientWidth;
+      if (suppressOwnResize && nextWidth === lastBodyWidth) return;
+      lastBodyWidth = nextWidth;
+      schedule();
+    }).observe(document.body);
   if ("MutationObserver" in window) {
     const styleChangeMayAffectObstacles = (target) => {
       if (!(target instanceof Element) || root.contains(target)) return false;

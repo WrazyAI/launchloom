@@ -1636,6 +1636,7 @@ async function runRepairRounds({
   const repairBlockedRounds = new Map();
   const rejectionCycles = new Map();
   const rejectionContext = new Map();
+  const appliedDeterministicRepairs = new Set();
   const REPAIR_BLOCK_COOLDOWN_ROUNDS = 2;
   const REPAIR_REJECTION_CYCLES_ALLOWED = 2;
   const isRepairBlockedAt = (candidateId, atRound) => {
@@ -1690,15 +1691,31 @@ async function runRepairRounds({
       candidateRoot,
       candidateDirectory,
     );
-    const deterministicFocus = await applyDeterministicMediaFocusOverlay({
-      candidateDir,
-      findings,
-    });
-    const deterministicHero = await applyDeterministicHeroOverlay({
-      candidateDir,
-      findings,
-    });
+    const deterministicFocus = appliedDeterministicRepairs.has(
+      `${candidateId}:deterministic-media-focus`,
+    )
+      ? { applied: false }
+      : await applyDeterministicMediaFocusOverlay({
+          candidateDir,
+          findings,
+        });
+    const deterministicHero = appliedDeterministicRepairs.has(
+      `${candidateId}:deterministic-hero-overlay`,
+    )
+      ? { applied: false }
+      : await applyDeterministicHeroOverlay({
+          candidateDir,
+          findings,
+        });
     if (deterministicFocus.applied || deterministicHero.applied) {
+      if (deterministicFocus.applied)
+        appliedDeterministicRepairs.add(
+          `${candidateId}:deterministic-media-focus`,
+        );
+      if (deterministicHero.applied)
+        appliedDeterministicRepairs.add(
+          `${candidateId}:deterministic-hero-overlay`,
+        );
       const status = [
         deterministicFocus.applied && "deterministic-media-focus",
         deterministicHero.applied && "deterministic-hero-overlay",
@@ -2039,6 +2056,8 @@ async function runRepairRounds({
         candidate,
         assessment: nearMissAssessment(candidate, {
           allowContrastWarnings: true,
+          allowPreviewLayoutWarnings: true,
+          dimensionFloor: 0,
         }),
       }))
       .filter((entry) => entry.assessment.eligible);

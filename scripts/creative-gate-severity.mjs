@@ -175,13 +175,37 @@ export const NEAR_MISS_PREVIEW_DEFAULTS = Object.freeze({
 });
 
 /**
+ * Rendered layout/imagery/identity findings that are advisory on a developer
+ * preview (never hiding real broken images, horizontal overflow, missing H1 or
+ * required sections, em dashes, missing alt text, or browser errors).
+ */
+export function isPreviewLayoutWarning(line) {
+  const text = String(line ?? "").trim();
+  if (!text) return false;
+  const withoutPage = text.replace(AUTHORED_PAGE_PREFIX, "");
+  const viewport = withoutPage.match(VIEWPORT_PREFIX);
+  const inner = viewport ? withoutPage.slice(viewport[0].length) : withoutPage;
+  return (
+    inner === "empty media frame has no image, label, or caption" ||
+    inner.startsWith("hero action exceeds mobile viewport") ||
+    inner === "hero media is not visible enough in the mobile first viewport" ||
+    /^hero copy (?:card|panel) covers\b/iu.test(inner) ||
+    inner.startsWith("purposeful interaction default panel repeats") ||
+    /^(?:service|location|services index)\s+page\s+(?:canvas|heading|body)/iu.test(
+      inner,
+    ) ||
+    /^authored page identity/iu.test(inner)
+  );
+}
+
+/**
  * Assess one candidate for near-miss preview delivery: every hard deterministic
  * gate must be clean, no critical judge findings, the overall rendered score at
  * or above the scalar bar, and every rendered dimension at or above the
  * absolute floor. Design-fidelity findings travel as open findings.
  *
  * @param {Record<string, any>} candidate bakeoff candidate result
- * @param {{overallBar?: number, dimensionFloor?: number, allowContrastWarnings?: boolean}} [options]
+ * @param {{overallBar?: number, dimensionFloor?: number, allowContrastWarnings?: boolean, allowPreviewLayoutWarnings?: boolean}} [options]
  * @returns {{eligible: boolean, reasons: string[], openFindings: string[], hardFailures: string[], criticalFindings: string[], overall: number | null, scores: Record<string, number> | null}}
  */
 export function nearMissAssessment(
@@ -190,15 +214,20 @@ export function nearMissAssessment(
     overallBar = NEAR_MISS_PREVIEW_DEFAULTS.overallBar,
     dimensionFloor = NEAR_MISS_PREVIEW_DEFAULTS.dimensionFloor,
     allowContrastWarnings = false,
+    allowPreviewLayoutWarnings = false,
   } = {},
 ) {
   const audit = candidate?.renderedReferenceFidelity?.audit || null;
   const split = splitFailureLines(candidate?.failures || []);
   const hard = [...split.hard];
   const open = [...split.open];
-  if (allowContrastWarnings) {
+  if (allowContrastWarnings || allowPreviewLayoutWarnings) {
     for (let index = hard.length - 1; index >= 0; index -= 1) {
-      if (/^contrast fail/u.test(hard[index])) {
+      const line = hard[index];
+      if (
+        (allowContrastWarnings && /^contrast fail/u.test(line)) ||
+        (allowPreviewLayoutWarnings && isPreviewLayoutWarning(line))
+      ) {
         open.unshift(...hard.splice(index, 1));
       }
     }

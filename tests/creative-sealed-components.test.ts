@@ -155,5 +155,24 @@ export default function Experience({ content, runtime }) {
       '<section><h2>More services</h2>{firstService.decisionSupport.scope}{secondService.decisionSupport.preparation}</section><section id="faqs">',
     );
     expect(() => validate(individualServiceCopy)).toThrow(/full service set.*exactly one section/u);
+
+    // Idiomatic derived collections, findIndex/indexOf lookups, and helper index forwarding are safe.
+    const derivedServicesMap = experience.replace(
+      "content.services.map(",
+      "(content.services || []).slice(0, 3).map(",
+    );
+    expect(() => validate(derivedServicesMap)).not.toThrow();
+
+    const findIndexLookup = experience.replace(
+      "index={index}",
+      "index={content.services.findIndex((item) => item.slug === service.slug)}",
+    );
+    expect(() => validate(findIndexLookup)).not.toThrow();
+
+    const helperIndexForward = `function ServiceCard({ content, service, index }) { return <article><h2>{service.name}</h2><p>{service.description}</p><ServiceLink content={content} index={index} /></article>; }\n${experience.replace(
+      `<section id="services">${servicesSection}</section>`,
+      '<section id="services">{content.services.map((service, index) => <ServiceCard key={service.name} content={content} service={service} index={index} />)}</section>',
+    )}`;
+    expect(() => validate(helperIndexForward)).not.toThrow();
   });
 });

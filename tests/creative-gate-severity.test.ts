@@ -223,6 +223,34 @@ describe("near-miss assessment", () => {
     ]);
     expect(assessment.hardFailures).toEqual(["desktop: horizontal overflow"]);
   });
+
+  it("downgrades preview layout and empty-media warnings when allowPreviewLayoutWarnings is enabled while keeping broken images and overflow hard", () => {
+    const allowed = nearMissAssessment(
+      candidate({
+        failures: [
+          "desktop: empty media frame has no image, label, or caption",
+          "mobile: hero action exceeds mobile viewport for an image-overlay route",
+        ],
+      }),
+      { allowPreviewLayoutWarnings: true, dimensionFloor: 0 },
+    );
+    expect(allowed.eligible).toBe(true);
+    expect(allowed.hardFailures).toEqual([]);
+    expect(allowed.openFindings).toContain(
+      "desktop: empty media frame has no image, label, or caption",
+    );
+    const blocked = nearMissAssessment(
+      candidate({
+        failures: [
+          "desktop: empty media frame has no image, label, or caption",
+          "desktop: broken image",
+        ],
+      }),
+      { allowPreviewLayoutWarnings: true, dimensionFloor: 0 },
+    );
+    expect(blocked.eligible).toBe(false);
+    expect(blocked.hardFailures).toEqual(["desktop: broken image"]);
+  });
 });
 
 describe("visual gate report classification", () => {
