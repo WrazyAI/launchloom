@@ -1,44 +1,7 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-26T18:00:43.678Z",
+  "updatedAt": "2026-11-26T18:45:42.679Z",
   "launches": [
-    {
-      "id": "2026-10-27-harbor-pine-landscape-co-attempt-197-run-40574638778-attempt-1",
-      "launchedAt": "2026-10-27T20:08:15.183Z",
-      "stage": "attempt",
-      "reservationKey": "197-run-40574638778-attempt-1",
-      "businessName": "Harbor & Pine Landscape Co.",
-      "businessKind": "home-services",
-      "recipe": "local-trades",
-      "packId": "bold-utility",
-      "variantId": "portrait",
-      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
-      "creativeFamilyId": "",
-      "referenceFamilyId": "",
-      "routeFamilyIds": [
-        "cinematic-stage",
-        "editorial-monument",
-        "htmlcodex-gardener-garden-services",
-        "market-collage",
-        "orgarden-gardening-services",
-        "spicer-landscaping-season-wheel"
-      ],
-      "heroArchetypes": [
-        "collage-mosaic",
-        "image-led-editorial",
-        "split-media-copy"
-      ],
-      "referenceIds": [
-        "htmlcodex-gardener-garden-services",
-        "orgarden-gardening-services",
-        "spicer-landscaping-season-wheel"
-      ],
-      "routeSignatures": [
-        "deep green wordmark and direct service navigation|split-media|service grid followed by a clear contact close|large clean sans heading with a calm local-service voice|navigation -> split-hero -> about -> service-grid -> team -> contact-form -> tes|wide garden photography and approved service imagery",
-        "quiet-wordmark-and-direct-section-anchors|portfolio-led-landscape-hero-with-season-selector|project-grid-plus-seasonal-planning-and-maintenance-comparison|editorial-serif-with-neutral-sans|portfolio-to-season-wheel-to-plan-matrix-to-estimator-to-coverage|ai-generated-garden-hero-with-inline-svg-project-illustrations",
-        "wordmark and direct service navigation|media-overlay|service grid with concise scope and a clear contact close|bold sans headings with a direct local-service voice|navigation -> full-bleed-hero -> trust-band -> about -> service-grid -> project-|wide garden photography and approved service imagery"
-      ]
-    },
     {
       "id": "2026-10-28-northline-dental-studio-attempt-202-run-40713717954-attempt-1",
       "launchedAt": "2026-10-28T15:18:42.396Z",
@@ -1785,47 +1748,47 @@
         "light service navigation with a strong quote control and a slim offer strip|a dark-green photographic stage with a technician in a yard and a bright lime ca|small pest-category pictograms and a three-part inspection-treatment-communicati|rounded modern sans statements with calm small explanatory copy|service navigation -> technician-led image hero -> four prevention benefits -> p|technician and home-garden scenes framed by organic leaf and lawn imagery",
         "quiet-wordmark-and-direct-section-anchors|portfolio-led-landscape-hero-with-season-selector|project-grid-plus-seasonal-planning-and-maintenance-comparison|editorial-serif-with-neutral-sans|portfolio-to-season-wheel-to-plan-matrix-to-estimator-to-coverage|ai-generated-garden-hero-with-inline-svg-project-illustrations"
       ]
+    },
+    {
+      "id": "2026-11-26-crestline-electrical-attempt-367-run-45877849370-attempt-1",
+      "launchedAt": "2026-11-26T18:45:42.676Z",
+      "stage": "attempt",
+      "reservationKey": "367-run-45877849370-attempt-1",
+      "businessName": "Crestline Electrical",
+      "businessKind": "home-services",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "cinematic-stage",
+        "htmlcodex-gardener-garden-services",
+        "market-collage",
+        "spicer-landscaping-season-wheel",
+        "utility-diagnostic",
+        "web-homeservices-aptive"
+      ],
+      "heroArchetypes": [
+        "collage-mosaic",
+        "image-led-editorial",
+        "image-overlay"
+      ],
+      "referenceIds": [
+        "htmlcodex-gardener-garden-services",
+        "spicer-landscaping-season-wheel",
+        "web-homeservices-aptive"
+      ],
+      "routeSignatures": [
+        "light service navigation with a strong quote control and a slim offer strip|a dark-green photographic stage with a technician in a yard and a bright lime ca|small pest-category pictograms and a three-part inspection-treatment-communicati|rounded modern sans statements with calm small explanatory copy|service navigation -> technician-led image hero -> four prevention benefits -> p|technician and home-garden scenes framed by organic leaf and lawn imagery",
+        "quiet-wordmark-and-direct-section-anchors|portfolio-led-landscape-hero-with-season-selector|project-grid-plus-seasonal-planning-and-maintenance-comparison|editorial-serif-with-neutral-sans|portfolio-to-season-wheel-to-plan-matrix-to-estimator-to-coverage|ai-generated-garden-hero-with-inline-svg-project-illustrations",
+        "wordmark and direct service navigation|media-overlay|service grid with concise scope and a clear contact close|bold sans headings with a direct local-service voice|navigation -> full-bleed-hero -> trust-band -> about -> service-grid -> project-|wide garden photography and approved service imagery"
+      ]
     }
   ],
   "launchesByBusinessKind": {
     "home-services": [
-      {
-        "id": "2026-10-27-harbor-pine-landscape-co-attempt-197-run-40568192231-attempt-1",
-        "launchedAt": "2026-10-27T19:26:03.757Z",
-        "stage": "attempt",
-        "reservationKey": "197-run-40568192231-attempt-1",
-        "businessName": "Harbor & Pine Landscape Co.",
-        "businessKind": "home-services",
-        "recipe": "local-trades",
-        "packId": "bold-utility",
-        "variantId": "portrait",
-        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "cinematic-stage",
-          "editorial-monument",
-          "htmlcodex-gardener-garden-services",
-          "market-collage",
-          "orgarden-gardening-services",
-          "spicer-landscaping-season-wheel"
-        ],
-        "heroArchetypes": [
-          "collage-mosaic",
-          "image-led-editorial",
-          "split-media-copy"
-        ],
-        "referenceIds": [
-          "htmlcodex-gardener-garden-services",
-          "orgarden-gardening-services",
-          "spicer-landscaping-season-wheel"
-        ],
-        "routeSignatures": [
-          "deep green wordmark and direct service navigation|split-media|service grid followed by a clear contact close|large clean sans heading with a calm local-service voice|navigation -> split-hero -> about -> service-grid -> team -> contact-form -> tes|wide garden photography and approved service imagery",
-          "quiet-wordmark-and-direct-section-anchors|portfolio-led-landscape-hero-with-season-selector|project-grid-plus-seasonal-planning-and-maintenance-comparison|editorial-serif-with-neutral-sans|portfolio-to-season-wheel-to-plan-matrix-to-estimator-to-coverage|ai-generated-garden-hero-with-inline-svg-project-illustrations",
-          "wordmark and direct service navigation|media-overlay|service grid with concise scope and a clear contact close|bold sans headings with a direct local-service voice|navigation -> full-bleed-hero -> trust-band -> about -> service-grid -> project-|wide garden photography and approved service imagery"
-        ]
-      },
       {
         "id": "2026-10-27-harbor-pine-landscape-co-attempt-197-run-40574638778-attempt-1",
         "launchedAt": "2026-10-27T20:08:15.183Z",
@@ -2114,6 +2077,80 @@
         ]
       },
       {
+        "id": "2026-11-26-crestline-electrical-attempt-367-run-45871792375-attempt-1",
+        "launchedAt": "2026-11-26T18:00:43.675Z",
+        "stage": "attempt",
+        "reservationKey": "367-run-45871792375-attempt-1",
+        "businessName": "Crestline Electrical",
+        "businessKind": "home-services",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "editorial-monument",
+          "market-collage",
+          "orgarden-gardening-services",
+          "spicer-landscaping-season-wheel",
+          "utility-diagnostic",
+          "web-homeservices-aptive"
+        ],
+        "heroArchetypes": [
+          "collage-mosaic",
+          "image-overlay",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "orgarden-gardening-services",
+          "spicer-landscaping-season-wheel",
+          "web-homeservices-aptive"
+        ],
+        "routeSignatures": [
+          "deep green wordmark and direct service navigation|split-media|service grid followed by a clear contact close|large clean sans heading with a calm local-service voice|navigation -> split-hero -> about -> service-grid -> team -> contact-form -> tes|wide garden photography and approved service imagery",
+          "light service navigation with a strong quote control and a slim offer strip|a dark-green photographic stage with a technician in a yard and a bright lime ca|small pest-category pictograms and a three-part inspection-treatment-communicati|rounded modern sans statements with calm small explanatory copy|service navigation -> technician-led image hero -> four prevention benefits -> p|technician and home-garden scenes framed by organic leaf and lawn imagery",
+          "quiet-wordmark-and-direct-section-anchors|portfolio-led-landscape-hero-with-season-selector|project-grid-plus-seasonal-planning-and-maintenance-comparison|editorial-serif-with-neutral-sans|portfolio-to-season-wheel-to-plan-matrix-to-estimator-to-coverage|ai-generated-garden-hero-with-inline-svg-project-illustrations"
+        ]
+      },
+      {
+        "id": "2026-10-27-harbor-pine-landscape-co-attempt-197-run-40568192231-attempt-1",
+        "launchedAt": "2026-10-27T19:26:03.757Z",
+        "stage": "attempt",
+        "reservationKey": "197-run-40568192231-attempt-1",
+        "businessName": "Harbor & Pine Landscape Co.",
+        "businessKind": "home-services",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "cinematic-stage",
+          "editorial-monument",
+          "htmlcodex-gardener-garden-services",
+          "market-collage",
+          "orgarden-gardening-services",
+          "spicer-landscaping-season-wheel"
+        ],
+        "heroArchetypes": [
+          "collage-mosaic",
+          "image-led-editorial",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "htmlcodex-gardener-garden-services",
+          "orgarden-gardening-services",
+          "spicer-landscaping-season-wheel"
+        ],
+        "routeSignatures": [
+          "deep green wordmark and direct service navigation|split-media|service grid followed by a clear contact close|large clean sans heading with a calm local-service voice|navigation -> split-hero -> about -> service-grid -> team -> contact-form -> tes|wide garden photography and approved service imagery",
+          "quiet-wordmark-and-direct-section-anchors|portfolio-led-landscape-hero-with-season-selector|project-grid-plus-seasonal-planning-and-maintenance-comparison|editorial-serif-with-neutral-sans|portfolio-to-season-wheel-to-plan-matrix-to-estimator-to-coverage|ai-generated-garden-hero-with-inline-svg-project-illustrations",
+          "wordmark and direct service navigation|media-overlay|service grid with concise scope and a clear contact close|bold sans headings with a direct local-service voice|navigation -> full-bleed-hero -> trust-band -> about -> service-grid -> project-|wide garden photography and approved service imagery"
+        ]
+      },
+      {
         "id": "2026-10-23-ridgeline-plumbing-drain-co-attempt-184-run-39971185509-attempt-1",
         "launchedAt": "2026-10-23T14:41:48.194Z",
         "stage": "attempt",
@@ -2185,10 +2222,10 @@
         ]
       },
       {
-        "id": "2026-11-26-crestline-electrical-attempt-367-run-45871792375-attempt-1",
-        "launchedAt": "2026-11-26T18:00:43.675Z",
+        "id": "2026-11-26-crestline-electrical-attempt-367-run-45877849370-attempt-1",
+        "launchedAt": "2026-11-26T18:45:42.676Z",
         "stage": "attempt",
-        "reservationKey": "367-run-45871792375-attempt-1",
+        "reservationKey": "367-run-45877849370-attempt-1",
         "businessName": "Crestline Electrical",
         "businessKind": "home-services",
         "recipe": "local-trades",
@@ -2198,27 +2235,27 @@
         "creativeFamilyId": "",
         "referenceFamilyId": "",
         "routeFamilyIds": [
-          "editorial-monument",
+          "cinematic-stage",
+          "htmlcodex-gardener-garden-services",
           "market-collage",
-          "orgarden-gardening-services",
           "spicer-landscaping-season-wheel",
           "utility-diagnostic",
           "web-homeservices-aptive"
         ],
         "heroArchetypes": [
           "collage-mosaic",
-          "image-overlay",
-          "split-media-copy"
+          "image-led-editorial",
+          "image-overlay"
         ],
         "referenceIds": [
-          "orgarden-gardening-services",
+          "htmlcodex-gardener-garden-services",
           "spicer-landscaping-season-wheel",
           "web-homeservices-aptive"
         ],
         "routeSignatures": [
-          "deep green wordmark and direct service navigation|split-media|service grid followed by a clear contact close|large clean sans heading with a calm local-service voice|navigation -> split-hero -> about -> service-grid -> team -> contact-form -> tes|wide garden photography and approved service imagery",
           "light service navigation with a strong quote control and a slim offer strip|a dark-green photographic stage with a technician in a yard and a bright lime ca|small pest-category pictograms and a three-part inspection-treatment-communicati|rounded modern sans statements with calm small explanatory copy|service navigation -> technician-led image hero -> four prevention benefits -> p|technician and home-garden scenes framed by organic leaf and lawn imagery",
-          "quiet-wordmark-and-direct-section-anchors|portfolio-led-landscape-hero-with-season-selector|project-grid-plus-seasonal-planning-and-maintenance-comparison|editorial-serif-with-neutral-sans|portfolio-to-season-wheel-to-plan-matrix-to-estimator-to-coverage|ai-generated-garden-hero-with-inline-svg-project-illustrations"
+          "quiet-wordmark-and-direct-section-anchors|portfolio-led-landscape-hero-with-season-selector|project-grid-plus-seasonal-planning-and-maintenance-comparison|editorial-serif-with-neutral-sans|portfolio-to-season-wheel-to-plan-matrix-to-estimator-to-coverage|ai-generated-garden-hero-with-inline-svg-project-illustrations",
+          "wordmark and direct service navigation|media-overlay|service grid with concise scope and a clear contact close|bold sans headings with a direct local-service voice|navigation -> full-bleed-hero -> trust-band -> about -> service-grid -> project-|wide garden photography and approved service imagery"
         ]
       }
     ],
