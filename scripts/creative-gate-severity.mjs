@@ -142,11 +142,22 @@ export function classifyJudgeFinding(finding) {
   }
   if (severity === "major" && category === "accessibility") return "hard";
   if (severity === "major" && category === "content-integrity") {
-    const evidence = String(
-      finding?.evidence || finding?.message || finding?.recommendation || "",
-    );
-    if (/copied|templated|repeated|duplicat|filler/iu.test(evidence))
-      return "open";
+    const evidence = [
+      finding?.evidence,
+      finding?.message,
+      finding?.recommendation,
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const factDefect =
+      /fabricat|invent|unverified|not present|missing from|credential|price|review|guarantee|licen[cs]e|wrong business|placeholder|lorem/iu.test(
+        evidence,
+      );
+    const uiCopyDefect =
+      /copied|templated|repeat(?:ed|ing|s)?|duplicat|filler|clipped|cropped|malformed|stray|truncated|overlap|empty\s+(?:dark\s+|light\s+|ghost\s+|outline\s+|secondary\s+)?(?:button|control|link|badge|pill|slot|card|box)|toggle\s+icon|two\s+plus/iu.test(
+        evidence,
+      );
+    if (uiCopyDefect && !factDefect) return "open";
     return "hard";
   }
   return "open";

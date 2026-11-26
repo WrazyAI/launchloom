@@ -94,3 +94,20 @@ it("repairs byte-preserved minified CSS through parser-bounded windows", () => {
   expect(result.styles).toBe(css.replace(selected.find, replacement));
   expect(current.styles).toBe(css);
 });
+
+it("allows an empty string replacement to delete one span from a multi-span file while rejecting full-file clears", () => {
+  const filler = Array.from({ length: 80 }, (_, i) => `.keep-${i} { color: #14201d; padding: ${i}px; }`).join("\n");
+  const current = {
+    ...files,
+    styles: `${filler}\n/* bad */\n.bad { color: red; }\n`,
+  };
+  const index = catalog(current, { allowedFiles: ["styles"] });
+  expect(index.spans.length).toBeGreaterThan(1);
+  const target = index.spans.find((s: any) => s.find.includes(".bad"));
+  const compiled = compile(current, index, [{ spanId: target.id, replace: "" }]);
+  expect(compiled).toHaveLength(1);
+  expect(compiled[0].replace).toBe("");
+  const applied = applyCreativeRepairEdits(current, compiled);
+  expect(applied.styles).not.toContain(".bad");
+  expect(applied.styles).toContain(".keep-0");
+});
