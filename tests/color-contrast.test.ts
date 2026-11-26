@@ -231,6 +231,18 @@ describe("accent text on dark pack bands", () => {
     for (const band of ["#30534b", "#14201d", "#101b19", "#0c1713", "#16241e"])
       expect(contrast(palette.accentTextDark, band)).toBeGreaterThanOrEqual(4.5);
   });
+
+  it("keeps copper accents readable on #eef1ea light bands and #142428 dark bands with browser color-mix rounding headroom", () => {
+    const palette = resolvePalette({
+      primaryColor: "#1e3a4c",
+      surfaceColor: "#f8f6f0",
+      accentColor: "#b4652a",
+    });
+    expect(contrast(palette.accentTextColor, "#eef1ea")).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(palette.accentTextColor, "#f8f6f0")).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(palette.accentTextDark, "#142428")).toBeGreaterThanOrEqual(4.6);
+    expect(contrast(palette.accentTextDark, "#152529")).toBeGreaterThanOrEqual(4.5);
+  });
 });
 
 describe("link text on dark light-bands", () => {

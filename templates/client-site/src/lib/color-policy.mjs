@@ -199,16 +199,22 @@ export function resolvePalette(input = {}) {
   const accent = accentColor
     ? {
         accentColor,
-        accentTextColor: ensureContrast(accentColor, surfaceColor),
+        accentTextColor:
+          readableOn(surfaceColor) === "#000000"
+            ? ensureContrast(
+                ensureContrast(accentColor, surfaceColor),
+                darkestLightBand,
+              )
+            : ensureContrast(accentColor, surfaceColor),
         accentContrastColor: readableOn(accentColor),
         accentMarkColor: ensureContrast(accentColor, surfaceColor, 3),
         accentTextHero: ensureContrast(accentColor, heroColor),
         accentTextBrand: ensureContrast(accentColor, brandSurface.color),
         // Accent text sits on several dark pack bands, not only #14201d. The
         // guide pack paints it on a 30%-brand teal (#30534b for a mint brand),
-        // where a #14201d-repaired accent measured 4.203. Repair against the
-        // lightest dark band so the worst case still clears 4.5.
-        accentTextDark: ensureContrast(accentColor, lightestDarkBand),
+        // where a #14201d-repaired accent measured 4.203. Add 0.15 headroom so
+        // 1-LSB browser color-mix() rounding cannot drop a 4.501 pair to 4.486.
+        accentTextDark: ensureContrast(accentColor, lightestDarkBand, 4.65),
         accentTextLightBand: ensureContrast(accentColor, darkestLightBand),
       }
     : {};
