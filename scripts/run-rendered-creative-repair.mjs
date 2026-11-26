@@ -2095,6 +2095,9 @@ async function runRepairRounds({
     } catch {}
     const testOnly = Boolean(gateConfig?.pipelineTest || gateConfig?.demoNotice);
     const hasConfiguredPhone = Boolean(gateConfig?.business?.phone);
+    const configuredEmail = String(gateConfig?.business?.email || "")
+      .trim()
+      .toLowerCase();
     const expectedTestNotice = (finding) => {
       if (!testOnly) return false;
       const evidence = String(finding?.evidence || finding?.message || "");
@@ -2105,11 +2108,24 @@ async function runRepairRounds({
         (hasConfiguredPhone && /placeholdered/iu.test(evidence))
       );
     };
+    const expectedVerifiedEmail = (finding) => {
+      if (!configuredEmail) return false;
+      if (String(finding?.category || "") !== "content-integrity") return false;
+      const evidence = String(finding?.evidence || finding?.message || "").toLowerCase();
+      return (
+        evidence.includes(configuredEmail) &&
+        /not in manifest|missing from manifest|absent from manifest|not listed in|not present in/iu.test(
+          evidence,
+        )
+      );
+    };
+    const ignoredGateFinding = (finding) =>
+      expectedTestNotice(finding) || expectedVerifiedEmail(finding);
     // A near-miss preview may carry design-fidelity observations, never a
     // critical finding or a major content-integrity or accessibility defect.
     // A block verdict with only open findings is still a warned preview.
     const substantiveGateFindings = (gateAudit.findings || []).filter(
-      (finding) => !expectedTestNotice(finding),
+      (finding) => !ignoredGateFinding(finding),
     );
     const gateHard = substantiveGateFindings.filter(
       (finding) => classifyJudgeFinding(finding) !== "open",
@@ -2123,7 +2139,7 @@ async function runRepairRounds({
     const openFindings = [
       ...assessment.openFindings,
       ...gateFindings(visualGate)
-        .filter((finding) => !expectedTestNotice(finding))
+        .filter((finding) => !ignoredGateFinding(finding))
         .map(describeGateFinding),
     ]
       .filter(Boolean)
@@ -2263,6 +2279,7 @@ async function runRepairRounds({
     );
   }
 
+  const attemptedEarlyNearMissKeys = new Set();
   for (let round = 0; round < maxRounds; round += 1) {
     const roundLabel = `round-${String(round).padStart(2, "0")}`;
     const roundDir = path.join(evidenceRoot, roundLabel);
@@ -2356,13 +2373,19 @@ async function runRepairRounds({
     // already clears every hard gate and the near-miss floor, deliver the
     // bounded preview now instead of spending repair cycles on design fidelity
     // that a local design agent can address after delivery.
+    const earlyNearMissKey =
+      candidateCount === 1 && report.candidates?.[0]
+        ? `${report.candidates[0].candidateId}:${report.candidates[0].sourceDigest || ""}:${cycleUse.get(report.candidates[0].candidateId) || 0}`
+        : "";
     if (
       candidateCount === 1 &&
       requestedMode === "preview" &&
       !humanFeedback &&
       nearMissPreviewEnabled &&
-      !report.selectedCandidateId
+      !report.selectedCandidateId &&
+      (!earlyNearMissKey || !attemptedEarlyNearMissKeys.has(earlyNearMissKey))
     ) {
+      if (earlyNearMissKey) attemptedEarlyNearMissKeys.add(earlyNearMissKey);
       const earlyNearMiss = await attemptNearMissPreview({
         round,
         roundLabel,
