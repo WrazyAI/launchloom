@@ -42,6 +42,6 @@ const runtime = {
     runtime={runtime}
   />
 </div>
-{!offlineEvidence && <LocationMap />}
+{!offlineEvidence && <div class="creative-shared-map" data-ll-surface="page"><LocationMap /></div>}
 
 {colorOverrides && <style is:inline set:html={`:root { ${colorOverrides} }`} />}
