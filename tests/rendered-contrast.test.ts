@@ -734,3 +734,21 @@ it("does not approve an outward ring covered by a descendant image shadow", asyn
   );
   expect(report.pass).toBe(false);
 });
+
+it("ignores background headings already passing in default when covered by an open floating menu panel", async () => {
+  const report = await scan(
+    `<style>
+      body{margin:0;background:#f8f6f0;color:#14201d;font:16px/1.4 sans-serif}
+      .band{padding:40px;background:#f8f6f0}
+      .band h2{margin:0;font-size:32px;display:inline-block;background:linear-gradient(90deg,#f8f6f0 80%,transparent 80%)}
+      #qa-panel{position:fixed;inset:20px auto auto 20px;width:260px;height:140px;padding:16px;background:#1e3a4c;color:#ffffff}
+      #qa-panel[hidden]{display:none}
+      #qa-btn{position:fixed;bottom:16px;right:16px;background:#1e3a4c;color:#ffffff;padding:8px 14px;border:0}
+    </style>
+    <main><section class="band"><h2>Residential work, clearly scoped</h2></section></main>
+    <button id="qa-btn" type="button" aria-expanded="false" aria-controls="qa-panel"
+      onclick="const p=document.getElementById('qa-panel');const open=p.hasAttribute('hidden');p.toggleAttribute('hidden',!open);this.setAttribute('aria-expanded',String(open));">Got questions?</button>
+    <div id="qa-panel" hidden><p>Quick answer text</p></div>`,
+  );
+  expect(report.pass).toBe(true);
+});

@@ -2112,7 +2112,60 @@ export async function inspectContrastPage(
       }
     }
     const viewport = page.viewportSize();
+    const menuOverlayRects =
+      state === "menu-open"
+        ? await page.evaluate(() =>
+            [...document.querySelectorAll("[data-ll-contrast-scope]")].map(
+              (node) => {
+                const box = node.getBoundingClientRect();
+                return {
+                  x: box.x,
+                  y: box.y,
+                  width: box.width,
+                  height: box.height,
+                };
+              },
+            ),
+          )
+        : [];
+    const outOfScopeInMenu =
+      state === "menu-open" && menuOverlayRects.length > 0
+        ? new Set(
+            await page.evaluate((selectors) => {
+              const markers = [
+                ...document.querySelectorAll("[data-ll-contrast-scope]"),
+              ];
+              return selectors.filter((selector) => {
+                const el = document.querySelector(selector);
+                if (!el) return false;
+                return !markers.some(
+                  (marker) => marker === el || marker.contains(el),
+                );
+              });
+            }, [...new Set(measured.map((t) => t.selector))]),
+          )
+        : null;
+    const intersectsOverlay = (rect) => {
+      if (!rect || !menuOverlayRects.length) return false;
+      const pad = 36;
+      return menuOverlayRects.some(
+        (box) =>
+          box.width > 0 &&
+          box.height > 0 &&
+          rect.x < box.x + box.width + pad &&
+          rect.x + rect.width > box.x - pad &&
+          rect.y < box.y + box.height + pad &&
+          rect.y + rect.height > box.y - pad,
+      );
+    };
     const stateTargets = measured.filter((target) => {
+      if (
+        state === "menu-open" &&
+        outOfScopeInMenu?.has(target.selector) &&
+        intersectsOverlay(target.rect) &&
+        defaultTargets.get(contrastTargetKey(target))?.status === "pass"
+      )
+        return false;
       if (
         state === "default" ||
         target.issues?.length !== 1 ||

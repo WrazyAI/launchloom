@@ -649,11 +649,16 @@ export async function verifyApprovedRoutes({
             );
           }
           if (brief?.mode === "supported") {
-            const body = await page.locator("main").innerText();
+            const normalizeText = (text) =>
+              String(text || "")
+                .replace(/\s+/gu, " ")
+                .trim()
+                .toLowerCase();
+            const body = normalizeText(await page.locator("main").innerText());
             add(
               "supported-content",
               pageBriefExpectedContent(brief).every((value) =>
-                body.includes(value),
+                body.includes(normalizeText(value)),
               ),
               "Supported page-specific content remains visible after hydration/disclosure.",
             );
