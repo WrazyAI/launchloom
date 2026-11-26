@@ -47,6 +47,12 @@ jobs:
       FAL_KEY: ${{ secrets.FAL_KEY }}
       FAL_IMAGE_MODEL: ${{ vars.FAL_IMAGE_MODEL || 'fal-ai/minimax/image-01' }}
       FAL_IMAGE_USD_PER_IMAGE: ${{ vars.FAL_IMAGE_USD_PER_IMAGE }}
+      # Focused previews use the same image provider default as production.
+      # Without this, the reusable workflow falls back to FAL and can fail
+      # closed on a provider 403 before authoring.
+      IMAGE_PROVIDER: ${{ vars.IMAGE_PROVIDER || 'workers-ai' }}
+      WORKERS_AI_IMAGE_MODEL: ${{ vars.WORKERS_AI_IMAGE_MODEL || '@cf/black-forest-labs/flux-1-schnell' }}
+      CLOUDFLARE_WORKERS_AI_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_AI_TOKEN }}
       DATAFORSEO_LOGIN: ${{ secrets.DATAFORSEO_LOGIN }}
       DATAFORSEO_PASSWORD: ${{ secrets.DATAFORSEO_PASSWORD }}
       GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}

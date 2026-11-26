@@ -25,6 +25,30 @@ describe("focused workflow generation tracking", () => {
     );
   });
 
+  it("uses the production image provider defaults in focused previews", () => {
+    expect(workflow).toContain(
+      "IMAGE_PROVIDER: ${{ vars.IMAGE_PROVIDER || 'workers-ai' }}",
+    );
+    expect(workflow).toContain(
+      "WORKERS_AI_IMAGE_MODEL: ${{ vars.WORKERS_AI_IMAGE_MODEL || '@cf/black-forest-labs/flux-1-schnell' }}",
+    );
+    expect(workflow).toContain(
+      "CLOUDFLARE_WORKERS_AI_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_AI_TOKEN }}",
+    );
+  });
+
+  it("uses the production image provider and Workers AI credentials", () => {
+    expect(workflow).toMatch(
+      /IMAGE_PROVIDER:\s*\$\{\{\s*vars\.IMAGE_PROVIDER\s*\|\|\s*'workers-ai'\s*\}\}/u,
+    );
+    expect(workflow).toContain(
+      "CLOUDFLARE_WORKERS_AI_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_AI_TOKEN }}",
+    );
+    expect(workflow).toMatch(
+      /WORKERS_AI_IMAGE_MODEL:\s*\$\{\{\s*vars\.WORKERS_AI_IMAGE_MODEL\s*\|\|\s*'@cf\/black-forest-labs\/flux-1-schnell'\s*\}\}/u,
+    );
+  });
+
   it("resolves the focused live thumbnail to the exact run attempt", () => {
     expect(
       liveGenerationId({
