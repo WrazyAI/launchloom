@@ -3090,3 +3090,96 @@ describe("repair replacement text normalisation", () => {
     expect(fenced.styles).toBe(".b { color: #14201d; }");
   });
 });
+
+describe("OpenCode Go span repair schema compatibility", () => {
+  it("omits huge regex pattern quantifiers on OpenCode Go and falls back to schema-free JSON on upstream errors", async () => {
+    vi.resetModules();
+    vi.stubEnv("CREATIVE_EXPERIENCE_PROVIDER", "opencode-go");
+    vi.stubEnv("OPENCODE_GO_API_KEY", "test-go-key");
+    const { requestRepair: requestRepairGo } = await import(
+      "../scripts/creative-repair-loop.mjs"
+    );
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "ll-go-span-repair-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "evidence");
+    const files = {
+      experience: "export default () => null;\n",
+      styles: ".hero{color:navy;}\n",
+      motion: "export function mountExperienceMotion(){return ()=>{};}\n",
+    };
+    const catalog = buildRepairSpanCatalog(files);
+    const style = catalog.spans.find((s) => s.file === "styles")!;
+    const seenBodies: any[] = [];
+    const logs: string[] = [];
+    let call = 0;
+    const fetchImpl = vi.fn(async (_url: any, options: any) => {
+      call += 1;
+      const body = JSON.parse(options.body);
+      seenBodies.push(body);
+      // Fail all 3 attempts of the strict json-schema call with 502 upstream,
+      // then succeed on the schema-free json_object fallback call.
+      if (call <= 3) {
+        return new Response(
+          JSON.stringify({ error: { message: "upstream grammar error" } }),
+          { status: 502, headers: { "content-type": "application/json" } },
+        );
+      }
+      return Response.json({
+        id: "resp_go_fallback",
+        status: "completed",
+        output: [
+          {
+            type: "message",
+            role: "assistant",
+            status: "completed",
+            content: [
+              {
+                type: "output_text",
+                text: JSON.stringify({
+                  edits: [{ spanId: style.id, replace: ".hero{color:white;}\n" }],
+                }),
+              },
+            ],
+          },
+        ],
+        usage: {
+          input_tokens: 100,
+          output_tokens: 40,
+          input_tokens_details: { cached_tokens: 0 },
+        },
+      });
+    });
+    try {
+      const repaired = await requestRepairGo({
+        model: "opencode-go/deepseek-v4.1-flash",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        files,
+        findings: ["contrast fail on .hero"],
+        screenshots: [],
+        automaticSpanRepair: true,
+        fetchImpl,
+        logger: (line: string) => logs.push(line),
+      } as any);
+      expect(repaired.styles).toBe(".hero{color:white;}\n");
+      // First attempt sent json_schema WITHOUT the 6000-char regex pattern
+      const firstFormat = seenBodies[0]?.text?.format;
+      expect(firstFormat?.type).toBe("json_schema");
+      expect(
+        firstFormat?.schema?.properties?.edits?.items?.properties?.replace
+          ?.pattern,
+      ).toBeUndefined();
+      // Fallback attempt switched to schema-free json_object
+      const fallbackFormat = seenBodies[seenBodies.length - 1]?.text?.format;
+      expect(fallbackFormat?.type).toBe("json_object");
+      expect(
+        logs.some((line) => line.includes("creative_repair_go_schema_fallback")),
+      ).toBe(true);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+});

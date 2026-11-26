@@ -1326,39 +1326,100 @@ Return a complete replacement for only this requested file. Keep source non-empt
     } : scopedHumanRepair || editsOnly
       ? repairEditSchemaFor(currentFiles, { includeInnerPages: !scopedHumanRepair })
       : targetFile ? REPAIR_FILE_SCHEMA : repairSchemaFor(currentFiles);
+    const stripSchemaPatterns = (node) => {
+      if (Array.isArray(node)) return node.map(stripSchemaPatterns);
+      if (!node || typeof node !== "object") return node;
+      const out = {};
+      for (const [key, value] of Object.entries(node)) {
+        if (key === "pattern") continue;
+        out[key] = stripSchemaPatterns(value);
+      }
+      return out;
+    };
     const sendRepairRequest = async (maxCompletionTokens) => {
       if (creativeProvider === "opencode-go") {
+        // OpenCode Go's constrained-decoding grammar compiler rejects large
+        // regex quantifiers such as `^[\s\S]{1,6000}$` with upstream errors;
+        // compileRepairSpanEdits enforces maxReplacementChars locally in JS.
+        const goSchema = spanCatalog
+          ? stripSchemaPatterns(repairJsonSchema.schema)
+          : repairJsonSchema.schema;
         let goResult;
         try {
           goResult = await completeGoCreative({
             logicalModel: model,
             fetchImpl,
+            logger,
             activity,
             activityStage: "creative_render",
             request: buildGoCreativeRequest({
-            systemPrompt: REPAIR_SYSTEM_PROMPT,
-            userContent: requestContent,
-            schemaName: repairJsonSchema.name,
-            schema: repairJsonSchema.schema,
-            maxOutputTokens: maxCompletionTokens,
-            effort: reasoningEffort,
+              systemPrompt: REPAIR_SYSTEM_PROMPT,
+              userContent: requestContent,
+              schemaName: repairJsonSchema.name,
+              schema: goSchema,
+              maxOutputTokens: maxCompletionTokens,
+              effort: reasoningEffort,
               sessionId,
             }),
           });
         } catch (error) {
-          // An incomplete response means the model exhausted its output
-          // budget (reasoning plus answer). That is a retryable repair-output
-          // failure, not a provider outage: the bounded repair contract
-          // retries it with fresh instructions.
-          if (
+          // If the Go gateway rejects a strict json-schema grammar upstream
+          // (for example large span enum/items constraints), retry once in
+          // schema-free JSON mode; parseModelJson + compileRepairSpanEdits
+          // still enforce the identical local contract.
+          const schemaFallbackEligible =
+            error?.code === "CREATIVE_GO_INCOMPLETE" &&
+            ["upstream", "invalid-request", "provider-error"].includes(
+              String(error?.providerErrorCode || ""),
+            );
+          if (schemaFallbackEligible) {
+            logger(
+              `creative_repair_go_schema_fallback code=${error.providerErrorCode || "unknown"} schema=${repairJsonSchema.name}`,
+            );
+            const fallbackShapeHint = spanCatalog
+              ? 'Return valid JSON only: {"edits":[{"spanId":"<id from TRUSTED SOURCE SPANS>","replace":"<replacement text>"}]}.'
+              : `Return valid JSON only matching the requested response fields (${Object.keys(repairJsonSchema.schema?.properties || {}).join(", ")}).`;
+            try {
+              goResult = await completeGoCreative({
+                logicalModel: model,
+                fetchImpl,
+                logger,
+                activity,
+                activityStage: "creative_render",
+                request: buildGoCreativeRequest({
+                  systemPrompt: REPAIR_SYSTEM_PROMPT,
+                  userContent: [
+                    ...requestContent,
+                    { type: "text", text: fallbackShapeHint },
+                  ],
+                  schemaName: null,
+                  schema: null,
+                  maxOutputTokens: maxCompletionTokens,
+                  effort: reasoningEffort,
+                  sessionId,
+                }),
+              });
+            } catch (fallbackError) {
+              if (
+                fallbackError?.code === "CREATIVE_GO_INCOMPLETE" &&
+                fallbackError?.providerStatus === "incomplete"
+              ) {
+                throw repairOutputRejection(
+                  "Creative repair response was truncated by the provider output budget.",
+                );
+              }
+              throw fallbackError;
+            }
+          } else if (
             error?.code === "CREATIVE_GO_INCOMPLETE" &&
             error?.providerStatus === "incomplete"
           ) {
             throw repairOutputRejection(
               "Creative repair response was truncated by the provider output budget.",
             );
+          } else {
+            throw error;
           }
-          throw error;
         }
         goCreativeUsageMetrics(goResult, {
           label: "creative-repair",

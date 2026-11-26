@@ -2388,3 +2388,26 @@ h2 {
   background: var(--brand-surface, var(--brand));
   color: var(--on-brand-surface, var(--on-brand, #fff));
 }
+
+/* Keep sibling hero copy above decorative/background hero media when an
+   authored mobile grid overlaps them without explicit z-index. Zero-specificity
+   :where() preserves any intentional author stacking rules. */
+:where([data-hero], [data-service-hero]) :where([data-hero-media]:not(:has([data-hero-copy]))) {
+  z-index: 0;
+  pointer-events: none;
+}
+:where([data-hero], [data-service-hero]) :where([data-hero-copy]) {
+  position: relative;
+  z-index: 2;
+}
+
+/* FAQList renders its own <span aria-hidden="true">+</span> toggle inside
+   <summary>; suppress duplicate pseudo-element toggles from creative themes. */
+[data-runtime="faq-list"] summary::before,
+[data-runtime="faq-list"] summary::after {
+  content: none !important;
+}
+[data-runtime="faq-list"] summary > span[aria-hidden="true"] {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
