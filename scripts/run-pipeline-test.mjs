@@ -18,6 +18,7 @@ import {
 } from "./pipeline-test-policy.mjs";
 import { recordGenerationStage } from "./record-generation-stage.mjs";
 import { summarizeGenerationCosts } from "./generation-cost-summary.mjs";
+import { missingRequiredHeroImagery } from "./creative-asset-readiness.mjs";
 import { collectEvidenceSamples, summarizeGateHealth } from "./gate-health.mjs";
 import { resolvePreviewLink } from "./preview-link.mjs";
 import { previewHostSuffixes } from "../src/lib/preview-proxy-contract.mjs";
@@ -879,6 +880,22 @@ export function createCloudDependencies(
         },
       },
     );
+    const assetManifest = await readJson(
+      path.join(evidence, "generated-assets.json"),
+    ).catch(() => null);
+    const imageryFailure = missingRequiredHeroImagery({
+      config: await readJson(config),
+      inspiration: pack,
+      assets: assetManifest,
+    });
+    if (imageryFailure) {
+      const routes = imageryFailure.routeIds.length
+        ? ` (${imageryFailure.routeIds.join(", ")})`
+        : "";
+      throw new Error(
+        `Required creative hero imagery is unavailable${routes}: ${imageryFailure.reason}. Restore the image provider or configure approved hero imagery before authoring.`,
+      );
+    }
   }
   async function sourceFiles(directory) {
     return Object.fromEntries(

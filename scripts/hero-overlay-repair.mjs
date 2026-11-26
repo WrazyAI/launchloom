@@ -93,7 +93,7 @@ body[data-ll-route="/"] [data-hero-copy] :is(.hero-body, .hero-kicker) {
 body[data-ll-route="/"] [data-hero-copy] :is(a, button) {
   flex: 0 1 auto;
 }
-body[data-ll-route="/"] [data-hero-copy] :is(.outline-action, .outline-action-light, .secondary-action) {
+body[data-ll-route="/"] [data-hero-copy] :is(.outline-action, .outline-action-light, .secondary-action, .action-quiet) {
   color: #f7f3e8;
   border-color: rgba(247, 243, 232, 0.85);
   background: #0b1511;

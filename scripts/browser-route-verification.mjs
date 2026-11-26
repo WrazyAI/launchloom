@@ -486,6 +486,31 @@ export async function verifyApprovedRoutes({
           checks.push({ name, status: ok ? "pass" : "fail", detail });
         await context.route("**/*", async (intercepted) => {
           const req = intercepted.request();
+          // A diagnostic submit can scroll the shared lazy map into range. A
+          // Google Maps embed document is not a submission; isolate it from the
+          // catch-all guard and render a harmless local document.
+          if (
+            formMode === "test-preview" &&
+            ["document", "subdocument"].includes(req.resourceType())
+          ) {
+            try {
+              const mapUrl = new URL(req.url());
+              if (
+                mapUrl.hostname === "www.google.com" &&
+                mapUrl.pathname === "/maps" &&
+                mapUrl.searchParams.get("output") === "embed"
+              ) {
+                await intercepted.fulfill({
+                  status: 200,
+                  contentType: "text/html",
+                  body: "<!doctype html><html><body>Map preview</body></html>",
+                });
+                return;
+              }
+            } catch {
+              // Fall through to the strict submission guard.
+            }
+          }
           // The disabled form must not initiate any network activity. The page
           // is already settled before submit; guard every resource type,
           // including image/ping GET beacons, throughout this bounded phase.
