@@ -139,5 +139,21 @@ export default function Experience({ content, runtime }) {
       '<section aria-label="Service index">{content.services.map((service, index) => <ServiceLink key={service.slug} content={content} index={index}>{service.name}</ServiceLink>)}</section><section id="services">',
     );
     expect(() => validate(namesOnlyIndex)).not.toThrow();
+    const aliasedServices = experience
+      .replace(
+        "export default function Experience({ content, runtime }) {",
+        "export default function Experience({ content, runtime }) {\n  const services = content.services;",
+      )
+      .replace(/content\.services\.map/gu, "services.map")
+      .replace(
+        '<section id="faqs">',
+        '<section><h2>More services</h2>{services.map((service) => <p key={service.name}>{service.description}</p>)}</section><section id="faqs">',
+      );
+    expect(() => validate(aliasedServices)).toThrow(/full service set.*exactly one section/u);
+    const individualServiceCopy = experience.replace(
+      '<section id="faqs">',
+      '<section><h2>More services</h2>{firstService.decisionSupport.scope}{secondService.decisionSupport.preparation}</section><section id="faqs">',
+    );
+    expect(() => validate(individualServiceCopy)).toThrow(/full service set.*exactly one section/u);
   });
 });

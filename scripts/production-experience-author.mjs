@@ -3675,11 +3675,18 @@ function validateServicePresentationDepth(source, route) {
   const leafSections = elements
     .filter(({ opening }) => jsxOpeningName(opening) === "section")
     .filter(({ body }) => !/<section\b/u.test(body));
-  const fullPresentations = leafSections.filter(
-    ({ body }) =>
-      /content\.services\.(?:map|filter|slice)\b/u.test(body) &&
-      /\.(?:description|decisionSupport)\b/u.test(body),
-  );
+  const fullPresentations = leafSections.filter(({ body }) => {
+    const mappedServices =
+      /\b(?:services|content\.services)\.(?:map|filter|slice)\b/u.test(body);
+    const describedServices = /\.(?:description|decisionSupport)\b/u.test(body);
+    const individualServices = new Set(
+      [...body.matchAll(/\b([A-Za-z_$][\w$]*)\.(?:description|decisionSupport)\b/gu)]
+        .map((match) => match[1]),
+    );
+    return (
+      (mappedServices && describedServices) || individualServices.size >= 2
+    );
+  });
   if (fullPresentations.length > 1)
     throw new Error(
       `Candidate ${route.id} must present the full service set with descriptions in exactly one section; found ${fullPresentations.length}. Keep additional service strips, indexes, or project rails to names and links only.`,

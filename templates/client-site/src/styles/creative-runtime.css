@@ -41,6 +41,26 @@
   background: transparent;
 }
 
+.creative-shared-map .location-map-section {
+  background: var(--ll-surface, var(--cream));
+  color: var(--ll-text, var(--ink));
+}
+
+.creative-shared-map .location-map-copy .kicker,
+.creative-shared-map .location-map-copy > p {
+  color: var(--ll-muted-text, var(--muted));
+}
+
+.creative-shared-map .location-map-copy .cta {
+  background: var(--ll-action, var(--brand));
+  color: var(--ll-on-action, #ffffff);
+  border-color: transparent;
+}
+
+.creative-shared-map .location-map-frame {
+  border-color: var(--ll-border, var(--line));
+}
+
 .launchloom-lead-form textarea {
   min-height: 6rem;
   resize: vertical;
