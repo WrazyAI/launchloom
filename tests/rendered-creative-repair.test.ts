@@ -777,6 +777,38 @@ describe("rendered creative repair orchestration", () => {
     }
   });
 
+  it("does not replay a deterministic repair after a hill-climb rollback", async () => {
+    const dir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-hero-overlay-rollback-"),
+    );
+    try {
+      const original = "body { color: #111; }";
+      await fs.writeFile(path.join(dir, "styles.css"), original);
+      const finding =
+        "hero copy is a large bordered card covering 50% of the hero area";
+      const seenKeys = new Set<string>();
+      const first = await applyDeterministicHeroOverlay({
+        candidateDir: dir,
+        findings: [finding],
+        seenKeys,
+      });
+      expect(first.applied).toBe(true);
+      await fs.writeFile(path.join(dir, "styles.css"), original);
+      const afterRollback = await applyDeterministicHeroOverlay({
+        candidateDir: dir,
+        findings: [finding],
+        seenKeys,
+      });
+      expect(afterRollback).toMatchObject({ applied: false, skipped: true });
+      expect(await fs.readFile(path.join(dir, "styles.css"), "utf8")).toBe(
+        original,
+      );
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
+
   it("rejects an automated repair that repaints a passing palette", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-palette-guard-"),

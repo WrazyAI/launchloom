@@ -592,7 +592,7 @@ export function contrastRepairCss(repairs) {
       ? // Inset ring: outline paint lives inside the border box, so rounded
         // or overflow-hidden ancestors cannot clip it away, and the ring's
         // backdrop is exactly the element region the pixel proof sampled.
-        `${selectorList}{outline:2px solid ${g.color}!important;outline-offset:-2px!important}`
+        `${selectorList}{outline:2px solid ${g.color}!important;outline-offset:-4px!important}`
       : `${selectorList}{--ll-creative-auto-text:${g.color};${g.property}:var(--ll-creative-auto-text)!important}`;
     for (const condition of g.conditions) rule = `@media ${condition}{${rule}}`;
     return rule;

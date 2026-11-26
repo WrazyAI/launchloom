@@ -1099,24 +1099,34 @@ function heroCardFindingText(finding) {
  * makes the structural change and lets the next rendered round decide.
  */
 /**
- * @param {{candidateDir: string, findings?: Array<string | Record<string, any>>}} options
+ * @param {{candidateDir: string, findings?: Array<string | Record<string, any>>, seenKeys?: Set<string>}} options
  */
 export async function applyDeterministicHeroOverlay({
   candidateDir,
   findings = [],
+  seenKeys = null,
 }) {
-  if (
-    !findings.some((finding) =>
+  const matching = findings
+    .filter((finding) =>
       HERO_CARD_FINDING_PATTERN.test(heroCardFindingText(finding)),
     )
-  )
-    return { applied: false };
+    .map(heroCardFindingText)
+    .sort();
+  if (!matching.length) return { applied: false };
   const stylesPath = path.join(candidateDir, "styles.css");
   const existing = await fs.readFile(stylesPath, "utf8");
+  const repairKey = createHash("sha256")
+    .update(existing)
+    .update("\n")
+    .update(matching.join("\n"))
+    .digest("hex");
+  if (seenKeys?.has(repairKey))
+    return { applied: false, skipped: true, repairKey };
   const next = withHeroOverlayCorrection(existing);
   if (next === existing) return { applied: false };
   await fs.writeFile(stylesPath, next);
-  return { applied: true };
+  seenKeys?.add(repairKey);
+  return { applied: true, repairKey };
 }
 
 /**
@@ -1128,24 +1138,35 @@ export async function applyDeterministicHeroOverlay({
  * the rendered gates still decide whether the candidate is acceptable.
  */
 /**
- * @param {{candidateDir: string, findings?: Array<string | Record<string, any>>}} options
+ * @param {{candidateDir: string, findings?: Array<string | Record<string, any>>, seenKeys?: Set<string>}} options
  */
 export async function applyDeterministicMediaFocusOverlay({
   candidateDir,
   findings = [],
+  seenKeys = null,
 }) {
-  if (
-    !findings.some((finding) =>
+  const matching = findings
+    .filter((finding) =>
       DETERMINISTIC_PAINT_FINDING_PATTERN.test(repairFindingText(finding)),
     )
-  )
-    return { applied: false };
+    .map(repairFindingText)
+    .sort();
+  if (!matching.length) return { applied: false };
   const stylesPath = path.join(candidateDir, "styles.css");
   const existing = await fs.readFile(stylesPath, "utf8");
+  const repairKey = createHash("sha256")
+    .update("media-focus\n")
+    .update(existing)
+    .update("\n")
+    .update(matching.join("\n"))
+    .digest("hex");
+  if (seenKeys?.has(repairKey))
+    return { applied: false, skipped: true, repairKey };
   const next = withMediaFocusCorrection(existing);
   if (next === existing) return { applied: false };
   await fs.writeFile(stylesPath, next);
-  return { applied: true };
+  seenKeys?.add(repairKey);
+  return { applied: true, repairKey };
 }
 
 /**
@@ -1493,6 +1514,10 @@ async function runRepairRounds({
   const stagnationGuardEnabled =
     String(process.env.CREATIVE_REPAIR_STAGNATION ?? "true").trim() !== "false";
   const repairBaselines = new Map();
+  // A hill-climb rollback restores the exact input source. Remember the
+  // deterministic correction for that source so the loop does not replay the
+  // same losing CSS and consume all orchestration rounds.
+  const deterministicRepairKeys = new Map();
   const repairAttemptCounts = new Map();
   const assessedRepairAttempts = new Map();
   const stagnantRepairCounts = new Map();
@@ -1636,7 +1661,6 @@ async function runRepairRounds({
   const repairBlockedRounds = new Map();
   const rejectionCycles = new Map();
   const rejectionContext = new Map();
-  const appliedDeterministicRepairs = new Set();
   const REPAIR_BLOCK_COOLDOWN_ROUNDS = 2;
   const REPAIR_REJECTION_CYCLES_ALLOWED = 2;
   const isRepairBlockedAt = (candidateId, atRound) => {
@@ -1691,31 +1715,20 @@ async function runRepairRounds({
       candidateRoot,
       candidateDirectory,
     );
-    const deterministicFocus = appliedDeterministicRepairs.has(
-      `${candidateId}:deterministic-media-focus`,
-    )
-      ? { applied: false }
-      : await applyDeterministicMediaFocusOverlay({
-          candidateDir,
-          findings,
-        });
-    const deterministicHero = appliedDeterministicRepairs.has(
-      `${candidateId}:deterministic-hero-overlay`,
-    )
-      ? { applied: false }
-      : await applyDeterministicHeroOverlay({
-          candidateDir,
-          findings,
-        });
+    const seenDeterministicRepairs =
+      deterministicRepairKeys.get(candidateId) || new Set();
+    deterministicRepairKeys.set(candidateId, seenDeterministicRepairs);
+    const deterministicFocus = await applyDeterministicMediaFocusOverlay({
+      candidateDir,
+      findings,
+      seenKeys: seenDeterministicRepairs,
+    });
+    const deterministicHero = await applyDeterministicHeroOverlay({
+      candidateDir,
+      findings,
+      seenKeys: seenDeterministicRepairs,
+    });
     if (deterministicFocus.applied || deterministicHero.applied) {
-      if (deterministicFocus.applied)
-        appliedDeterministicRepairs.add(
-          `${candidateId}:deterministic-media-focus`,
-        );
-      if (deterministicHero.applied)
-        appliedDeterministicRepairs.add(
-          `${candidateId}:deterministic-hero-overlay`,
-        );
       const status = [
         deterministicFocus.applied && "deterministic-media-focus",
         deterministicHero.applied && "deterministic-hero-overlay",
