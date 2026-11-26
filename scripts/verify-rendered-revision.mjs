@@ -3,7 +3,10 @@ import { sanitizeVerificationReport } from "./route-verification-handoff.mjs";
 import { compileRouteInventory } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { hasTestOnlySite } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { resolveLocationMap } from "../templates/client-site/src/lib/location-map.mjs";
-import { contrastFailureMessages } from "./rendered-contrast.mjs";
+import {
+  contrastFailureMessages,
+  filterRecordedContrastWarnings,
+} from "./rendered-contrast.mjs";
 import fs from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
@@ -117,8 +120,31 @@ try {
     JSON.stringify(contrastReport, null, 2) + "\n",
   );
   if (!contrastReport.pass)
-    if (process.env.RENDERED_GATE_CONTRAST !== "separate")
-      failures.push(...contrastFailureMessages(contrastReport));
+    if (process.env.RENDERED_GATE_CONTRAST !== "separate") {
+      const contrastMessages = contrastFailureMessages(contrastReport);
+      let recordedWarnings = null;
+      if (
+        reviewMode &&
+        config.design?.experience?.selectionMode === "creative-near-miss"
+      ) {
+        const warningsPath = path.resolve(
+          path.dirname(path.resolve(args.config)),
+          "../.launchloom/delivery-warnings.json",
+        );
+        try {
+          recordedWarnings = JSON.parse(await fs.readFile(warningsPath, "utf8"));
+        } catch {}
+      }
+      const filtered = filterRecordedContrastWarnings(
+        contrastMessages,
+        recordedWarnings,
+      );
+      if (filtered.suppressed.length)
+        console.log(
+          `rendered_revision_recorded_contrast_warnings=${filtered.suppressed.length}`,
+        );
+      failures.push(...filtered.blocking);
+    }
   const routeReport = await verifyApprovedRoutes({
     config,
     origin: url,

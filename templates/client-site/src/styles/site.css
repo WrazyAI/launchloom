@@ -2381,3 +2381,10 @@ h2 {
   z-index: 1;
   background: inherit;
 }
+
+/* Keep the shared QuickAnswers launcher readable when an unlayered creative
+   candidate stylesheet declares `button { color: inherit; }`. */
+.quick-answers .quick-answers__launcher {
+  background: var(--brand-surface, var(--brand));
+  color: var(--on-brand-surface, var(--on-brand, #fff));
+}
