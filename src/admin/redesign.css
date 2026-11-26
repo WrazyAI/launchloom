@@ -1984,7 +1984,9 @@
   width: 100%;
   max-height: min(54vh, 520px);
   padding: 10px;
-  background: #f8faf7;
+  background-color: #f8faf7;
+  background-image: radial-gradient(#d9ddd3 1px, transparent 1px);
+  background-size: 18px 18px;
   overflow-y: auto;
   overflow-x: hidden;
   overflow-anchor: none;
