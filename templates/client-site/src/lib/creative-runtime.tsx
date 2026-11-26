@@ -180,15 +180,17 @@ export function FAQList({
     : Array.isArray(faqs)
       ? faqs
       : null;
-  const list =
-    override && override.length > 0
-      ? override.filter(
-          (faq): faq is FAQItem =>
-            Boolean(faq) &&
-            typeof faq.question === "string" &&
-            typeof faq.answer === "string",
-        )
-      : content.faqs;
+  const validOverride = Array.isArray(override)
+    ? override.filter(
+        (faq): faq is FAQItem =>
+          Boolean(faq) &&
+          typeof faq.question === "string" &&
+          faq.question.trim().length > 0 &&
+          typeof faq.answer === "string" &&
+          faq.answer.trim().length > 0,
+      )
+    : [];
+  const list = validOverride.length > 0 ? validOverride : content.faqs;
   return (
     <div className="launchloom-faq-list" data-runtime="faq-list">
       {list.map((faq) => (

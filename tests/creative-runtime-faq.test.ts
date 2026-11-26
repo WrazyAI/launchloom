@@ -45,5 +45,13 @@ describe("FAQList runtime helper", () => {
       createElement(FAQList, { content: baseContent, items: [] }),
     );
     expect(emptyFallback).toContain("Homepage question?");
+
+    const invalidFallback = renderToStaticMarkup(
+      createElement(FAQList, {
+        content: baseContent,
+        items: [{ question: "Missing answer" } as any],
+      }),
+    );
+    expect(invalidFallback).toContain("Homepage question?");
   });
 });

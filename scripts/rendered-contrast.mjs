@@ -2147,20 +2147,20 @@ export async function inspectContrastPage(
         : null;
     const intersectsOverlay = (rect) => {
       if (!rect || !menuOverlayRects.length) return false;
-      const pad = 36;
       return menuOverlayRects.some(
         (box) =>
           box.width > 0 &&
           box.height > 0 &&
-          rect.x < box.x + box.width + pad &&
-          rect.x + rect.width > box.x - pad &&
-          rect.y < box.y + box.height + pad &&
-          rect.y + rect.height > box.y - pad,
+          rect.x < box.x + box.width &&
+          rect.x + rect.width > box.x &&
+          rect.y < box.y + box.height &&
+          rect.y + rect.height > box.y,
       );
     };
     const stateTargets = measured.filter((target) => {
       if (
         state === "menu-open" &&
+        target.status === "unresolved" &&
         outOfScopeInMenu?.has(target.selector) &&
         intersectsOverlay(target.rect) &&
         defaultTargets.get(contrastTargetKey(target))?.status === "pass"
