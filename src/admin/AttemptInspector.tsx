@@ -54,6 +54,7 @@ export type AttemptInspectorProps = {
   eventsLoading: boolean;
   eventsError: string | null;
   activityEnabled?: boolean;
+  onWorkflowPollingChange?: (attemptId: string | null) => void;
   headingRef: RefObject<HTMLHeadingElement | null>;
   onClose: () => void;
   onRetry: () => void;
@@ -260,6 +261,7 @@ export function AttemptInspector({
   onLoadMoreEvents,
   onOpenClient,
   onOpenAttempt,
+  onWorkflowPollingChange,
 }: AttemptInspectorProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -280,6 +282,12 @@ export function AttemptInspector({
     (selection.view !== "activity" || activityEnabled)
       ? selection.view
       : "overview";
+  useEffect(() => {
+    onWorkflowPollingChange?.(
+      view === "workflow" ? (attempt?.attemptId ?? null) : null,
+    );
+    return () => onWorkflowPollingChange?.(null);
+  }, [view, attempt?.attemptId, onWorkflowPollingChange]);
   const timelineOpen =
     view === "activity" &&
     Boolean(attempt?.attemptId) &&
@@ -454,6 +462,7 @@ export function AttemptInspector({
 
         {attempt && view === "workflow" ? (
           <WorkflowRunPanel
+            key={attempt.attemptId}
             api={api}
             attemptId={attempt.attemptId}
             initialStage={attempt.failure.stage}

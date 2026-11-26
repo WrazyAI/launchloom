@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   AttemptDetail,
   AttemptEventRecord,
@@ -9,6 +9,7 @@ import type {
 import type { AdminApi } from "./api";
 import { DetailValue } from "./DetailValue";
 import { DeliveryStatusBadge, ExecutionStatusBadge } from "./StatusBadge";
+import { mergeWorkflowEvents, useWorkflowRun } from "./useWorkflowRun";
 import {
   WorkflowGraph,
   WorkflowLegend,
@@ -57,14 +58,29 @@ function FailureDetails({
   failure: Failure | undefined;
   event?: AttemptEventRecord;
 }) {
-  if (!failure?.category && !failure?.summary && !failure?.nextStep)
+  const diagnostic = structuredFailure(event);
+  const eventDetail = event?.detail?.trim() ?? "";
+  if (
+    !failure?.category &&
+    !failure?.summary &&
+    !failure?.nextStep &&
+    !failure?.code &&
+    !failure?.detail &&
+    !eventDetail
+  )
     return <p className="flow-muted">No failure details were recorded.</p>;
-  const detail = failure.detail?.trim() ?? "";
-  const summary = failure.summary?.trim() ?? "";
+  const detail = failure?.detail?.trim() ?? "";
+  const summary = failure?.summary?.trim() ?? "";
   return (
     <div className="flow-failure">
-      {structuredFailure(event) ? <StageEvidence event={event!} /> : null}
-      {failure.code ? (
+      {diagnostic ? <StageEvidence event={event!} /> : null}
+      {eventDetail &&
+      !diagnostic &&
+      eventDetail !== summary &&
+      eventDetail !== detail ? (
+        <StageEvidence event={event!} />
+      ) : null}
+      {failure?.code && failure.code !== diagnostic?.errorCode ? (
         <p className="flow-failure__code">
           <span>Code</span> <code>{failure.code}</code>
         </p>
@@ -72,17 +88,17 @@ function FailureDetails({
       {detail && detail !== summary ? (
         <pre className="flow-failure__detail">{detail}</pre>
       ) : null}
-      {failure.summary ? (
+      {failure?.summary ? (
         <DetailValue value={failure.summary} />
-      ) : (
+      ) : !detail && !eventDetail ? (
         <p>Cause not recorded.</p>
-      )}
-      {failure.nextStep ? (
+      ) : null}
+      {failure?.nextStep ? (
         <p>
           <strong>Next step</strong> {failure.nextStep}
         </p>
       ) : null}
-      {failure.category ? (
+      {failure?.category ? (
         <p className="flow-muted">
           Category <code>{failure.category}</code>
         </p>
@@ -147,9 +163,6 @@ function StageEvidence({ event }: { event: AttemptEventRecord }) {
   return <DetailValue value={event.detail} />;
 }
 
-type RunState =
-  { loading: true } | { error: string } | { attempt: AttemptDetail };
-
 function runHeadline(
   attempt: AttemptDetail,
   stages: WorkflowStage[],
@@ -186,64 +199,49 @@ export function WorkflowRunPanel({
   api: AdminApi;
   attemptId: string;
   initialStage: string | null;
-  /** Already-loaded detail avoids a second request inside the Sites drawer. */
+  /** Already-loaded detail seeds the panel before its first live refresh. */
   data?: AttemptDetail;
   heading?: string;
 }) {
-  const [result, setResult] = useState<RunState>(
-    data ? { attempt: data } : { loading: true },
-  );
+  const {
+    attempt,
+    events: liveEvents,
+    error,
+    refreshing,
+    checkedAt,
+    refresh,
+  } = useWorkflowRun(api, attemptId, data);
   const [selection, setSelection] = useState(initialStage);
-  const [refresh, setRefresh] = useState(0);
+  const [following, setFollowing] = useState(true);
   const [older, setOlder] = useState<{
     events: AttemptEventRecord[];
     cursor: string | null;
   }>();
   const [olderLoading, setOlderLoading] = useState(false);
   const [olderError, setOlderError] = useState("");
+  const olderRequest = useRef<AbortController | null>(null);
+  const previousHead = useRef<AttemptDetail | null>(null);
   useEffect(() => {
-    if (data) return;
-    const controller = new AbortController();
-    api
-      .getAttempt(attemptId, { signal: controller.signal })
-      .then((attempt) => {
-        if (!controller.signal.aborted) setResult({ attempt });
-      })
-      .catch((error) => {
-        if (!controller.signal.aborted)
-          setResult({ error: requestErrorMessage(error) });
-      });
-    return () => controller.abort();
-  }, [api, attemptId, refresh, data]);
+    return () => olderRequest.current?.abort();
+  }, [attemptId]);
 
-  function reload() {
-    setResult({ loading: true });
-    setOlder(undefined);
-    setOlderError("");
-    setRefresh((value) => value + 1);
-  }
+  useEffect(() => {
+    const previous = previousHead.current;
+    previousHead.current = attempt;
+    if (!previous || !attempt?.eventsNextCursor || !attempt.events.length)
+      return;
+    const keys = new Set(previous.events.map((event) => event.eventKey));
+    if (!attempt.events.some((event) => keys.has(event.eventKey))) {
+      // A burst or hidden tab can move the whole head past unseen events.
+      // Re-open traversal from that gap without discarding inspected history.
+      setOlder((current) => ({
+        events: current?.events ?? [],
+        cursor: attempt.eventsNextCursor,
+      }));
+    }
+  }, [attempt]);
 
-  const attempt = "attempt" in result ? result.attempt : null;
-  const events = [
-    ...new Map(
-      [
-        ...(attempt?.events ?? []),
-        ...(older?.events ?? []),
-        ...(attempt?.workflowEvents ?? []),
-      ].map((event) => [event.eventKey, event]),
-    ).values(),
-  ]
-    .filter(
-      (event) =>
-        !["execution", "delivery"].includes(event.stage) &&
-        !/(^|:)cost:/u.test(event.eventKey),
-    )
-    .sort(
-      (a, b) =>
-        a.createdAt - b.createdAt ||
-        a.observedAt - b.observedAt ||
-        a.eventKey.localeCompare(b.eventKey),
-    );
+  const events = mergeWorkflowEvents(older?.events ?? [], liveEvents);
   const cursor = older ? older.cursor : attempt?.eventsNextCursor;
   const failureStage =
     attempt?.executionStatus === "failed"
@@ -287,19 +285,32 @@ export function WorkflowRunPanel({
       : null;
 
   async function loadEarlier() {
-    if (!cursor || olderLoading) return;
+    if (!cursor || olderRequest.current) return;
+    const controller = new AbortController();
+    olderRequest.current = controller;
     setOlderLoading(true);
     setOlderError("");
     try {
-      const page = await api.getAttemptEvents(attemptId, cursor, 50);
-      setOlder({
-        events: [...(older?.events ?? []), ...page.items],
-        cursor: page.nextCursor,
-      });
+      const page = await api.getAttemptEvents(
+        attemptId,
+        cursor,
+        50,
+        controller.signal,
+      );
+      if (controller.signal.aborted) return;
+      setOlder((current) => ({
+        events: mergeWorkflowEvents(current?.events ?? [], page.items),
+        // A new head may have exposed a gap while this older page was loading.
+        cursor:
+          current && current.cursor !== cursor
+            ? current.cursor
+            : page.nextCursor,
+      }));
     } catch (error) {
-      setOlderError(requestErrorMessage(error));
+      if (!controller.signal.aborted) setOlderError(requestErrorMessage(error));
     } finally {
-      setOlderLoading(false);
+      if (!controller.signal.aborted) setOlderLoading(false);
+      if (olderRequest.current === controller) olderRequest.current = null;
     }
   }
 
@@ -311,7 +322,19 @@ export function WorkflowRunPanel({
         attempt?.deliveryStatus ?? "none",
       )
     : null;
-  const shownEvent = stageEvents.find((event) => event.detail);
+  const matchingEvidence = stageEvents.filter(
+    (event) =>
+      event.detail &&
+      stageStatus(
+        event.status,
+        active,
+        event.stage,
+        attempt?.deliveryStatus ?? "none",
+      ).tone === selectedState?.tone,
+  );
+  const shownEvent =
+    matchingEvidence.findLast((event) => structuredFailure(event)) ??
+    matchingEvidence.at(-1);
 
   return (
     <section className="workflow-panel" aria-label={heading} data-workflow-view>
@@ -353,28 +376,38 @@ export function WorkflowRunPanel({
               <DeliveryStatusBadge status={attempt.deliveryStatus} />
             </>
           ) : null}
-          {!data ? (
-            <button
-              type="button"
-              className="admin-link-button"
-              onClick={reload}
-              disabled={olderLoading}
-            >
-              Refresh
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="admin-link-button"
+            aria-label="Refresh workflow"
+            onClick={refresh}
+            disabled={refreshing}
+          >
+            Refresh
+          </button>
         </div>
       </header>
 
-      {"loading" in result ? (
+      {!attempt && !error ? (
         <p role="status" className="flow-muted">
           Loading workflow run…
         </p>
       ) : null}
-      {"error" in result ? (
+      {error ? (
         <div role="alert" className="admin-inline-error">
-          <p>{result.error}</p>
-          <button type="button" className="admin-link-button" onClick={reload}>
+          {attempt ? (
+            <p>
+              Live updates interrupted. Showing the last received evidence and
+              retrying automatically.
+            </p>
+          ) : null}
+          <p>{error}</p>
+          <button
+            type="button"
+            className="admin-link-button"
+            onClick={refresh}
+            disabled={refreshing}
+          >
             Retry workflow run
           </button>
         </div>
@@ -392,6 +425,25 @@ export function WorkflowRunPanel({
                 <strong>{skipped.length}</strong> skipped
               </span>
             ) : null}
+            <span
+              className="workflow-scorecard__live"
+              title={
+                checkedAt
+                  ? `Last checked ${formatTimestamp(checkedAt)}`
+                  : undefined
+              }
+            >
+              <span
+                className="workflow-scorecard__dot"
+                data-live={!error}
+                aria-hidden="true"
+              />
+              {error
+                ? "Reconnecting"
+                : active || attempt.executionStatus === "queued"
+                  ? "Live updates"
+                  : "Updates enabled"}
+            </span>
           </div>
           {graphStages.length ? (
             <>
@@ -401,6 +453,8 @@ export function WorkflowRunPanel({
                 delivery={attempt.deliveryStatus}
                 selected={selected}
                 onSelect={setSelection}
+                following={following}
+                onFollowingChange={setFollowing}
                 label="Workflow stage graph"
               />
               <WorkflowLegend />
@@ -474,7 +528,10 @@ export function WorkflowRunPanel({
                     key={item.stage}
                     type="button"
                     className="admin-link-button"
-                    onClick={() => setSelection(item.stage)}
+                    onClick={() => {
+                      setFollowing(false);
+                      setSelection(item.stage);
+                    }}
                   >
                     {stageLabel(item.stage)}
                   </button>
