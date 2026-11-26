@@ -21,6 +21,8 @@ describe("hero overlay correction", () => {
     expect(css).toContain("border: 0");
     expect(css).toContain("background: transparent");
     expect(css).toContain("linear-gradient");
+    expect(css).toContain(".action-quiet");
+    expect(css).toContain("outline-offset: -3px");
     expect(css).toContain("@media (max-width: 767px)");
   });
 

@@ -91,7 +91,8 @@ async function server(
       | "network"
       | "native-get"
       | "stale-status"
-      | "image-get";
+      | "image-get"
+      | "lazy-map";
   } = {},
 ) {
   let mutations = 0;
@@ -140,10 +141,15 @@ async function server(
                 '<small role="status"></small>',
                 '<small role="status">Test-only preview: submissions are disabled.</small>',
               )
-            : body;
+            : options.preview === "lazy-map"
+              ? body.replace(
+                  "</form>",
+                  '</form><div style="height:1400px"></div><section id="location"><iframe title="Area map" loading="lazy" src="https://www.google.com/maps?q=Asheville&output=embed"></iframe></section>',
+                )
+              : body;
       res.end(
         diagnosticBody +
-          `<script>document.querySelector('form').addEventListener('submit', async event => { ${options.preview === "native-get" ? "" : "event.preventDefault();"} ${options.preview === "network" ? "await fetch('/unexpected-submission',{method:'POST'});" : ""} ${options.preview === "image-get" ? "const beacon = new Image(); beacon.src = '/unexpected-submission?name=Synthetic'; document.body.append(beacon);" : ""} ${options.preview === "stale-status" ? "" : "document.querySelector('form [role=status]').textContent='Test-only preview: submissions are disabled.';"} });</script>`,
+          `<script>document.querySelector('form').addEventListener('submit', async event => { ${options.preview === "native-get" ? "" : "event.preventDefault();"} ${options.preview === "network" ? "await fetch('/unexpected-submission',{method:'POST'});" : ""} ${options.preview === "image-get" ? "const beacon = new Image(); beacon.src = '/unexpected-submission?name=Synthetic'; document.body.append(beacon);" : ""} ${options.preview === "lazy-map" ? "document.querySelector('#location iframe')?.scrollIntoView();" : ""} ${options.preview === "stale-status" ? "" : "document.querySelector('form [role=status]').textContent='Test-only preview: submissions are disabled.';"} });</script>`,
       );
       return;
     }
@@ -264,6 +270,32 @@ it("runs the disabled-form browser check for full-preview provenance", async () 
   });
   expect(report.status).toBe("pass");
   expect(s.mutations()).toBe(0);
+});
+it("allows the exact configured lazy map to load locally during diagnostic submit", async () => {
+  const s = await server({ preview: "lazy-map" });
+  const diagnosticConfig = {
+    ...config,
+    lead: { apiUrl: "", token: "" },
+    pipelineTest: {
+      version: 1,
+      profile: "full-preview",
+      testOnly: true,
+      sourceSha: "a".repeat(40),
+      runId: "synthetic",
+    },
+  };
+  const report: any = await verifyApprovedRoutes({
+    config: diagnosticConfig,
+    origin: s.origin,
+    mode: "review",
+    formMode: "test-preview",
+    viewports: [{ name: "mobile", width: 390, height: 844 }],
+    representativeViewports: [],
+    timeout: 1500,
+  });
+  expect(s.deliveries()).toBe(0);
+  console.error(JSON.stringify(report.routes, null, 2));
+  expect(report.status).toBe("pass");
 });
 it.each(["native-get", "stale-status", "image-get"] as const)(
   "rejects diagnostic GET delivery or stale disabled status: %s",
