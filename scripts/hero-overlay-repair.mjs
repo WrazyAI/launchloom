@@ -197,6 +197,8 @@ body[data-ll-route^="/locations"] form :is(input, textarea, select):focus-visibl
    grid overlaps them without explicit z-index. */
 :is([data-hero], [data-service-hero]) [data-hero-media]:not(:has([data-hero-copy])) {
   z-index: 0;
+}
+:is([data-hero], [data-service-hero]) [data-hero-media] [aria-hidden="true"] {
   pointer-events: none;
 }
 :is([data-hero], [data-service-hero]) [data-hero-copy] {

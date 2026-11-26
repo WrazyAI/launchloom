@@ -2394,6 +2394,8 @@ h2 {
    :where() preserves any intentional author stacking rules. */
 :where([data-hero], [data-service-hero]) :where([data-hero-media]:not(:has([data-hero-copy]))) {
   z-index: 0;
+}
+:where([data-hero], [data-service-hero]) :where([data-hero-media] [aria-hidden="true"]) {
   pointer-events: none;
 }
 :where([data-hero], [data-service-hero]) :where([data-hero-copy]) {
