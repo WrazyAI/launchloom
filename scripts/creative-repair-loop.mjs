@@ -1310,7 +1310,7 @@ Return a complete replacement for only this requested file. Keep source non-empt
     });
     if (spanCatalog) {
       requestContent.push({ type: "text", text: "TRUSTED SOURCE SPANS\n" + JSON.stringify(spanCatalog) +
-        "\nReturn edits with spanId and replace only. Do not generate find text or file names. Select an ID from this exact source snapshot and supply the entire replacement for its shown span. Keep 1-12 edits, each non-empty replacement at most6000 characters, total original-span-plus-replacement at most24000. Preserve all unrelated source and bindings." });
+        "\nReturn edits with spanId and replace only. Do not generate find text or file names. Select an ID from this exact source snapshot and supply the replacement for its shown span (or an empty string to remove that span cleanly; never write placeholder words). Keep 1-12 edits, each replacement at most 6000 characters, total original-span-plus-replacement at most 24000. Preserve all unrelated source and bindings." });
       if (requestBudget) requestContent.push({ type: "text", text:
         "REQUEST CHARACTER BUDGET\n" + JSON.stringify(requestBudget) +
         `\nFor this request return 1-${requestBudget.maxEdits} edits only, each replacement at most${requestBudget.maxReplacementChars} UTF16 code units. Each edit costs its shown original find length plus replacement length. Prioritize the most consequential findings within these reservations; do not copy additional unrelated windows into a replacement. JavaScript counts astral characters as two code units; schema string length alone does not replace the local checks. All existing source and rendered gates still apply.` });
