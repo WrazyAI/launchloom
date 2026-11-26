@@ -87,6 +87,37 @@ describe("generation activity presentation", () => {
     expect(isOpenEntry(entries[0]!)).toBe(true);
   });
 
+  it("reconciles duplicate starts without merging parallel calls", () => {
+    const otherCall = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+    const parallel = stored({
+      ...modelEvents[0],
+      eventId: "55555555-5555-4555-8555-555555555555",
+      payload: { ...modelEvents[0]!.payload, callId: otherCall },
+    }, 5);
+    const repeated = stored({
+      ...modelEvents[0],
+      eventId: "66666666-6666-4666-8666-666666666666",
+    }, 6);
+    const entries = groupActivity([...modelEvents, parallel, repeated], true);
+    expect(entries.map(({ callId, status }) => ({ callId, status }))).toEqual([
+      { callId: BASE_CALL_ID, status: "completed" },
+      { callId: otherCall, status: null },
+    ]);
+  });
+
+  it("keeps a model row selected when its earlier start is loaded", () => {
+    const [start, finish, output] = modelEvents;
+    const [partial] = groupActivity([finish!, output!], true);
+    const [complete] = groupActivity([start!, finish!, output!], true);
+    expect(complete?.key).toBe(partial?.key);
+    expect(complete?.primary).toBe(start);
+    expect(complete?.status).toBe("completed");
+    expect(activityModelOutput(complete!)).toEqual({
+      kind: "recorded",
+      text: "Visible generated copy.",
+    });
+  });
+
   it("groups an output delta into the active model call", () => {
     const delta = stored(
       {

@@ -4557,6 +4557,42 @@ it("cancels a pending history read when leaving Agent runs", async () => {
   }
 });
 
+it("shows live status without visible output and keeps counters in details", async () => {
+  activityEnabled = true;
+  const attemptId = "attempt-0005";
+  const initial = activityPageFor(attemptId);
+  const start = initial.activity.items[0]!;
+  const progress = {
+    ...start,
+    eventId: "88888888-8888-4888-8888-888888888888",
+    sequence: 2,
+    cursor: "v1.2.abcdabcd",
+    kind: "output_delta",
+    payload: { callId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", visibleChars: 0, reasoningTokens: 883, elapsedMs: 15_000 },
+  };
+  activityFixture = {
+    ...initial,
+    activity: { ...initial.activity, items: [start, progress], nextCursor: progress.cursor },
+  };
+  const { page, errors } = await openPage({
+    path: `/admin/onboarding-invites?view=generations&attempt=${attemptId}`,
+  });
+  try {
+    const drawer = page.locator("#attempt-inspector");
+    await drawer.getByRole("button", { name: "Agent runs", exact: true }).click();
+    const row = drawer.locator(".admin-chat__turn");
+    await visible(row.getByText("Waiting for visible output · 15s reported", { exact: true }));
+    expect(await row.locator(".admin-chat__thinking-toggle").getAttribute("aria-expanded")).toBe("false");
+    expect(await row.getByRole("button", { name: /883 reasoning deltas/u }).count()).toBe(0);
+    expect(await row.locator(".admin-chat__codeblock--live").count()).toBe(0);
+    await row.locator(".admin-chat__thinking-toggle").click();
+    await visible(row.getByText("883 reasoning deltas", { exact: true }));
+    autoErrors(errors);
+  } finally {
+    await page.close();
+  }
+});
+
 it("streams Agent runs code across incremental polls and replaces it at completion on desktop and mobile", async () => {
   activityEnabled = true;
   const attemptId = "attempt-0005"; // Running fixture
