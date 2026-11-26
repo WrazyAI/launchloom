@@ -34,7 +34,7 @@ export type GenerationActivityState = {
  *
  * Only the last acknowledged cursor is sent, so reconnects replay missed events
  * without duplicating them. Rapid polling stops when the run is no longer live
- * or the tab is hidden; reads never overlap.
+ * or the tab is hidden; only one forward read can be in flight.
  */
 export function useGenerationActivity({
   api,
@@ -61,6 +61,7 @@ export function useGenerationActivity({
   const latestCursor = useRef<string | null>(null);
   const ids = useRef(new Set<string>());
   const eventsRef = useRef<StoredTraceEvent[]>([]);
+  const olderRequest = useRef<AbortController | null>(null);
 
   useEffect(() => {
     latestCursor.current = null;
@@ -71,7 +72,12 @@ export function useGenerationActivity({
     setHasOlder(false);
     setError(null);
     setConnection(enabled ? "connecting" : "disabled");
-  }, [identity.namespace, identity.attemptId, enabled]);
+    setLoadingOlder(false);
+    return () => {
+      olderRequest.current?.abort();
+      olderRequest.current = null;
+    };
+  }, [api, identity.namespace, identity.attemptId, enabled]);
 
   const merge = useCallback((incoming: StoredTraceEvent[], mode: "append" | "prepend") => {
     const fresh = incoming.filter((event) => {
@@ -100,40 +106,37 @@ export function useGenerationActivity({
     let controller: AbortController | null = null;
     let catchUp = 0;
 
-    function schedule(delay: number) {
-      if (cancelled) return;
-      timer = window.setTimeout(() => {
-        if (document.visibilityState === "hidden") {
-          schedule(ACTIVITY_IDLE_POLL_MS);
-          return;
-        }
-        void load();
-      }, delay);
+    function clearTimer() {
+      if (timer !== undefined) window.clearTimeout(timer);
+      timer = undefined;
     }
 
     async function load() {
-      if (cancelled || controller) return;
+      if (cancelled || controller || document.visibilityState === "hidden") return;
       controller = new AbortController();
       const signal = controller.signal;
-      const initial = latestCursor.current === null;
+      const after = latestCursor.current;
+      const pollDelay = active ? ACTIVITY_POLL_MS : ACTIVITY_IDLE_POLL_MS;
+      let delay = pollDelay;
       try {
         const next = await api.getGenerationActivity(identity, {
-          after: latestCursor.current,
+          after,
           limit: 100,
           signal,
         });
         if (cancelled) return;
         merge(next.items, "append");
         latestCursor.current = next.nextCursor ?? latestCursor.current;
-        if (initial) setHasOlder(next.hasMore);
+        if (after === null) setHasOlder(next.hasMore);
         setPage(next);
         setConnection("live");
         setError(null);
-        if (next.hasMore && catchUp < CATCH_UP_PAGES) {
+        // On the initial page, hasMore describes older history. Only a
+        // forward page that advanced the cursor can request immediate catch-up.
+        if (after !== null && next.nextCursor && next.nextCursor !== after &&
+            next.hasMore && catchUp < CATCH_UP_PAGES) {
           catchUp += 1;
-          controller = null;
-          schedule(0);
-          return;
+          delay = 0;
         }
       } catch (cause) {
         if (cancelled || isAbortError(cause)) return;
@@ -141,18 +144,28 @@ export function useGenerationActivity({
         setError(requestErrorMessage(cause));
       } finally {
         controller = null;
-        if (!cancelled) {
-          catchUp = 0;
-          schedule(active ? ACTIVITY_POLL_MS : ACTIVITY_IDLE_POLL_MS);
+        if (delay !== 0) catchUp = 0;
+        if (!cancelled && document.visibilityState !== "hidden") {
+          timer = window.setTimeout(() => {
+            timer = undefined;
+            void load();
+          }, delay);
         }
       }
     }
 
+    function onVisibilityChange() {
+      clearTimer();
+      void load();
+    }
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
     void load();
     return () => {
       cancelled = true;
-      if (timer) window.clearTimeout(timer);
+      clearTimer();
       controller?.abort();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [
     api,
@@ -167,10 +180,11 @@ export function useGenerationActivity({
   ]);
 
   const loadOlder = useCallback(() => {
-    if (!enabled || loadingOlder) return;
+    if (!enabled || olderRequest.current) return;
     const oldest = eventsRef.current[0];
     if (!oldest) return;
     const controller = new AbortController();
+    olderRequest.current = controller;
     setLoadingOlder(true);
     api
       .getGenerationActivity(identity, {
@@ -179,14 +193,20 @@ export function useGenerationActivity({
         signal: controller.signal,
       })
       .then((older) => {
+        if (controller.signal.aborted) return;
         merge(older.items, "prepend");
         setHasOlder(older.hasMore);
       })
       .catch((cause: unknown) => {
-        if (!isAbortError(cause)) setError(requestErrorMessage(cause));
+        if (!controller.signal.aborted && !isAbortError(cause))
+          setError(requestErrorMessage(cause));
       })
-      .finally(() => setLoadingOlder(false));
-  }, [api, enabled, identity, loadingOlder, merge]);
+      .finally(() => {
+        if (olderRequest.current !== controller) return;
+        olderRequest.current = null;
+        setLoadingOlder(false);
+      });
+  }, [api, enabled, identity, merge]);
 
   return {
     page,

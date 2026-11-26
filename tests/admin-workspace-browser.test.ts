@@ -4450,6 +4450,113 @@ it("renders model calls, actions, usage and inspectable evidence in a dedicated 
   }
 });
 
+it("catches up once from the acknowledged activity cursor after reconnecting", async () => {
+  activityEnabled = true;
+  const attemptId = "attempt-0005";
+  const initial = activityPageFor(attemptId);
+  const initialCursor = initial.activity.items.at(-1)!.cursor;
+  const { page } = await openPage({
+    clock: true,
+    path: `/admin/onboarding-invites?view=generations&attempt=${attemptId}`,
+  });
+  const cursors: (string | null)[] = [];
+  const caughtUpCursor = "v1.b.abcdabcd";
+  try {
+    await page.route(`**/legacy/attempts/${attemptId}/activity*`, async (route) => {
+      const after = new URL(route.request().url()).searchParams.get("after");
+      cursors.push(after);
+      const activity = initial.activity;
+      if (!after) {
+        await route.fulfill({
+          json: { ...initial, activity: { ...activity, nextCursor: initialCursor, hasMore: true } },
+        });
+        return;
+      }
+      if (cursors.length === 2) {
+        await route.fulfill({ status: 503, json: { error: { message: "Temporarily unavailable" } } });
+        return;
+      }
+      const firstPage = after === initialCursor;
+      const sequence = firstPage ? 10 : 11;
+      const item = {
+        ...activityEvent(sequence, {
+          kind: "task_finished",
+          payload: { label: firstPage ? "Revision evidence received" : "Revision evidence checked", status: "succeeded" },
+        }),
+        context: { ...activityEvent(sequence).context, attemptId },
+        cursor: firstPage ? "v1.a.abcdabcd" : caughtUpCursor,
+        receivedAt: Date.now(),
+      };
+      await route.fulfill({
+        json: {
+          ...initial,
+          activity: {
+            ...activity,
+            items: after === caughtUpCursor ? [] : [...activity.items.slice(-1), item],
+            hasMore: firstPage,
+            nextCursor: item.cursor,
+          },
+        },
+      });
+    });
+    const drawer = page.locator("#attempt-inspector");
+    await drawer.getByRole("button", { name: "Agent runs", exact: true }).click();
+    await visible(drawer.getByRole("button", { name: "Load earlier activity" }));
+    await page.clock.runFor(100);
+    expect(cursors).toEqual([null]);
+
+    await page.clock.runFor(2_000);
+    await expect.poll(() => cursors.length).toBe(2);
+    await page.clock.runFor(2_100);
+    await visible(drawer.getByText("Revision evidence checked", { exact: true }));
+    expect(cursors).toEqual([null, initialCursor, initialCursor, "v1.a.abcdabcd"]);
+    expect(await drawer.getByText("Revision evidence received", { exact: true }).count()).toBe(1);
+    await page.clock.runFor(2_100);
+    await expect.poll(() => cursors.slice(4)).toEqual([caughtUpCursor]);
+  } finally {
+    await page.close();
+  }
+}, 30_000);
+
+it("cancels a pending history read when leaving Agent runs", async () => {
+  activityEnabled = true;
+  const attemptId = "attempt-0005";
+  const initial = activityPageFor(attemptId);
+  const { page } = await openPage({
+    path: `/admin/onboarding-invites?view=generations&attempt=${attemptId}`,
+  });
+  const isHistory = (url: string) => new URL(url).searchParams.has("before");
+  let releaseHistory!: () => void;
+  const held = new Promise<void>((resolve) => { releaseHistory = resolve; });
+  try {
+    await page.route(`**/legacy/attempts/${attemptId}/activity*`, async (route) => {
+      if (isHistory(route.request().url())) {
+        await held;
+        await route.fulfill({ json: initial }).catch(() => {});
+        return;
+      }
+      await route.fulfill({ json: {
+        ...initial,
+        activity: { ...initial.activity, hasMore: true, nextCursor: initial.activity.items.at(-1)!.cursor },
+      } });
+    });
+    const drawer = page.locator("#attempt-inspector");
+    await drawer.getByRole("button", { name: "Agent runs", exact: true }).click();
+    const started = page.waitForRequest((request) => isHistory(request.url()));
+    const cancelled = page.waitForEvent("requestfailed", {
+      predicate: (request) => isHistory(request.url()),
+      timeout: 2_000,
+    }).catch(() => null);
+    await drawer.getByRole("button", { name: "Load earlier activity" }).click();
+    await started;
+    await drawer.getByRole("button", { name: "Overview", exact: true }).click();
+    expect((await cancelled)?.failure()?.errorText).toBe("net::ERR_ABORTED");
+  } finally {
+    releaseHistory();
+    await page.close();
+  }
+});
+
 it("streams Agent runs code across incremental polls and replaces it at completion on desktop and mobile", async () => {
   activityEnabled = true;
   const attemptId = "attempt-0005"; // Running fixture
