@@ -1486,7 +1486,11 @@ jobs:
           grep -I -F -q 'data-creative-host="true"' dist/index.html || { echo "Creative host marker missing from fresh build"; exit 1; }
           grep -I -F -q "data-creative-candidate=\"$CANDIDATE_ID\"" dist/index.html || { echo "Fresh build does not contain selected creative candidate $CANDIDATE_ID"; exit 1; }
           if grep -I -E -q 'data-experience-pack|legacy-design-family' dist/index.html; then echo "Legacy renderer marker found in creative preview"; exit 1; fi
-          PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
+          CONTRAST_ENV=()
+          if [ "$CREATIVE_DECISION" = "warned" ]; then
+            CONTRAST_ENV=(RENDERED_GATE_CONTRAST=separate)
+          fi
+          env PUBLIC_REVIEW_MODE=true "${CONTRAST_ENV[@]}" node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
           REPAIR_SCREENSHOTS=.launchloom/creative-repair/final/screenshots
           for VIEWPORT in desktop compact mobile; do
             if [ -f "$REPAIR_SCREENSHOTS/${CANDIDATE_ID}-${VIEWPORT}.png" ]; then
