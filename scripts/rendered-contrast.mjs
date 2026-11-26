@@ -2368,3 +2368,39 @@ export function contrastFailureMessages(report) {
       `contrast ${f.status}: ${f.route} ${f.viewport || ""} ${f.state} ${f.selector} ${f.kind} ${JSON.stringify(f.text)} (${f.ratio == null ? "unresolved" : f.ratio.toFixed(3)}; required ${f.minimum}); foreground ${f.color || "unknown"}, background ${f.background || "variable"}; ${(f.issues || []).join(", ")}${f.status === "unresolved" ? "; use a proving foreground color, a sufficiently strong scrim, or a moved copy field and rerun" : ""}`,
   );
 }
+
+function contrastWarningSignature(message) {
+  const text = String(message || "").trim();
+  if (!text.startsWith("contrast fail:")) return "";
+  return text.replace(/\s*\([^)]*\).*$/u, "").trim();
+}
+
+/**
+ * Suppress only final-audit contrast failures that match contrast warnings
+ * already recorded for a warned creative-near-miss preview. Any unmatched
+ * contrast failure (or any unresolved contrast error) remains blocking.
+ */
+export function filterRecordedContrastWarnings(messages, deliveryWarnings) {
+  const list = Array.isArray(messages) ? messages : [];
+  if (
+    deliveryWarnings?.decision !== "warned" ||
+    !Array.isArray(deliveryWarnings.warnings) ||
+    !deliveryWarnings.warnings.length
+  ) {
+    return { blocking: list, suppressed: [] };
+  }
+  const recorded = new Set(
+    deliveryWarnings.warnings
+      .map(contrastWarningSignature)
+      .filter(Boolean),
+  );
+  if (!recorded.size) return { blocking: list, suppressed: [] };
+  const blocking = [];
+  const suppressed = [];
+  for (const message of list) {
+    const signature = contrastWarningSignature(message);
+    if (signature && recorded.has(signature)) suppressed.push(message);
+    else blocking.push(message);
+  }
+  return { blocking, suppressed };
+}

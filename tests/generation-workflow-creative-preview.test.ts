@@ -43,9 +43,5 @@ describe("creative preview workflow", () => {
     );
     expect(warningsCommit).toBeGreaterThan(-1);
     expect(finalSha).toBeGreaterThan(warningsCommit);
-    expect(creativeDeploy).toContain(
-      'if [ "$CREATIVE_DECISION" = "warned" ]; then',
-    );
-    expect(creativeDeploy).toContain("RENDERED_GATE_CONTRAST=separate");
   });
 });

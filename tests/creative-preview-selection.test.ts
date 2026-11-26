@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { validateCreativePreviewSelection } from "../scripts/validate-creative-preview-selection.mjs";
+import { filterRecordedContrastWarnings } from "../scripts/rendered-contrast.mjs";
 
 function config(overrides: Record<string, any> = {}) {
   return {
@@ -297,5 +298,27 @@ describe("creative preview selection", () => {
         }),
       }).decision,
     ).toBe("reject");
+  });
+
+  it("suppresses only contrast failures matching recorded warned delivery warnings", () => {
+    const warnings = {
+      decision: "warned",
+      warnings: [
+        'contrast fail: / mobile default body > main > p:nth-of-type(1) text "Residential electricians" (3.026; required 4.5); foreground #5e6360, background variable',
+      ],
+    };
+    const result = filterRecordedContrastWarnings(
+      [
+        'contrast fail: / mobile default body > main > p:nth-of-type(1) text "Residential electricians" (2.705; required 4.5); foreground #5e6360, background variable',
+        'contrast fail: / desktop menu-open body > aside > button text "Got questions?" (1.407; required 4.5); foreground #14201d, background #1e3a4c',
+        'contrast unresolved: / mobile default body > main > p:nth-of-type(1) text "Residential electricians" (unresolved; required 4.5); foreground #5e6360, background variable',
+      ],
+      warnings,
+    );
+    expect(result.suppressed).toHaveLength(1);
+    expect(result.suppressed[0]).toContain("2.705");
+    expect(result.blocking).toHaveLength(2);
+    expect(result.blocking[0]).toContain("Got questions?");
+    expect(result.blocking[1]).toContain("contrast unresolved:");
   });
 });
