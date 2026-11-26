@@ -190,7 +190,7 @@ body[data-ll-route^="/locations"] form :is(input, textarea, select):focus-visibl
   background-color: #f8f6f0 !important;
   color: #14201d !important;
   outline: 2px solid #14201d !important;
-  outline-offset: -2px !important;
+  outline-offset: -4px !important;
   box-shadow: none !important;
 }
 ${MEDIA_FOCUS_CORRECTION_END}
