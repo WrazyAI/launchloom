@@ -57,7 +57,9 @@ export function useGenerationActivity({
   const [error, setError] = useState<string | null>(null);
   const [hasOlder, setHasOlder] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
-  const [manualToken, setManualToken] = useState(0);
+  const pollDelay = useRef(active ? ACTIVITY_POLL_MS : ACTIVITY_IDLE_POLL_MS);
+  const pollOwner = useRef<{ refresh: () => void; reschedule: () => void } | null>(null);
+  const lastRefreshToken = useRef(refreshToken);
   const latestCursor = useRef<string | null>(null);
   const ids = useRef(new Set<string>());
   const eventsRef = useRef<StoredTraceEvent[]>([]);
@@ -97,6 +99,11 @@ export function useGenerationActivity({
   }, []);
 
   useEffect(() => {
+    pollDelay.current = active ? ACTIVITY_POLL_MS : ACTIVITY_IDLE_POLL_MS;
+    pollOwner.current?.reschedule();
+  }, [active]);
+
+  useEffect(() => {
     if (!enabled) {
       setConnection("disabled");
       return;
@@ -111,13 +118,20 @@ export function useGenerationActivity({
       timer = undefined;
     }
 
+    function schedule(delay: number) {
+      if (cancelled || document.visibilityState === "hidden") return;
+      timer = window.setTimeout(() => {
+        timer = undefined;
+        void load();
+      }, delay);
+    }
+
     async function load() {
       if (cancelled || controller || document.visibilityState === "hidden") return;
       controller = new AbortController();
       const signal = controller.signal;
       const after = latestCursor.current;
-      const pollDelay = active ? ACTIVITY_POLL_MS : ACTIVITY_IDLE_POLL_MS;
-      let delay = pollDelay;
+      let shouldCatchUp = false;
       try {
         const next = await api.getGenerationActivity(identity, {
           after,
@@ -133,39 +147,44 @@ export function useGenerationActivity({
         setError(null);
         // On the initial page, hasMore describes older history. Only a
         // forward page that advanced the cursor can request immediate catch-up.
-        if (after !== null && next.nextCursor && next.nextCursor !== after &&
-            next.hasMore && catchUp < CATCH_UP_PAGES) {
-          catchUp += 1;
-          delay = 0;
-        }
+        shouldCatchUp =
+          after !== null &&
+          next.nextCursor !== null &&
+          next.nextCursor !== after &&
+          next.hasMore &&
+          catchUp < CATCH_UP_PAGES;
       } catch (cause) {
         if (cancelled || isAbortError(cause)) return;
         setConnection("disconnected");
         setError(requestErrorMessage(cause));
       } finally {
         controller = null;
-        if (delay !== 0) catchUp = 0;
-        if (!cancelled && document.visibilityState !== "hidden") {
-          timer = window.setTimeout(() => {
-            timer = undefined;
-            void load();
-          }, delay);
-        }
+        catchUp = shouldCatchUp ? catchUp + 1 : 0;
+        schedule(shouldCatchUp ? 0 : pollDelay.current);
       }
     }
 
-    function onVisibilityChange() {
+    function refresh() {
       clearTimer();
       void load();
     }
 
-    document.addEventListener("visibilitychange", onVisibilityChange);
+    pollOwner.current = {
+      refresh,
+      reschedule() {
+        if (timer === undefined || catchUp > 0) return;
+        clearTimer();
+        schedule(pollDelay.current);
+      },
+    };
+    document.addEventListener("visibilitychange", refresh);
     void load();
     return () => {
       cancelled = true;
+      pollOwner.current = null;
       clearTimer();
       controller?.abort();
-      document.removeEventListener("visibilitychange", onVisibilityChange);
+      document.removeEventListener("visibilitychange", refresh);
     };
   }, [
     api,
@@ -173,11 +192,14 @@ export function useGenerationActivity({
     identity.namespace,
     identity.attemptId,
     enabled,
-    active,
-    refreshToken,
-    manualToken,
     merge,
   ]);
+
+  useEffect(() => {
+    if (refreshToken === lastRefreshToken.current) return;
+    lastRefreshToken.current = refreshToken;
+    pollOwner.current?.refresh();
+  }, [refreshToken]);
 
   const loadOlder = useCallback(() => {
     if (!enabled || olderRequest.current) return;
@@ -216,6 +238,6 @@ export function useGenerationActivity({
     hasOlder,
     loadingOlder,
     loadOlder,
-    refresh: () => setManualToken((value) => value + 1),
+    refresh: () => pollOwner.current?.refresh(),
   };
 }

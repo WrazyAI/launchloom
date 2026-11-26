@@ -766,6 +766,9 @@ function ThreadedEntry({
 
   // Model turns render as full thread-native chat messages with collapsible thinking traces.
   if (entry.kind === "model") {
+    const hasVisibleOutput = entry.evidence.some(
+      (event) => event.kind === "output_delta" && event.payload.delta?.kind === "text",
+    );
     return (
       <li
         className={`admin-activity__entry admin-chat__turn${
@@ -801,7 +804,7 @@ function ThreadedEntry({
               </span>
               {open && active ? (
                 <span className="admin-activity__sub">
-                  {output?.kind === "preview" ? "Receiving output" : "Waiting for visible output"}
+                  {hasVisibleOutput ? "Visible output received" : "Waiting for visible output"}
                   {progress ? ` · ${Math.floor(progress.elapsedMs / 1_000)}s reported` : ""}
                 </span>
               ) : null}
@@ -830,7 +833,7 @@ function ThreadedEntry({
           {output?.kind === "preview" ? (
             <LiveModelOutput
               text={output.text}
-              streaming={open && active}
+              streaming={open && active && hasVisibleOutput}
               follow={follow}
               onScroll={onPreviewScroll}
             />

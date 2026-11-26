@@ -783,12 +783,6 @@
   font-size: 11.5px;
   overflow-wrap: anywhere;
 }
-.admin-activity__tokens {
-  font-size: 11.5px;
-  font-variant-numeric: tabular-nums;
-  color: var(--drawer-accent);
-  font-weight: 500;
-}
 .admin-chat__turn-right,
 .admin-chat__tool-right {
   display: inline-flex;
