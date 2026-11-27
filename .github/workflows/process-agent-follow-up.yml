@@ -99,6 +99,7 @@ jobs:
               --candidates "$RUNNER_TEMP/creative-revision-candidates" \
               --out "$RUNNER_TEMP/human-revision" \
               --mode preview \
+              --model deepseek/deepseek-v4.1-flash \
               --max-cycles 2 \
               --require-diversity false \
               --feedback-file "$RUNNER_TEMP/agent-feedback.txt" \

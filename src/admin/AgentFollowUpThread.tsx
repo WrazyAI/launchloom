@@ -14,6 +14,7 @@ function Card({
   hasPreview,
   onApply,
   onOpenLatest,
+  onConfirmLatest,
 }: {
   suggestion: AgentSuggestion;
   writable: boolean;
@@ -21,6 +22,7 @@ function Card({
   hasPreview: boolean;
   onApply: () => void;
   onOpenLatest: () => void;
+  onConfirmLatest: () => void;
 }) {
   const running = active || suggestion.status === "started";
   const delivered = suggestion.status === "delivered";
@@ -55,6 +57,15 @@ function Card({
       >
         {label}
       </button>
+      {!writable && hasPreview && !running && !delivered && !failed ? (
+        <button
+          type="button"
+          className="admin-follow-up-card__confirm"
+          onClick={onConfirmLatest}
+        >
+          I opened the latest preview
+        </button>
+      ) : null}
       {delivered ? (
         <p className="admin-follow-up-card__receipt">
           The revision passed its checks. The previous preview is still
@@ -222,8 +233,8 @@ export function AgentFollowUpThread({
                       "_blank",
                       "noopener,noreferrer",
                     );
-                    setOpenedLatest(true);
                   }}
+                  onConfirmLatest={() => setOpenedLatest(true)}
                 />
               ))}
             </div>

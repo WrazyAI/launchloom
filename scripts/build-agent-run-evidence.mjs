@@ -40,18 +40,22 @@ function candidates(report, creativeSummary) {
   const selectedId =
     report?.selectedCandidateId || creativeSummary?.selectedCandidateId || null;
   if (declared.length) {
-    return declared.slice(0, MAX_CANDIDATES).map((candidate, index) => ({
-      id:
-        text(candidate?.id || candidate?.candidateId, 80) ||
-        `candidate-${index + 1}`,
-      score: Number.isFinite(Number(candidate?.score ?? candidate?.visualScore))
-        ? Number(candidate.score ?? candidate.visualScore)
-        : null,
-      selected:
-        candidate?.selected === true ||
-        candidate?.id === selectedId ||
-        candidate?.candidateId === selectedId,
-    }));
+    return declared.slice(0, MAX_CANDIDATES).map((candidate, index) => {
+      const scoreValue = candidate?.score ?? candidate?.visualScore;
+      return {
+        id:
+          text(candidate?.id || candidate?.candidateId, 80) ||
+          `candidate-${index + 1}`,
+        score:
+          typeof scoreValue === "number" && Number.isFinite(scoreValue)
+            ? scoreValue
+            : null,
+        selected:
+          candidate?.selected === true ||
+          candidate?.id === selectedId ||
+          candidate?.candidateId === selectedId,
+      };
+    });
   }
   const total = Math.min(MAX_CANDIDATES, count(report?.candidateCount));
   return Array.from({ length: total }, (_, index) => {

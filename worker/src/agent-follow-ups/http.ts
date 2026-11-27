@@ -138,7 +138,10 @@ export function parseRunEvidence(value: unknown): AgentRunEvidence | null {
         if (typeof row.id !== "string") return [];
         return [{
           id: row.id.slice(0, 80),
-          score: Number.isFinite(Number(row.score)) ? Number(row.score) : null,
+          score:
+            typeof row.score === "number" && Number.isFinite(row.score)
+              ? row.score
+              : null,
           selected: row.selected === true,
         }];
       }),
