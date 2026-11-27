@@ -190,30 +190,36 @@ export function groupActivity(
 
   for (const event of events) {
     switch (event.kind) {
-      case "model_started": {
-        const entry = entryFor(event, "model", "Model request");
-        entry.callId = event.payload.callId;
-        calls.set(event.payload.callId, entry);
-        entries.push(entry);
-        break;
-      }
+      case "model_started":
       case "model_finished":
       case "output":
       case "usage":
       case "output_delta": {
-        let entry = calls.get(event.payload.callId);
-        if (!entry && includePartial) {
+        const { callId } = event.payload;
+        const started = event.kind === "model_started";
+        let entry = calls.get(callId);
+        if (!entry) {
+          if (!started && !includePartial) break;
           entry = entryFor(
             event,
             "model",
-            "Model activity (earlier request not loaded)",
+            started ? "Model request" : "Model activity (earlier request not loaded)",
           );
-          entry.callId = event.payload.callId;
-          calls.set(event.payload.callId, entry);
+          entry.key = `model:${callId}`;
+          entry.callId = callId;
+          calls.set(callId, entry);
           entries.push(entry);
+        } else {
+          if (started && entry.primary.kind !== "model_started") {
+            entry.primary = event;
+            entry.at = event.receivedAt;
+            entry.stage = event.context.stage;
+            entry.actorKind = event.context.actor.kind;
+            entry.role = event.context.actor.role;
+            entry.title = "Model request";
+          }
+          entry.evidence.push(event);
         }
-        if (!entry) break;
-        if (entry.primary !== event) entry.evidence.push(event);
         if (event.kind === "model_finished")
           entry.status = event.payload.status;
         break;

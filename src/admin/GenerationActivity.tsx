@@ -450,15 +450,9 @@ function ModelThinkingTrace({
 
   let label = "Reasoning & execution trace";
   if (isLive) {
-    label = progress?.reasoningTokens
-      ? `Thinking (${formatCount(progress.reasoningTokens)} reasoning deltas)`
-      : "Thinking";
-  } else if (duration !== null && reasoning) {
-    label = `Thought for ${duration}s (${formatCount(reasoning.tokens)} reasoning ${reasoning.kind === "reported" ? "tokens" : "deltas"})`;
+    label = "Request details";
   } else if (duration !== null) {
     label = `Thought for ${duration}s`;
-  } else if (reasoning) {
-    label = `Thought (${formatCount(reasoning.tokens)} reasoning ${reasoning.kind === "reported" ? "tokens" : "deltas"})`;
   }
 
   const steps: Array<{ label: string; meta?: string; spinning?: boolean }> = [];
@@ -475,9 +469,7 @@ function ModelThinkingTrace({
   }
   if (progress) {
     steps.push({
-      label: isLive
-        ? `Streaming ~${formatCount(Math.ceil(progress.visibleChars / 4))} estimated tokens`
-        : `Streamed ~${formatCount(Math.ceil(progress.visibleChars / 4))} estimated tokens`,
+      label: `~${formatCount(Math.ceil(progress.visibleChars / 4))} estimated output tokens`,
       meta: `${progress.reasoningTokens} reasoning deltas`,
       spinning: isLive,
     });
@@ -493,6 +485,9 @@ function ModelThinkingTrace({
       label: "Provider reported usage",
       meta: `${formatCount(u.inputTokens)} in / ${formatCount(u.outputTokens)} out${u.cachedInputTokens ? ` (${formatCount(u.cachedInputTokens)} cached)` : ""}`,
     });
+  }
+  if (reasoning?.kind === "reported") {
+    steps.push({ label: "Reported reasoning", meta: `${formatCount(reasoning.tokens)} tokens` });
   }
   if (finished && finished.kind === "model_finished") {
     steps.push({
@@ -771,6 +766,9 @@ function ThreadedEntry({
 
   // Model turns render as full thread-native chat messages with collapsible thinking traces.
   if (entry.kind === "model") {
+    const hasVisibleOutput = entry.evidence.some(
+      (event) => event.kind === "output_delta" && event.payload.delta?.kind === "text",
+    );
     return (
       <li
         className={`admin-activity__entry admin-chat__turn${
@@ -802,17 +800,12 @@ function ThreadedEntry({
                 {activityStageLabel(entry.stage)}
                 {candidateId ? ` · ${candidateId}` : ""}
                 {repairPass === null ? "" : ` · Round ${repairPass}`}
+                {entry.callId ? ` · Request ${entry.callId.slice(-8)}` : ""}
               </span>
-              {usage ? (
-                <span className="admin-activity__tokens">
-                  {formatCount(usage.payload.usage.inputTokens)} in ·{" "}
-                  {formatCount(usage.payload.usage.outputTokens)} out · reported
-                </span>
-              ) : progress && open && active ? (
+              {open && active ? (
                 <span className="admin-activity__sub">
-                  ~{Math.ceil(progress.visibleChars / 4)} output tokens
-                  estimated while streaming · {progress.reasoningTokens}{" "}
-                  reasoning deltas
+                  {hasVisibleOutput ? "Visible output received" : "Waiting for visible output"}
+                  {progress ? ` · ${Math.floor(progress.elapsedMs / 1_000)}s reported` : ""}
                 </span>
               ) : null}
             </span>
@@ -840,7 +833,7 @@ function ThreadedEntry({
           {output?.kind === "preview" ? (
             <LiveModelOutput
               text={output.text}
-              streaming={open && active}
+              streaming={open && active && hasVisibleOutput}
               follow={follow}
               onScroll={onPreviewScroll}
             />
@@ -974,7 +967,7 @@ function EntryRow({
         type="button"
         className="admin-activity__row"
         aria-pressed={selected}
-        onClick={() => onSelect(entry.primary.eventId)}
+        onClick={() => onSelect(entry.key)}
       >
         <time
           className="admin-activity__clock"
@@ -1232,7 +1225,7 @@ export function GenerationActivity({
   function isThinkingExpanded(entry: ActivityEntry): boolean {
     if (Object.hasOwn(thinkingState, entry.key))
       return Boolean(thinkingState[entry.key]);
-    return isOpenEntry(entry) && active;
+    return false;
   }
 
   const allThinkingOpen =

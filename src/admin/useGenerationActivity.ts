@@ -34,7 +34,7 @@ export type GenerationActivityState = {
  *
  * Only the last acknowledged cursor is sent, so reconnects replay missed events
  * without duplicating them. Rapid polling stops when the run is no longer live
- * or the tab is hidden; reads never overlap.
+ * or the tab is hidden; only one forward read can be in flight.
  */
 export function useGenerationActivity({
   api,
@@ -57,10 +57,13 @@ export function useGenerationActivity({
   const [error, setError] = useState<string | null>(null);
   const [hasOlder, setHasOlder] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
-  const [manualToken, setManualToken] = useState(0);
+  const pollDelay = useRef(active ? ACTIVITY_POLL_MS : ACTIVITY_IDLE_POLL_MS);
+  const pollOwner = useRef<{ refresh: () => void; reschedule: () => void } | null>(null);
+  const lastRefreshToken = useRef(refreshToken);
   const latestCursor = useRef<string | null>(null);
   const ids = useRef(new Set<string>());
   const eventsRef = useRef<StoredTraceEvent[]>([]);
+  const olderRequest = useRef<AbortController | null>(null);
 
   useEffect(() => {
     latestCursor.current = null;
@@ -71,7 +74,12 @@ export function useGenerationActivity({
     setHasOlder(false);
     setError(null);
     setConnection(enabled ? "connecting" : "disabled");
-  }, [identity.namespace, identity.attemptId, enabled]);
+    setLoadingOlder(false);
+    return () => {
+      olderRequest.current?.abort();
+      olderRequest.current = null;
+    };
+  }, [api, identity.namespace, identity.attemptId, enabled]);
 
   const merge = useCallback((incoming: StoredTraceEvent[], mode: "append" | "prepend") => {
     const fresh = incoming.filter((event) => {
@@ -91,6 +99,11 @@ export function useGenerationActivity({
   }, []);
 
   useEffect(() => {
+    pollDelay.current = active ? ACTIVITY_POLL_MS : ACTIVITY_IDLE_POLL_MS;
+    pollOwner.current?.reschedule();
+  }, [active]);
+
+  useEffect(() => {
     if (!enabled) {
       setConnection("disabled");
       return;
@@ -100,59 +113,78 @@ export function useGenerationActivity({
     let controller: AbortController | null = null;
     let catchUp = 0;
 
+    function clearTimer() {
+      if (timer !== undefined) window.clearTimeout(timer);
+      timer = undefined;
+    }
+
     function schedule(delay: number) {
-      if (cancelled) return;
+      if (cancelled || document.visibilityState === "hidden") return;
       timer = window.setTimeout(() => {
-        if (document.visibilityState === "hidden") {
-          schedule(ACTIVITY_IDLE_POLL_MS);
-          return;
-        }
+        timer = undefined;
         void load();
       }, delay);
     }
 
     async function load() {
-      if (cancelled || controller) return;
+      if (cancelled || controller || document.visibilityState === "hidden") return;
       controller = new AbortController();
       const signal = controller.signal;
-      const initial = latestCursor.current === null;
+      const after = latestCursor.current;
+      let shouldCatchUp = false;
       try {
         const next = await api.getGenerationActivity(identity, {
-          after: latestCursor.current,
+          after,
           limit: 100,
           signal,
         });
         if (cancelled) return;
         merge(next.items, "append");
         latestCursor.current = next.nextCursor ?? latestCursor.current;
-        if (initial) setHasOlder(next.hasMore);
+        if (after === null) setHasOlder(next.hasMore);
         setPage(next);
         setConnection("live");
         setError(null);
-        if (next.hasMore && catchUp < CATCH_UP_PAGES) {
-          catchUp += 1;
-          controller = null;
-          schedule(0);
-          return;
-        }
+        // On the initial page, hasMore describes older history. Only a
+        // forward page that advanced the cursor can request immediate catch-up.
+        shouldCatchUp =
+          after !== null &&
+          next.nextCursor !== null &&
+          next.nextCursor !== after &&
+          next.hasMore &&
+          catchUp < CATCH_UP_PAGES;
       } catch (cause) {
         if (cancelled || isAbortError(cause)) return;
         setConnection("disconnected");
         setError(requestErrorMessage(cause));
       } finally {
         controller = null;
-        if (!cancelled) {
-          catchUp = 0;
-          schedule(active ? ACTIVITY_POLL_MS : ACTIVITY_IDLE_POLL_MS);
-        }
+        catchUp = shouldCatchUp ? catchUp + 1 : 0;
+        schedule(shouldCatchUp ? 0 : pollDelay.current);
       }
     }
 
+    function refresh() {
+      clearTimer();
+      void load();
+    }
+
+    pollOwner.current = {
+      refresh,
+      reschedule() {
+        if (timer === undefined || catchUp > 0) return;
+        clearTimer();
+        schedule(pollDelay.current);
+      },
+    };
+    document.addEventListener("visibilitychange", refresh);
     void load();
     return () => {
       cancelled = true;
-      if (timer) window.clearTimeout(timer);
+      pollOwner.current = null;
+      clearTimer();
       controller?.abort();
+      document.removeEventListener("visibilitychange", refresh);
     };
   }, [
     api,
@@ -160,17 +192,21 @@ export function useGenerationActivity({
     identity.namespace,
     identity.attemptId,
     enabled,
-    active,
-    refreshToken,
-    manualToken,
     merge,
   ]);
 
+  useEffect(() => {
+    if (refreshToken === lastRefreshToken.current) return;
+    lastRefreshToken.current = refreshToken;
+    pollOwner.current?.refresh();
+  }, [refreshToken]);
+
   const loadOlder = useCallback(() => {
-    if (!enabled || loadingOlder) return;
+    if (!enabled || olderRequest.current) return;
     const oldest = eventsRef.current[0];
     if (!oldest) return;
     const controller = new AbortController();
+    olderRequest.current = controller;
     setLoadingOlder(true);
     api
       .getGenerationActivity(identity, {
@@ -179,14 +215,20 @@ export function useGenerationActivity({
         signal: controller.signal,
       })
       .then((older) => {
+        if (controller.signal.aborted) return;
         merge(older.items, "prepend");
         setHasOlder(older.hasMore);
       })
       .catch((cause: unknown) => {
-        if (!isAbortError(cause)) setError(requestErrorMessage(cause));
+        if (!controller.signal.aborted && !isAbortError(cause))
+          setError(requestErrorMessage(cause));
       })
-      .finally(() => setLoadingOlder(false));
-  }, [api, enabled, identity, loadingOlder, merge]);
+      .finally(() => {
+        if (olderRequest.current !== controller) return;
+        olderRequest.current = null;
+        setLoadingOlder(false);
+      });
+  }, [api, enabled, identity, merge]);
 
   return {
     page,
@@ -196,6 +238,6 @@ export function useGenerationActivity({
     hasOlder,
     loadingOlder,
     loadOlder,
-    refresh: () => setManualToken((value) => value + 1),
+    refresh: () => pollOwner.current?.refresh(),
   };
 }

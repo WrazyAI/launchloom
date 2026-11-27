@@ -4412,9 +4412,8 @@ it("renders model calls, actions, usage and inspectable evidence in a dedicated 
       "I am building the opening section around the approved service scope.",
     );
     const thread = activity.locator('[data-kind="model"]');
-    expect(
-      await thread.locator(".admin-activity__tokens").textContent(),
-    ).toContain("340 out · reported");
+    await visible(evidence.getByText("340", { exact: true }));
+    expect(await thread.getByRole("button", { name: /Model request.*340/u }).count()).toBe(0);
     await activity.getByRole("button", { name: /Model request/u }).click();
     expect(await evidence.count()).toBe(0);
     await visible(
@@ -4444,6 +4443,246 @@ it("renders model calls, actions, usage and inspectable evidence in a dedicated 
       .getByRole("button", { name: "Overview", exact: true })
       .click();
     await visible(inspector.locator("[data-attempt-metrics]"));
+    autoErrors(errors);
+  } finally {
+    await page.close();
+  }
+});
+
+it("catches up once from the acknowledged activity cursor after reconnecting", async () => {
+  activityEnabled = true;
+  const attemptId = "attempt-0005";
+  const initial = activityPageFor(attemptId);
+  const initialCursor = initial.activity.items.at(-1)!.cursor;
+  const { page } = await openPage({
+    clock: true,
+    path: `/admin/onboarding-invites?view=generations&attempt=${attemptId}`,
+  });
+  const cursors: (string | null)[] = [];
+  const caughtUpCursor = "v1.b.abcdabcd";
+  try {
+    await page.route(`**/legacy/attempts/${attemptId}/activity*`, async (route) => {
+      const after = new URL(route.request().url()).searchParams.get("after");
+      cursors.push(after);
+      const activity = initial.activity;
+      if (!after) {
+        await route.fulfill({
+          json: { ...initial, activity: { ...activity, nextCursor: initialCursor, hasMore: true } },
+        });
+        return;
+      }
+      if (cursors.length === 2) {
+        await route.fulfill({ status: 503, json: { error: { message: "Temporarily unavailable" } } });
+        return;
+      }
+      const firstPage = after === initialCursor;
+      const sequence = firstPage ? 10 : 11;
+      const item = {
+        ...activityEvent(sequence, {
+          kind: "task_finished",
+          payload: { label: firstPage ? "Revision evidence received" : "Revision evidence checked", status: "succeeded" },
+        }),
+        context: { ...activityEvent(sequence).context, attemptId },
+        cursor: firstPage ? "v1.a.abcdabcd" : caughtUpCursor,
+        receivedAt: Date.now(),
+      };
+      await route.fulfill({
+        json: {
+          ...initial,
+          activity: {
+            ...activity,
+            items: after === caughtUpCursor ? [] : [...activity.items.slice(-1), item],
+            hasMore: firstPage,
+            nextCursor: item.cursor,
+          },
+        },
+      });
+    });
+    const drawer = page.locator("#attempt-inspector");
+    await drawer.getByRole("button", { name: "Agent runs", exact: true }).click();
+    await visible(drawer.getByRole("button", { name: "Load earlier activity" }));
+    await page.clock.runFor(100);
+    expect(cursors).toEqual([null]);
+
+    await page.clock.runFor(2_000);
+    await expect.poll(() => cursors.length).toBe(2);
+    await page.clock.runFor(2_100);
+    await visible(drawer.getByText("Revision evidence checked", { exact: true }));
+    expect(cursors).toEqual([null, initialCursor, initialCursor, "v1.a.abcdabcd"]);
+    expect(await drawer.getByText("Revision evidence received", { exact: true }).count()).toBe(1);
+    await page.clock.runFor(2_100);
+    await expect.poll(() => cursors.slice(4)).toEqual([caughtUpCursor]);
+  } finally {
+    await page.close();
+  }
+}, 30_000);
+
+it("cancels a pending history read and opens the next attempt at its own cursor", async () => {
+  activityEnabled = true;
+  const attemptId = "attempt-0005";
+  const initial = activityPageFor(attemptId);
+  const { page } = await openPage({
+    path: `/admin/onboarding-invites?view=generations&attempt=${attemptId}`,
+  });
+  const isHistory = (url: string) => new URL(url).searchParams.has("before");
+  let releaseHistory!: () => void;
+  const held = new Promise<void>((resolve) => { releaseHistory = resolve; });
+  const history = structuredClone(initial);
+  history.activity.items[0]!.context.candidateId = "previous-attempt-only";
+  try {
+    await page.route(`**/legacy/attempts/${attemptId}/activity*`, async (route) => {
+      if (isHistory(route.request().url())) {
+        await held;
+        await route.fulfill({ json: history }).catch(() => {});
+        return;
+      }
+      await route.fulfill({ json: {
+        ...initial,
+        activity: { ...initial.activity, hasMore: true, nextCursor: initial.activity.items.at(-1)!.cursor },
+      } });
+    });
+    const drawer = page.locator("#attempt-inspector");
+    await drawer.getByRole("button", { name: "Agent runs", exact: true }).click();
+    const started = page.waitForRequest((request) => isHistory(request.url()));
+    const cancelled = page.waitForEvent("requestfailed", {
+      predicate: (request) => isHistory(request.url()),
+      timeout: 2_000,
+    }).catch(() => null);
+    await drawer.getByRole("button", { name: "Load earlier activity" }).click();
+    await started;
+    await drawer.getByRole("button", { name: "Close preview", exact: true }).click();
+    expect((await cancelled)?.failure()?.errorText).toBe("net::ERR_ABORTED");
+    await waitForGenerations(page);
+    await page.getByRole("button", { name: /Open attempt attempt-0001/u }).click();
+    const nextRequest = page.waitForRequest((request) =>
+      new URL(request.url()).pathname.endsWith("/legacy/attempts/attempt-0001/activity"),
+    );
+    await drawer.getByRole("button", { name: "Agent runs", exact: true }).click();
+    expect(new URL((await nextRequest).url()).search).toBe("?limit=100");
+    releaseHistory();
+    await visible(drawer.getByRole("button", { name: /Model request/u }));
+    expect(await drawer.getByText(/previous-attempt-only/u).count()).toBe(0);
+  } finally {
+    releaseHistory();
+    await page.close();
+  }
+});
+
+it("keeps one pending cursor when a run ends and resumes after visibility returns", async () => {
+  activityEnabled = true;
+  const attemptId = "attempt-0005";
+  const initial = activityPageFor(attemptId);
+  const initialCursor = initial.activity.items.at(-1)!.cursor;
+  const detail = attemptDetail(ATTEMPTS.find((attempt) => attempt.attemptId === attemptId)!);
+  const { page } = await openPage({
+    clock: true,
+    path: `/admin/onboarding-invites?view=generations&attempt=${attemptId}`,
+  });
+  const setVisibility = (visibility: "hidden" | "visible") => page.evaluate((value) => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value });
+    document.dispatchEvent(new Event("visibilitychange"));
+  }, visibility);
+  const reads: Route[] = [];
+  const latestCursor = "v1.a.abcdabcd";
+  try {
+    await page.route(`**/legacy/attempts/${attemptId}/activity*`, async (route) => {
+      if (new URL(route.request().url()).searchParams.has("after")) {
+        reads.push(route);
+        return;
+      }
+      await route.fulfill({ json: {
+        ...initial,
+        activity: { ...initial.activity, items: initial.activity.items.slice(0, 1), nextCursor: initialCursor },
+      } });
+    });
+    const drawer = page.locator("#attempt-inspector");
+    await drawer.getByRole("button", { name: "Agent runs", exact: true }).click();
+    await visible(drawer.getByText("Waiting for visible output", { exact: true }));
+    await page.clock.runFor(2_100);
+    await expect.poll(() => reads.length).toBe(1);
+    await page.route(`**/workspace/attempts/${attemptId}`, (route) => route.fulfill({
+      json: { attempt: { ...detail, executionStatus: "failed", completedAt: Date.now() } },
+    }));
+    await page.clock.runFor(15_100);
+    await visible(drawer.getByText("Unconfirmed", { exact: true }));
+    expect(reads.map((route) => new URL(route.request().url()).searchParams.get("after")))
+      .toEqual([initialCursor]);
+
+    const item = {
+      ...activityEvent(10, { kind: "task_finished", payload: { label: "Final activity recorded", status: "succeeded" } }),
+      context: { ...activityEvent(10).context, attemptId },
+      cursor: latestCursor,
+      receivedAt: Date.now(),
+    };
+    await reads[0]!.fulfill({ json: {
+      ...initial,
+      activity: { ...initial.activity, items: [item], nextCursor: latestCursor },
+    } });
+    await visible(drawer.getByText("Final activity recorded", { exact: true }));
+    await page.clock.runFor(2_100);
+    expect(reads).toHaveLength(1);
+    await page.clock.runFor(13_000);
+    await expect.poll(() => reads.length).toBe(2);
+    expect(new URL(reads[1]!.request().url()).searchParams.get("after")).toBe(latestCursor);
+    await reads[1]!.fulfill({ json: {
+      ...initial,
+      activity: { ...initial.activity, items: [], nextCursor: latestCursor },
+    } });
+
+    await setVisibility("hidden");
+    await page.clock.runFor(16_000);
+    expect(reads).toHaveLength(2);
+    await setVisibility("visible");
+    await expect.poll(() => reads.length).toBe(3);
+    expect(new URL(reads[2]!.request().url()).searchParams.get("after")).toBe(latestCursor);
+  } finally {
+    await page.close();
+  }
+}, 30_000);
+
+it("shows live status without visible output and keeps counters in details", async () => {
+  activityEnabled = true;
+  const attemptId = "attempt-0005";
+  const initial = activityPageFor(attemptId);
+  const start = initial.activity.items[0]!;
+  const progress = {
+    ...start,
+    eventId: "88888888-8888-4888-8888-888888888888",
+    sequence: 2,
+    cursor: "v1.2.abcdabcd",
+    kind: "output_delta",
+    payload: { callId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", visibleChars: 0, reasoningTokens: 883, elapsedMs: 15_000 },
+  };
+  activityFixture = {
+    ...initial,
+    activity: { ...initial.activity, items: [start, progress], nextCursor: progress.cursor },
+  };
+  const { page, errors } = await openPage({
+    path: `/admin/onboarding-invites?view=generations&attempt=${attemptId}`,
+  });
+  try {
+    const drawer = page.locator("#attempt-inspector");
+    await drawer.getByRole("button", { name: "Agent runs", exact: true }).click();
+    const row = drawer.locator(".admin-chat__turn");
+    await visible(row.getByText("Waiting for visible output · 15s reported", { exact: true }));
+    expect(await row.locator(".admin-chat__thinking-toggle").getAttribute("aria-expanded")).toBe("false");
+    expect(await row.getByRole("button", { name: /883 reasoning deltas/u }).count()).toBe(0);
+    expect(await row.locator(".admin-chat__codeblock--live").count()).toBe(0);
+    await row.locator(".admin-chat__thinking-toggle").click();
+    await visible(row.getByText("883 reasoning deltas", { exact: true }));
+    const withheld = {
+      ...progress,
+      eventId: "99999999-9999-4999-8999-999999999999",
+      sequence: 3,
+      cursor: "v1.3.abcdabcd",
+      payload: { ...progress.payload, delta: { kind: "withheld", reason: "sensitive" } },
+    };
+    activityFixture = {
+      ...initial,
+      activity: { ...initial.activity, items: [withheld], nextCursor: withheld.cursor },
+    };
+    await visible(row.getByText("[Output withheld: sensitive]", { exact: true }));
+    expect(await row.getByText("Waiting for visible output · 15s reported", { exact: true }).count()).toBe(1);
     autoErrors(errors);
   } finally {
     await page.close();
@@ -4515,6 +4754,7 @@ it("streams Agent runs code across incremental polls and replaces it at completi
         (element) => element.scrollHeight - element.scrollTop - element.clientHeight <= 28,
       );
       await visible(live.getByText("Streaming", { exact: true }));
+      await visible(drawer.getByText("Visible output received · 24s reported", { exact: true }));
       expect(await code.textContent()).toBe('export const headline = "Working";\n');
       await expect.poll(atBottom).toBe(true);
 
