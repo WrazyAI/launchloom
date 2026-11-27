@@ -64,18 +64,19 @@ These are settled:
 7. An unconfirmed probable cause still offers **Fix in Agent runs**. Verification decides whether it worked.
 8. **Needs review** is reserved for unsupported edits or a missing or moved preview base.
 9. DeepSeek through OpenCode Go produces the answer and suggestions.
-10. OpenRouter classifies the request and extracts proposed edits, in one isolated server-side module.
+10. OpenRouter classifies the request and extracts proposed edits, in one isolated server-side module, subject to the policy exception in this document.
 11. The classifier default is `openai/gpt-6-luna`, because `openai/gpt-6-luna-decisions` is not in the public model catalog. It supports structured output and tools. The model ID is configurable.
 12. The owning agent receives a complete brief: issue, probable cause, suggested solution, edits, checks, evidence, guardrails and base preview.
 
 ## Verified current state
 
 - Agent runs already receives sanitized model output, actions, stage changes, gate activity and repair activity through authenticated cursor polling. Trace retention is 30 days.
-- The Worker already calls OpenRouter in two production paths: onboarding service suggestions and the client site assistant. The claim that OpenRouter is otherwise disabled is not accurate for the current code.
+- The Worker uses OpenCode Go for all Worker AI features. The previous OpenRouter service-suggestion and client-assistant calls were migrated to OpenCode Go, and `OPENROUTER_API_KEY` is no longer configured for the Worker. Using OpenRouter for the classifier would deliberately reverse that policy.
 - The reviewed OpenCode Go profile supports text, JSON and JSON schema output. It does not currently expose native tool calling.
 - `deploy-platform.yml` already configures `OPENCODE_GO_API_KEY` and `OPENROUTER_API_KEY` for the API Worker, so the classifier and answering agent can run server-side without a new dispatch workflow.
 - `RevisionCoordinator` already queues, claims, retries and recovers revision requests. It deduplicates by request ID and fingerprint, enforces one active request, and interlocks with publication.
 - The developer revision workflow currently starts from the current review PR head and may update a branch alias and send email. It does not yet provide an exact-base, preview-only mode.
+- The run summary needed for grounding is not currently a single stored artifact. Attempt detail holds delivery, execution, stages and events, while candidate scores, gate findings, route checks and asset status live in the private pipeline report and activity trace. The design adds a bounded summary at completion rather than reconstructing it from prose.
 - `AdminApi` and the workspace API expose repository-scoped revision reads. There is no admin-authenticated follow-up write path.
 
 ## Product flow
@@ -100,14 +101,18 @@ The composer keeps one active revision per site. The admin can draft the next me
 The mode selector has three options:
 
 - **Decide automatically** uses the classifier.
-- **Ask about this run** skips classification.
-- **Request an improvement** skips classification and requires at least one proposed edit.
+- **Ask about this run** skips classification and answers from the selected attempt.
+- **Request an improvement** skips intent classification. The answering agent still turns the request into one or more `suggest_solution` results, and the admin confirms through a card. There is no separate structured edit form.
 
 Automatic classification is a convenience, not a gate. If the classifier is unavailable or returns low confidence, the UI shows both explicit actions.
 
 ### Thread
 
-The thread is scoped to the normalized site repository and survives later generation runs. Each message records the attempt it was asked from. Only the latest delivered preview is writable. Older attempts remain readable, but their composer is disabled with a plain explanation.
+The thread is scoped to the normalized site repository and survives later generation runs. Each message records the attempt it was asked from.
+
+Questions may be asked about any attempt, including failed or diagnostic runs with no preview. They answer from that attempt's recorded evidence and say what was not recorded.
+
+Improvements are writable only when the thread's latest verified preview is `preview_ready`, has an immutable deployment URL, and matches the preview currently open. If the admin is viewing another attempt, the card's button becomes **Open latest preview**. It navigates first and does not start a revision from a different base.
 
 Messages are role-tagged as **You**, **Agent**, **Question**, **Improvement** or **Suggested fix**. Answers cite the evidence they used, for example a mobile check or a gate finding. If the run did not record why a choice was made, the answer says so.
 
@@ -126,7 +131,7 @@ States:
 - **Ready:** issue, suggestion and active button.
 - **Working:** button becomes **Revision running**, progress appears in place.
 - **Delivered:** receipt appears under the card and the button becomes **Open revised preview**.
-- **Needs review:** disabled button with the exact reason, used only for unsupported edits or a missing or moved base.
+- **Needs review:** disabled button with the exact reason, used when the base is missing or moved, or when the requested pages and sections are clearly outside the supported edit vocabulary. An unknown structural request is attempted and can become **Needs review** only after verification fails.
 
 The card settles in once over 280ms. Pressing the button uses a short press scale. Progress and the receipt do not close the card, so the thread keeps its history. Reduced motion removes the settle, the pulse and the press scale.
 
@@ -149,20 +154,24 @@ Output:
 }
 ```
 
-The classifier does not dispatch, does not choose a preview and does not call `suggest_solution`. If it returns `unsupported` or low confidence, the thread asks the admin to choose a mode or clarifies the request.
+The classifier does not dispatch, does not choose a preview and does not call `suggest_solution`.
 
-The production policy should allow OpenRouter in one module only. Existing onboarding and client-assistant uses stay as they are unless the owner asks for a separate migration. A test should reject new OpenRouter imports outside the approved modules.
+The classifier returns `mixed` when the message asks a question and proposes a change. The thread answers the question first, then shows any suggestion cards. Nothing is dispatched automatically. If the classifier is unavailable, low confidence or `unsupported`, the admin chooses **Ask** or **Improve** and the request proceeds without classification.
+
+The production policy currently rejects OpenRouter in Worker AI. Using it for the classifier is a deliberate, single-module exception, not an existing pattern. The plan needs the credential, deployment configuration, a recorded exception and a test that rejects OpenRouter outside the classifier module. If the owner declines the exception, the classifier uses OpenCode Go with the same contract.
 
 ## Answering agent
 
 DeepSeek V4.1 Flash through OpenCode Go receives:
 
 - the site identity and the current preview identity
-- the latest run summary: renderer, candidates, selected candidate, scores, gates, failures, route checks and asset status
+- a bounded run summary: renderer, candidates, selected candidate, scores, gates, failures, route checks and asset status
 - the findings the run recorded, with evidence references
 - the prior thread messages for this site
 - the admin's current message
 - the proposed edits when classification produced them
+
+The run summary is a new bounded artifact written by the completion ingest, not inferred from prose. It carries the fields above plus the immutable preview deployment. If the summary is absent, the agent falls back to attempt detail and activity, and labels the missing evidence. It never fills a gap with a guess. Messages snapshot the summary they used so a question remains answerable after trace retention expires.
 
 It returns prose plus zero or more `suggest_solution` results. It must not present an unrecorded cause as fact. It may label a cause as probable.
 
@@ -206,14 +215,16 @@ The Worker turns this into a revision brief. The brief also includes the admin's
 A follow-up revision uses the existing coordinator and workflow with a new preview-only mode:
 
 - The request records the site thread, message, attempt, actor, brief and exact base.
-- The base is repository, PR, commit SHA and deployment-specific preview URL.
+- The base is repository, PR, commit SHA and an immutable deployment URL captured at delivery. Mutable branch aliases are not accepted.
 - The workflow checks out the exact base. It stops if the base has moved or is no longer available.
 - All edits run as one bounded revision. Scope validation, rendered verification, contrast, SEO and content gates apply.
-- A verified result records a new deployment-specific preview and a receipt.
+- The revision commits to a request-specific branch and deploys directly from that build. It never moves the shared review branch, so a failed deploy cannot wedge the next follow-up.
+- A verified result records a new deployment-specific preview and a receipt. The thread advances to that commit.
 - A failed edit keeps the previous preview selected. No partial preview replaces it.
 - The mode skips developer and client email, review-link delivery and publication.
-- Only one revision runs per site. A second request waits as a draft or queue entry, never as a parallel write.
+- Only one revision runs per site. A second improvement message is accepted and can produce cards, but every card's button stays disabled with **Revision running** until the active request settles. Nothing auto-dispatches.
 - The existing `revision_requests.stage` constraint allows only `developer` and `client`. A follow-up needs a migration that adds a source or mode instead of overloading those stages.
+- Existing delivered sites without an immutable deployment URL stay read-only until a new run records one. Diagnostic previews are not writable.
 
 If the base cannot be proved, the card becomes **Needs review** and no revision starts.
 
@@ -245,11 +256,11 @@ Reads are paged oldest to newest for display and newest to oldest for resumption
 - **Classifier unavailable:** explicit Ask and Improve actions.
 - **Answer model unavailable:** the message stays in the thread with a retry action. No suggestion card is invented.
 - **Suggestion has no cause evidence:** card is still allowed, cause is marked probable.
-- **Suggestion needs an unsupported structural change:** card is disabled as **Needs review** with the reason.
+- **Suggestion needs an unsupported structural change:** the card is allowed when the support is unknown. If verification fails, it becomes **Needs review** with the reason.
 - **Preview base missing or moved:** card is disabled as **Needs review**; no revision starts.
 - **Revision fails:** previous preview stays selected; the thread shows the failed check and the request ID.
 - **Revision succeeds but the preview cannot be verified:** treat as failed. Do not advance the thread.
-- **Site already has an active revision:** the message becomes a draft or waits in the queue.
+- **Site already has an active revision:** the message is accepted and can produce cards, but the buttons stay disabled until the active request settles.
 
 ## Rollout
 
@@ -260,7 +271,8 @@ Implementation should sit behind an admin capability flag. The flag stays off in
 - a synthetic site completes one question and one suggested-fix revision
 - the previous preview remains available after a failed revision
 - no email or publication is emitted
-- OpenRouter usage is limited to the approved module plus the two existing paths
+- OpenRouter usage is limited to the approved classifier module, with a recorded policy exception and a test that rejects all other imports. The existing Worker AI features stay on OpenCode Go.
+- every writable preview has an immutable deployment URL and matches the preview on screen
 - the admin-only authorization and base pinning have browser and Worker coverage
 
 ## Success criteria
@@ -276,7 +288,7 @@ Implementation should sit behind an admin capability flag. The flag stays off in
 
 ## Open decisions for review
 
-1. Existing OpenRouter calls in onboarding and the client assistant remain. Limiting OpenRouter to the classifier alone is a separate migration.
-2. The proposal disables writing from older attempts. If the admin needs to revise an older preview, that needs a deliberate base-selection flow.
+1. OpenRouter is currently disabled in Worker AI. The classifier requires a deliberate single-module exception, credentials, deployment configuration and a recorded policy reversal. If the owner does not want that, the classifier uses OpenCode Go with the same contract.
+2. The proposal requires an immutable deployment URL. Existing delivered sites without one stay read-only until a new run records it.
 3. The revision brief is stored but not shown by default. A **View brief** disclosure can be added without changing the card.
 4. The exact classifier model is configurable. The public default is `openai/gpt-6-luna`.
