@@ -1908,15 +1908,19 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     return {
       run: true,
       status: "running",
-      request: {
-        source: row.source,
-        brief: row.brief,
-        baseSha: row.base_sha,
-        baseDeploymentId: row.base_deployment_id,
-        suggestionId: row.suggestion_id,
-        repo: row.repo,
-        pr: row.pr,
-      },
+      ...(row.source === "agent_follow_up"
+        ? {
+            request: {
+              source: row.source,
+              brief: row.brief,
+              baseSha: row.base_sha,
+              baseDeploymentId: row.base_deployment_id,
+              suggestionId: row.suggestion_id,
+              repo: row.repo,
+              pr: row.pr,
+            },
+          }
+        : {}),
     };
   }
 

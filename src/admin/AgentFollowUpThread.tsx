@@ -11,12 +11,14 @@ function Card({
   suggestion,
   writable,
   active,
+  hasPreview,
   onApply,
   onOpenLatest,
 }: {
   suggestion: AgentSuggestion;
   writable: boolean;
   active: boolean;
+  hasPreview: boolean;
   onApply: () => void;
   onOpenLatest: () => void;
 }) {
@@ -27,11 +29,13 @@ function Card({
     ? "Revision running"
     : delivered
       ? "Open revised preview"
-      : needsReview
+      : needsReview || (!writable && !hasPreview)
         ? "Needs review"
         : writable
           ? "Fix in Agent runs"
           : "Open latest preview";
+  const disabled =
+    running || delivered || needsReview || (!writable && !hasPreview);
   return (
     <article className="admin-follow-up-card" data-status={suggestion.status}>
       <p className="admin-follow-up-card__issue">{suggestion.issue}</p>
@@ -43,7 +47,7 @@ function Card({
       <button
         type="button"
         className="admin-follow-up-card__apply"
-        disabled={running || delivered || needsReview}
+        disabled={disabled}
         onClick={writable ? onApply : onOpenLatest}
       >
         {label}
@@ -179,6 +183,7 @@ export function AgentFollowUpThread({
                   key={suggestion.id}
                   suggestion={suggestion}
                   writable={thread.writable || openedLatest}
+                  hasPreview={Boolean(thread.latestPreview)}
                   active={Boolean(thread.activeRequestId)}
                   onApply={() => void apply(suggestion)}
                   onOpenLatest={() => {
