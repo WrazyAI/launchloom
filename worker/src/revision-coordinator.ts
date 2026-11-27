@@ -1065,6 +1065,32 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     }
   }
 
+  private setSuggestionStatusByRequest(
+    requestId: string,
+    status: AgentSuggestion["status"],
+  ) {
+    const rows = this.ctx.storage.sql
+      .exec<{ suggestion_id: string; payload_json: string }>(
+        "SELECT suggestion_id, payload_json FROM agent_suggestions WHERE request_id = ?",
+        requestId,
+      )
+      .toArray();
+    for (const row of rows) {
+      try {
+        const suggestion = JSON.parse(row.payload_json) as AgentSuggestion;
+        suggestion.status = status;
+        this.ctx.storage.sql.exec(
+          "UPDATE agent_suggestions SET status = ?, payload_json = ? WHERE suggestion_id = ?",
+          status,
+          JSON.stringify(suggestion),
+          row.suggestion_id,
+        );
+      } catch {
+        // A malformed historical suggestion cannot block the queue.
+      }
+    }
+  }
+
   async reserveAgentCommand(
     repo: string,
     requestId: string,
@@ -1711,6 +1737,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         input.requestId,
         input.suggestionId,
       );
+      this.setSuggestionStatusByRequest(input.requestId, "started");
     }
     return result;
   }
@@ -1918,6 +1945,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         "UPDATE agent_suggestions SET status = 'delivered' WHERE request_id = ?",
         requestId,
       );
+      this.setSuggestionStatusByRequest(requestId, "delivered");
     }
     let promoted = row.promoted_request_id
       ? this.row(row.promoted_request_id)
