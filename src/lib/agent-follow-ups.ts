@@ -92,6 +92,8 @@ export type AgentSuggestion = {
   evidence: SuggestionEvidence[];
   guardrails: string[];
   brief: string;
+  baseDeploymentId: string | null;
+  baseSha: string | null;
   status: AgentSuggestionStatus;
   requestId: string | null;
 };
@@ -116,15 +118,21 @@ export type AgentThreadPage = {
   writable: boolean;
 };
 
+export type AgentSuggestionInput = Omit<
+  AgentSuggestion,
+  "id" | "messageId" | "status" | "requestId" | "baseDeploymentId" | "baseSha"
+> & {
+  baseDeploymentId?: string | null;
+  baseSha?: string | null;
+};
+
 export type AgentExchangeInput = {
   repo: string;
   attemptId: string;
   adminText: string;
   agentText: string;
   intent: AgentIntent;
-  suggestions: Array<
-    Omit<AgentSuggestion, "id" | "messageId" | "status" | "requestId">
-  >;
+  suggestions: AgentSuggestionInput[];
 };
 
 export type AgentFollowUpSubmission = {

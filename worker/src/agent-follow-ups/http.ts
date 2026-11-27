@@ -1,6 +1,7 @@
 import type {
   AgentRunEvidence,
   AgentSuggestion,
+  AgentSuggestionInput,
   PreviewDelivery,
 } from "../../../src/lib/agent-follow-ups";
 import { buildRevisionBrief } from "./brief";
@@ -213,9 +214,7 @@ type AdminFollowUpEnv = {
         adminText: string;
         agentText: string;
         intent: "question" | "improvement" | "mixed" | "unsupported";
-        suggestions: Array<
-          Omit<AgentSuggestion, "id" | "messageId" | "status" | "requestId">
-        >;
+        suggestions: AgentSuggestionInput[];
       }): Promise<{ message: { id: string } }>;
       enqueueAgentFollowUp(input: {
         requestId: string;
@@ -290,11 +289,21 @@ async function applyAgentSuggestion(
       },
       409,
     );
+  if (!suggestion.baseSha || !suggestion.baseDeploymentId)
+    return json(
+      {
+        error: {
+          code: "preview_base_missing",
+          message: "This suggestion has no pinned preview. Ask for a new suggestion.",
+        },
+      },
+      409,
+    );
   const result = await coordinator.enqueueAgentFollowUp({
     requestId,
     repo: attempt.repository,
-    baseSha: thread.latestPreview?.sha || "",
-    baseDeploymentId,
+    baseSha: suggestion.baseSha,
+    baseDeploymentId: suggestion.baseDeploymentId,
     brief: suggestion.brief,
     suggestionId,
   });
@@ -475,6 +484,8 @@ export async function agentFollowUpsAdmin(
   const preview = current.latestPreview;
   const suggestions = rawSuggestions.map((suggestion) => ({
     ...suggestion,
+    baseDeploymentId: preview?.deploymentId || null,
+    baseSha: preview?.sha || null,
     brief: buildRevisionBrief({
       suggestion,
       adminText: text,

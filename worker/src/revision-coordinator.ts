@@ -1150,6 +1150,8 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         const id = crypto.randomUUID();
         const stored: AgentSuggestion = {
           ...suggestion,
+          baseDeploymentId: suggestion.baseDeploymentId ?? null,
+          baseSha: suggestion.baseSha ?? null,
           id,
           messageId: agentId,
           status: "suggested",

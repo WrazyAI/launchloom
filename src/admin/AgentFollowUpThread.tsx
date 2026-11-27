@@ -139,7 +139,15 @@ export function AgentFollowUpThread({
 
   async function apply(suggestion: AgentSuggestion) {
     const preview = thread?.latestPreview;
-    if (!preview || (!thread?.writable && !openedLatest)) return;
+    if (
+      !preview ||
+      (!thread?.writable &&
+        !(
+          openedLatest &&
+          suggestion.baseDeploymentId === preview.deploymentId
+        ))
+    )
+      return;
     setError(null);
     try {
       await api.applyAgentSuggestion(attemptId, suggestion.id, {
@@ -185,7 +193,12 @@ export function AgentFollowUpThread({
                 <Card
                   key={suggestion.id}
                   suggestion={suggestion}
-                  writable={thread.writable || openedLatest}
+                  writable={
+                    thread.writable ||
+                    (openedLatest &&
+                      suggestion.baseDeploymentId ===
+                        thread.latestPreview?.deploymentId)
+                  }
                   hasPreview={Boolean(thread.latestPreview)}
                   active={Boolean(thread.activeRequestId)}
                   onApply={() => void apply(suggestion)}
