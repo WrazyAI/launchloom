@@ -7,6 +7,7 @@
  * Diagnostic failure never changes the workflow outcome.
  */
 import { activityFromEnv } from "./generation-activity-context.mjs";
+import { emitChangeSummary, summarizeCommittedChanges } from "./generation-activity-changes.mjs";
 
 export async function finalizeGenerationActivity({
   env = process.env,
@@ -24,6 +25,13 @@ export async function finalizeGenerationActivity({
   const outcome = String(env.GENERATION_OUTCOME || "").toLowerCase();
   const complete = outcome === "success";
   try {
+    const summary = await summarizeCommittedChanges(
+      env.ACTIVITY_CLIENT_DIR || "",
+      env.ACTIVITY_CLIENT_REPOSITORY || "",
+      env.ACTIVITY_BASE_SHA || "",
+      env.ACTIVITY_HEAD_SHA || "",
+    ).catch(() => null);
+    emitChangeSummary(producer, "run_code_changes", summary);
     producer.emit("coverage", {
       boundary: "workflow.finalizer",
       status: complete ? "instrumented" : "limited",

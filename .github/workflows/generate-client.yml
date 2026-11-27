@@ -920,6 +920,7 @@ jobs:
             git config user.email "automation@launchloom.app"
             git remote set-url origin "$REMOTE"
           fi
+          echo "activity_base_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
             node --input-type=module -e 'const { initializeQaRepairReceipt } = await import(process.env.GITHUB_WORKSPACE + "/scripts/creative-repair-experiment.mjs"); await initializeQaRepairReceipt(".launchloom/creative-repair");'
           fi
@@ -1266,13 +1267,15 @@ jobs:
           fi
           RUN_SUFFIX=$(printf '%s' "$GITHUB_RUN_ID" | tail -c 9)
           BRANCH="diag-${RUN_SUFFIX}-${GITHUB_RUN_ATTEMPT}"
+          DIAGNOSTIC_SHA=$(git rev-parse HEAD)
           PREVIEW_RESULT=$(node "$GITHUB_WORKSPACE/scripts/deploy-private-diagnostic-preview.mjs" \
             --directory "$PWD/dist" \
             --project "$LAUNCHLOOM_TEST_PAGES_PROJECT" \
             --branch "$BRANCH" \
-            --source-sha "$(git rev-parse HEAD)")
+            --source-sha "$DIAGNOSTIC_SHA")
           PREVIEW=$(printf '%s' "$PREVIEW_RESULT" | jq -er '.url')
           echo "preview=$PREVIEW" >> "$GITHUB_OUTPUT"
+          echo "sha=$DIAGNOSTIC_SHA" >> "$GITHUB_OUTPUT"
       - name: Summarize protected diagnostic design
         if: always() && steps.diagnostic_preview.outputs.preview != ''
         continue-on-error: true
@@ -1892,4 +1895,8 @@ jobs:
         continue-on-error: true
         env:
           GENERATION_OUTCOME: ${{ job.status }}
+          ACTIVITY_CLIENT_DIR: ${{ steps.branch.outputs.dir }}
+          ACTIVITY_CLIENT_REPOSITORY: ${{ steps.client.outputs.repo }}
+          ACTIVITY_BASE_SHA: ${{ steps.branch.outputs.activity_base_sha }}
+          ACTIVITY_HEAD_SHA: ${{ steps.deploy.outputs.sha || steps.diagnostic_preview.outputs.sha }}
         run: node scripts/finalize-generation-activity.mjs

@@ -191,6 +191,29 @@ describe("generation activity producer", () => {
     await producer.close();
   });
 
+  it("removes private candidate patch lines before spooling and transport", async () => {
+    const { producer, sent, spoolWrites } = harness();
+    producer.addSensitiveValues(["123 Private Drive\nApartment Seven"]);
+    expect(producer.emit("action_finished", {
+      actionId: "candidate:edit",
+      name: "edit_candidate_files",
+      status: "succeeded",
+      durationMs: null,
+      result: {
+        filesChanged: 1,
+        additions: 4,
+        deletions: 1,
+        patch: "-old\n+new\n+123 Private Drive\n+Apartment Seven\n+help@private.example\n",
+      },
+    })).toBe(true);
+    await vi.advanceTimersByTimeAsync(TRACE_LIMITS.flushIntervalMs);
+    for (const evidence of [spoolWrites.join("\n"), JSON.stringify(sent)]) {
+      expect(evidence).toContain("+new");
+      expect(evidence).not.toMatch(/123 Private Drive|Apartment Seven|help@private\.example/u);
+    }
+    await producer.close();
+  });
+
   it("shares one queue and sequence between child contexts", async () => {
     const { producer, sent } = harness();
     const child = producer.withContext({ stage: "creative_render" });

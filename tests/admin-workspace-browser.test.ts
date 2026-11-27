@@ -4729,6 +4729,16 @@ it("streams Agent runs code across incremental polls and replaces it at completi
       message: { kind: "text", text: JSON.stringify({ designContract: "Authoritative rendered design" }) },
     },
   });
+  const edit = event(30, {
+    kind: "action_finished",
+    payload: {
+      actionId: "candidate:live:edit",
+      name: "edit_candidate_files",
+      status: "succeeded",
+      durationMs: null,
+      result: { filesChanged: 1, additions: 1, deletions: 1, patch: "-old\n+new\n" },
+    },
+  });
   const respond = (items: ReturnType<typeof event>[]) => {
     activityFixture = {
       ...initial,
@@ -4808,6 +4818,11 @@ it("streams Agent runs code across incremental polls and replaces it at completi
       expect(await live.count()).toBe(0);
       await model.click();
       await visible(drawer.getByText("Authoritative rendered design", { exact: true }));
+      respond([edit]);
+      const appliedEdit = drawer.getByRole("button", { name: /Edit candidate files/u });
+      await visible(appliedEdit.getByText("1 file · +1 −1", { exact: true }));
+      await appliedEdit.click();
+      await visible(drawer.getByLabel("Applied candidate diff"));
       await expectNoOverflow();
       if (process.env.ADMIN_DESIGN_CAPTURE_DIR) {
         await page.screenshot({ path: `${process.env.ADMIN_DESIGN_CAPTURE_DIR}/admin-completed-agent-${width}.png` });
@@ -4818,6 +4833,67 @@ it("streams Agent runs code across incremental polls and replaces it at completi
     }
   }
 }, 50_000);
+
+it("reopens completed agent activity and shows applied and final source changes", async () => {
+  activityEnabled = true;
+  const attemptId = "attempt-diagnostic";
+  const initial = activityPageFor(attemptId);
+  const baseSha = "a".repeat(40);
+  const headSha = "b".repeat(40);
+  const change = (index: number, name: string, result: Record<string, unknown>) =>
+    activityEvent(index, {
+      cursor: `v1.${index.toString(16)}.abcdabcd`,
+      receivedAt: Date.now() + index,
+      kind: "action_finished",
+      payload: { actionId: name, name, status: "succeeded", durationMs: null, result },
+    });
+  activityFixture = {
+    ...initial,
+    activity: {
+      ...initial.activity,
+      recording: "complete",
+      items: [
+        ...initial.activity.items,
+        change(11, "edit_candidate_files", {
+          filesChanged: 1, additions: 3, deletions: 2, patch: "-old\n+new\n",
+        }),
+        change(12, "run_code_changes", {
+          repository: "WrazyAI/client-site", baseSha, headSha,
+          filesChanged: 2, additions: 8, deletions: 1,
+        }),
+      ],
+    },
+  };
+  const { page, errors } = await openPage({
+    path: "/admin/onboarding-invites?view=clients&client=submission:client-a",
+  });
+  try {
+    const activity = page.getByRole("link", {
+      name: `View agent activity for ${attemptId}`,
+    });
+    await visible(activity);
+    await activity.click();
+    const drawer = page.locator("#attempt-inspector");
+    const checkSummary = async () => {
+      await visible(drawer.getByText("2 files · +8 −1", { exact: true }));
+      expect(await drawer.getByRole("link", { name: "View complete diff on GitHub" })
+        .getAttribute("href")).toBe(`https://github.com/WrazyAI/client-site/compare/${baseSha}...${headSha}`);
+    };
+    await checkSummary();
+    const edit = drawer.getByRole("button", { name: /Edit candidate files/u });
+    await visible(edit.getByText("1 file · +3 −2", { exact: true }));
+    await edit.click();
+    await visible(drawer.getByLabel("Applied candidate diff"));
+    expect(await drawer.getByLabel("Applied candidate diff").textContent()).toBe("-old\n+new\n");
+    await page.reload();
+    await checkSummary();
+    await drawer.getByRole("button", { name: "Overview", exact: true }).click();
+    await checkSummary();
+    autoErrors(errors);
+  } finally {
+    await page.close();
+  }
+});
 
 it("shows recorded model output when its start is on an older activity page", async () => {
   activityEnabled = true;

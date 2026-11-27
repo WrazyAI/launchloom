@@ -539,7 +539,7 @@ export function GenerationsView({
   function selectAttempt(attempt: AttemptSummary, trigger: HTMLButtonElement) {
     triggerRef.current = trigger;
     focusOnOpenRef.current = true;
-    navigate({ ...state, attemptId: attempt.attemptId, clientId: null });
+    navigate({ ...state, attemptId: attempt.attemptId, attemptView: undefined, clientId: null });
   }
 
   function nextPage() {
@@ -1072,9 +1072,10 @@ export function GenerationsView({
           eventsLoading={eventsLoading}
           eventsError={eventsError}
           activityEnabled={activityEnabled}
+          openActivity={state.attemptView === "activity"}
           onWorkflowPollingChange={setWorkflowAttemptId}
           headingRef={headingRef}
-          onClose={() => navigate({ ...state, attemptId: null })}
+          onClose={() => navigate({ ...state, attemptId: null, attemptView: undefined })}
           onRetry={() => setDetailToken((token) => token + 1)}
           onLoadMoreEvents={loadMoreEvents}
           onOpenClient={(clientId) =>
@@ -1090,7 +1091,7 @@ export function GenerationsView({
             )
           }
           onOpenAttempt={(attemptId) =>
-            navigate({ ...state, attemptId, clientId: null })
+            navigate({ ...state, attemptId, attemptView: undefined, clientId: null })
           }
         />
       ) : null}

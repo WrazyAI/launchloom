@@ -232,9 +232,16 @@ export function groupActivity(
         break;
       }
       case "action_finished": {
-        const entry = actions.get(event.payload.actionId);
+        if (event.payload.name === "run_code_changes") break;
+        let entry = actions.get(event.payload.actionId);
+        if (!entry && event.payload.name === "edit_candidate_files") {
+          entry = entryFor(event, "action", titleCase(event.payload.name));
+          entry.callId = event.payload.actionId;
+          entries.push(entry);
+        } else if (entry) {
+          entry.evidence.push(event);
+        }
         if (!entry) break;
-        entry.evidence.push(event);
         entry.status = event.payload.status;
         break;
       }
@@ -505,6 +512,8 @@ export function actionChipText(entry: ActivityEntry): string | null {
   const finished = entry.evidence.findLast(
     (event) => event.kind === "action_finished",
   );
+  if (finished?.payload.name === "edit_candidate_files")
+    return codeChangeTotals(finished.payload.result);
   const fields: Record<string, string | number | boolean | null> = {};
   if (started && started.kind === "action_started") {
     Object.assign(fields, started.payload.input);
@@ -535,6 +544,27 @@ export function actionChipText(entry: ActivityEntry): string | null {
       : `${finished.payload.durationMs} ms`;
   }
   return null;
+}
+
+export function codeChangeTotals(result: Record<string, unknown>): string | null {
+  const { filesChanged, additions, deletions } = result;
+  if (
+    typeof filesChanged !== "number" || !Number.isSafeInteger(filesChanged) || filesChanged < 0 ||
+    typeof additions !== "number" || !Number.isSafeInteger(additions) || additions < 0 ||
+    typeof deletions !== "number" || !Number.isSafeInteger(deletions) || deletions < 0
+  ) return null;
+  return `${formatCount(filesChanged)} ${filesChanged === 1 ? "file" : "files"} · +${formatCount(additions)} −${formatCount(deletions)}`;
+}
+
+export function runChangeUrl(result: Record<string, unknown>): string | null {
+  const { repository, baseSha, headSha } = result;
+  const sha = /^[a-f0-9]{40}$/u;
+  if (
+    typeof repository !== "string" || !/^[A-Za-z0-9-]+\/[A-Za-z0-9_][A-Za-z0-9_.-]*$/u.test(repository) ||
+    typeof baseSha !== "string" || !sha.test(baseSha) ||
+    typeof headSha !== "string" || !sha.test(headSha)
+  ) return null;
+  return `https://github.com/${repository}/compare/${baseSha}...${headSha}`;
 }
 
 export type ParsedModelOutput =

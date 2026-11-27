@@ -85,6 +85,7 @@ export function ClientsView({
   state,
   cursorTrail,
   onNavigate,
+  activityEnabled,
 }: {
   api: AdminApi;
   state: AdminRouteState;
@@ -93,6 +94,7 @@ export function ClientsView({
     next: AdminRouteState,
     options?: { cursorTrail?: string[] },
   ) => void;
+  activityEnabled: boolean;
 }) {
   const filters = state.filters;
   const cursor = state.cursor;
@@ -840,6 +842,7 @@ export function ClientsView({
           attemptsLoading={attemptsLoading}
           attemptsError={attemptsError}
           attemptTotal={attemptTotal}
+          activityEnabled={activityEnabled}
           headingRef={headingRef}
           onClose={() => onNavigate({ ...state, clientId: null })}
           onRetry={() => setClientToken((token) => token + 1)}

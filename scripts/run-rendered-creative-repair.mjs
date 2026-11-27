@@ -8,6 +8,7 @@ import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
 import { uploadGenerationHero } from "./record-generation-event.mjs";
 import { activityFromEnv } from "./generation-activity-context.mjs";
 import { observePipelineAction } from "./generation-activity-action.mjs";
+import { observeCandidateWrite } from "./generation-activity-changes.mjs";
 import { recordGenerationStage } from "./record-generation-stage.mjs";
 import {
   withHeroOverlayCorrection,
@@ -1063,7 +1064,9 @@ export async function defaultRepairCandidate({
   } catch (error) {
     throw inheritRepairRejectionEvidence(repairOutputRejected(error), repairResponse, error?.message || String(error));
   }
-  await writeCandidate(candidateDir, validated.files);
+  await observeCandidateWrite(activity, candidateDir, () =>
+    writeCandidate(candidateDir, validated.files),
+  );
   return validated.files;
 }
 

@@ -11,7 +11,7 @@ import { AttemptSitePreview } from "./AttemptSitePreview";
 import { AttemptSeoResearch } from "./AttemptSeoResearch";
 import { WorkflowRunPanel } from "./ClientWorkflow";
 import { DetailValue } from "./DetailValue";
-import { GenerationActivity } from "./GenerationActivity";
+import { AttemptRunCodeChanges, GenerationActivity } from "./GenerationActivity";
 import { activityStageLabel } from "./generation-activity-format";
 import { RevisionTimeline } from "./RevisionTimeline";
 import type { AdminApi } from "./api";
@@ -54,6 +54,7 @@ export type AttemptInspectorProps = {
   eventsLoading: boolean;
   eventsError: string | null;
   activityEnabled?: boolean;
+  openActivity?: boolean;
   onWorkflowPollingChange?: (attemptId: string | null) => void;
   headingRef: RefObject<HTMLHeadingElement | null>;
   onClose: () => void;
@@ -255,6 +256,7 @@ export function AttemptInspector({
   eventsLoading,
   eventsError,
   activityEnabled = false,
+  openActivity = false,
   headingRef,
   onClose,
   onRetry,
@@ -281,7 +283,7 @@ export function AttemptInspector({
     selection.attemptId === attempt?.attemptId &&
     (selection.view !== "activity" || activityEnabled)
       ? selection.view
-      : "overview";
+      : openActivity && activityEnabled ? "activity" : "overview";
   useEffect(() => {
     onWorkflowPollingChange?.(
       view === "workflow" ? (attempt?.attemptId ?? null) : null,
@@ -624,6 +626,15 @@ export function AttemptInspector({
               <p className="admin-cost-coverage">
                 {formatCost(attempt.costs).unreported}
               </p>
+            ) : null}
+            {activityEnabled &&
+            attempt.executionStatus !== "queued" &&
+            attempt.executionStatus !== "running" ? (
+              <AttemptRunCodeChanges
+                key={attempt.attemptId}
+                api={api}
+                attemptId={attempt.attemptId}
+              />
             ) : null}
 
             <div className="admin-panel-actions">

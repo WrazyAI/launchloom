@@ -47,6 +47,39 @@ void _actorCheck;
 const policy = createPrivacyPolicy({ allowSourceText: true });
 
 describe("generation activity contract", () => {
+  it("preserves a bounded patch preview after removing private source values", () => {
+    const privateAddress = "123 Private Drive\nApartment Seven";
+    const patch = `-old\n+new\n+123 Private Drive\n+Apartment Seven\n+help@private.example\n${"+another changed line\n".repeat(500)}`;
+    const event = traceEvent({
+      kind: "action_finished",
+      payload: {
+        actionId: "edit:1",
+        name: "edit_candidate_files",
+        status: "succeeded",
+        durationMs: null,
+        result: { filesChanged: 1, additions: 503, deletions: 1, patch },
+      },
+    });
+    const projected = buildTraceEvent(event, createPrivacyPolicy({
+      allowSourceText: true,
+      sensitiveValues: [privateAddress],
+    }));
+    if (projected.kind !== "action_finished") throw new Error("Expected applied changes.");
+    expect(projected.payload.result).toMatchObject({
+      patch: expect.stringContaining("-old\n+new\n"),
+      patchOmitted: true,
+    });
+    const output = JSON.stringify(projected);
+    expect(output).not.toContain("123 Private Drive");
+    expect(output).not.toContain("Apartment Seven");
+    expect(output).not.toContain("help@private.example");
+    expect(buildTraceEvent(projected, policy)).toEqual(projected);
+    expect(buildTraceEvent(event).payload).toMatchObject({
+      result: { filesChanged: 1, patchOmitted: true },
+    });
+    expect(JSON.stringify(buildTraceEvent(event))).not.toContain("+new");
+  });
+
   it("keeps a stable event ID across delivery replay", () => {
     const event = traceEvent();
     const second = traceEvent({

@@ -30,6 +30,7 @@ import {
 } from "./production-experience-author.mjs";
 import { activityFromEnv } from "./generation-activity-context.mjs";
 import { observePipelineAction } from "./generation-activity-action.mjs";
+import { observeCandidateWrite } from "./generation-activity-changes.mjs";
 import {
   cacheableReferenceDna,
   logOpenRouterCacheUsage,
@@ -1059,7 +1060,17 @@ try {
       count: Array.isArray(value?.candidates) ? value.candidates.length : 0,
     }),
   });
-  await writeResult(result);
+  let persist = () => writeResult(result);
+  for (const candidate of result.candidates) {
+    if (!/^candidate-[a-z]$/u.test(candidate.directory)) continue;
+    const write = persist;
+    persist = () => observeCandidateWrite(
+      activity.withContext({ candidateId: candidate.directory }),
+      path.join(outputPath, candidate.directory),
+      write,
+    );
+  }
+  await persist();
   console.log(`production_experience_candidates=${outputPath}`);
   console.log(`production_experience_model=${model}`);
   console.log(`production_experience_reasoning_effort=${reasoningEffort}`);
