@@ -982,8 +982,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       .toArray()[0];
   }
 
-  /** Read-only timeline for the authenticated admin workspace. */
-  async recordPreviewDelivery(input: PreviewDelivery): Promise<{ ok: true }> {
+  private writePreviewDelivery(input: PreviewDelivery) {
     this.ctx.storage.sql.exec(
       `INSERT INTO preview_deliveries (
         repo, attempt_id, project, pr, sha, deployment_id, preview_url, created_at
@@ -1008,6 +1007,11 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       input.previewUrl,
       Date.now(),
     );
+  }
+
+  /** Read-only timeline for the authenticated admin workspace. */
+  async recordPreviewDelivery(input: PreviewDelivery): Promise<{ ok: true }> {
+    this.writePreviewDelivery(input);
     return { ok: true };
   }
 
@@ -1038,9 +1042,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     };
   }
 
-  async recordAgentRunEvidence(
-    evidence: AgentRunEvidence,
-  ): Promise<{ ok: true }> {
+  private writeAgentRunEvidence(evidence: AgentRunEvidence) {
     this.ctx.storage.sql.exec(
       `INSERT INTO agent_run_evidence (repo, attempt_id, evidence_json, recorded_at)
        VALUES (?, ?, ?, ?)
@@ -1052,6 +1054,12 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       JSON.stringify(evidence),
       evidence.recordedAt,
     );
+  }
+
+  async recordAgentRunEvidence(
+    evidence: AgentRunEvidence,
+  ): Promise<{ ok: true }> {
+    this.writeAgentRunEvidence(evidence);
     return { ok: true };
   }
 
@@ -2011,29 +2019,6 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         throw new Error("Only an agent follow-up can record a preview result.");
       if (row.base_sha && row.base_sha !== result.baseSha)
         throw new Error("Revision result does not match the pinned base.");
-      await this.recordPreviewDelivery(result.preview);
-      await this.recordAgentRunEvidence({
-        attemptId: `agent:${requestId}`,
-        repository: row.repo,
-        siteId: row.site_id,
-        issueNumber: null,
-        profile: "revision",
-        renderer: null,
-        verdict: "unknown",
-        selectedCandidateId: null,
-        candidates: [],
-        gates: [],
-        failures: [],
-        routeChecks: [],
-        assets: null,
-        preview: result.preview,
-        recordedAt: Date.now(),
-      });
-      this.ctx.storage.sql.exec(
-        "UPDATE agent_suggestions SET status = 'delivered' WHERE request_id = ?",
-        requestId,
-      );
-      this.setSuggestionStatusByRequest(requestId, "delivered");
     }
     let promoted = row.promoted_request_id
       ? this.row(row.promoted_request_id)
@@ -2043,13 +2028,41 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       !["dispatching", "dispatched", "running"].includes(promoted.status)
     )
       promoted = undefined;
-    if (row.status !== "completed") {
+    const terminal = row.status !== "completed";
+    if (terminal) {
       promoted = this.ctx.storage.sql
         .exec<RevisionRow>(
           "SELECT * FROM revision_requests WHERE status = 'queued' ORDER BY created_at LIMIT 1",
         )
         .toArray()[0];
-      this.ctx.storage.transactionSync(() => {
+    }
+    this.ctx.storage.transactionSync(() => {
+      if (result) {
+        this.writePreviewDelivery(result.preview);
+        this.writeAgentRunEvidence({
+          attemptId: `agent:${requestId}`,
+          repository: row.repo,
+          siteId: row.site_id,
+          issueNumber: null,
+          profile: "revision",
+          renderer: null,
+          verdict: "unknown",
+          selectedCandidateId: null,
+          candidates: [],
+          gates: [],
+          failures: [],
+          routeChecks: [],
+          assets: null,
+          preview: result.preview,
+          recordedAt: Date.now(),
+        });
+        this.ctx.storage.sql.exec(
+          "UPDATE agent_suggestions SET status = 'delivered' WHERE request_id = ?",
+          requestId,
+        );
+        this.setSuggestionStatusByRequest(requestId, "delivered");
+      }
+      if (terminal) {
         this.ctx.storage.sql.exec(
           "UPDATE revision_requests SET status = 'completed', completed_at = ?, failure = NULL, promoted_request_id = ? WHERE request_id = ?",
           Date.now(),
@@ -2061,7 +2074,9 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
             "UPDATE revision_requests SET status = 'dispatching' WHERE request_id = ?",
             promoted.request_id,
           );
-      });
+      }
+    });
+    if (terminal) {
       console.log(
         JSON.stringify({
           event: "revision.completed",

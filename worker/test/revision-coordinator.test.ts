@@ -709,3 +709,112 @@ describe("agent follow-up apply", () => {
     expect(stale).toMatchObject({ ok: false, code: "preview_base_moved" });
   });
 });
+
+describe("agent follow-up completion atomicity", () => {
+  it("rolls back the receipt, evidence and card when the terminal commit fails", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName("wrazyai/atomic-site");
+    const basePreview = {
+      repository: "WrazyAI/atomic-site",
+      attemptId: "attempt-atomic",
+      project: "atomic-site",
+      pr: 9,
+      sha: "e".repeat(40),
+      deploymentId: "4c1e9a2b",
+      previewUrl: "https://4c1e9a2b.atomic-site.pages.dev",
+    };
+    const nextPreview = {
+      ...basePreview,
+      attemptId: "agent:atomic-1",
+      sha: "f".repeat(40),
+      deploymentId: "5d2f0b3c",
+      previewUrl: "https://5d2f0b3c.atomic-site.pages.dev",
+    };
+    await coordinator.recordPreviewDelivery(basePreview);
+    await coordinator.recordAgentRunEvidence({
+      attemptId: "attempt-atomic",
+      repository: "WrazyAI/atomic-site",
+      siteId: "atomic-site",
+      issueNumber: 9,
+      profile: "full-preview",
+      renderer: "creative",
+      verdict: "passed",
+      selectedCandidateId: "candidate-b",
+      candidates: [],
+      gates: [],
+      failures: [],
+      routeChecks: [],
+      assets: null,
+      preview: basePreview,
+      recordedAt: 1,
+    });
+    const exchange = await coordinator.appendAgentExchange({
+      repo: "WrazyAI/atomic-site",
+      attemptId: "attempt-atomic",
+      adminText: "Move the action.",
+      agentText: "Here is a fix.",
+      intent: "improvement",
+      suggestions: [{
+        issue: "The action is hidden.",
+        probableCause: "The hero is too tall.",
+        causeStatus: "probable",
+        suggestedFix: "Move the action and reduce the height.",
+        edits: [{ page: "home", section: "hero", instruction: "Move it." }],
+        checks: ["Render at 390px"],
+        evidence: [{ label: "Mobile check", source: "route-report" }],
+        guardrails: ["Preserve verified facts."],
+        brief: "Issue\nThe action is hidden.",
+        baseDeploymentId: basePreview.deploymentId,
+        baseSha: basePreview.sha,
+      }],
+    });
+    const suggestionId = exchange.message.suggestions[0].id;
+    await coordinator.enqueueAgentFollowUp({
+      requestId: "atomic-1",
+      repo: "WrazyAI/atomic-site",
+      baseSha: basePreview.sha,
+      baseDeploymentId: basePreview.deploymentId,
+      brief: "Issue\nThe action is hidden.",
+      suggestionId,
+    });
+    await coordinator.claim("atomic-1");
+
+    await runInDurableObject(coordinator, async (instance, state) => {
+      const typed = instance as unknown as {
+        complete(
+          requestId: string,
+          result: { baseSha: string; preview: typeof nextPreview },
+        ): Promise<unknown>;
+        latestPreviewDelivery(repo: string): Promise<{ deploymentId: string } | null>;
+        readAgentThread(repo: string): Promise<{
+          messages: Array<{
+            suggestions: Array<{ id: string; status: string }>;
+          }>;
+        }>;
+      };
+      const original = state.storage.sql.exec.bind(state.storage.sql);
+      state.storage.sql.exec = ((query: string, ...args: unknown[]) => {
+        if (query.includes("SET status = 'completed'"))
+          throw new Error("forced terminal failure");
+        return original(query, ...args);
+      }) as typeof state.storage.sql.exec;
+      try {
+        await expect(
+          typed.complete("atomic-1", {
+            baseSha: basePreview.sha,
+            preview: nextPreview,
+          }),
+        ).rejects.toThrow("forced terminal failure");
+      } finally {
+        state.storage.sql.exec = original as typeof state.storage.sql.exec;
+      }
+      expect(
+        await typed.latestPreviewDelivery("WrazyAI/atomic-site"),
+      ).toMatchObject({ deploymentId: basePreview.deploymentId });
+      const thread = await typed.readAgentThread("WrazyAI/atomic-site");
+      const stored = thread.messages
+        .flatMap((message) => message.suggestions)
+        .find((item) => item.id === suggestionId);
+      expect(stored?.status).toBe("started");
+    });
+  });
+});
