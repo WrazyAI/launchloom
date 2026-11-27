@@ -167,6 +167,41 @@ describe("judge finding classification", () => {
           "The footer displays a wrong phone number that does not match the intake.",
       }),
     ).toBe("critical");
+    expect(
+      classifyJudgeFinding({
+        severity: "major",
+        category: "content-integrity",
+        evidence:
+          "The process section tabs still use seasonal labels instead of the electrical workflow steps.",
+        recommendation:
+          "Replace the tab labels with manifest steps such as 'Review the details' and 'Schedule the work'.",
+      }),
+    ).toBe("open");
+    expect(
+      classifyJudgeFinding({
+        severity: "critical",
+        category: "content-integrity",
+        evidence:
+          "The services link is missing from the compact mobile footer bar.",
+        recommendation:
+          "Use 'Review the details' or restore the Services link without placeholder text.",
+      }),
+    ).toBe("open");
+    expect(
+      classifyJudgeFinding({
+        severity: "major",
+        category: "content-integrity",
+        evidence:
+          "The page displays fabricated customer reviews with 5-star ratings.",
+      }),
+    ).toBe("hard");
+    expect(
+      classifyJudgeFinding({
+        severity: "critical",
+        category: "content-integrity",
+        evidence: "Unverified Google reviews appear beneath the hero.",
+      }),
+    ).toBe("critical");
   });
 });
 
