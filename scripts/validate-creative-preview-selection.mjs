@@ -7,6 +7,35 @@ import {
   splitFailureLines,
 } from "./creative-gate-severity.mjs";
 
+function nearMissReviewWarnings(summary, candidateId) {
+  const nearMiss = summary?.nearMiss;
+  if (
+    summary?.status !== "previewed-with-open-findings" ||
+    summary.selectedCandidateId !== candidateId ||
+    summary.promotionReady !== false ||
+    nearMiss?.candidateId !== candidateId ||
+    !Array.isArray(nearMiss.openFindings)
+  )
+    return [
+      "Creative near-miss: matching repair findings are unavailable. Review before approving.",
+    ];
+
+  const findings = nearMiss.openFindings
+    .slice(0, 80)
+    .filter((finding) => typeof finding === "string")
+    .map((finding) => finding.replace(/\s+/gu, " ").trim().slice(0, 600))
+    .filter(Boolean);
+  const score =
+    typeof nearMiss.overall === "number" && Number.isFinite(nearMiss.overall)
+      ? ` (score ${nearMiss.overall})`
+      : "";
+  return [
+    `Creative near-miss${score}: ${findings.length} open ${findings.length === 1 ? "finding" : "findings"}. Review before approving.`,
+    // Keep advisory prose distinct from measured contrast waivers.
+    ...findings.map((finding) => `Creative review: ${finding}`),
+  ];
+}
+
 /**
  * Decide whether a creative selection may deploy a preview.
  *
@@ -15,10 +44,15 @@ import {
  * requires the explicit `nearMissSelection` marker and may carry open design
  * findings. Every hard gate failure rejects.
  *
- * @param {{config: Record<string, any>, bakeoff: Record<string, any>, gate: Record<string, any>}} input
+ * @param {{config: Record<string, any>, bakeoff: Record<string, any>, gate: Record<string, any>, repairSummary?: Record<string, any>}} input
  * @returns {{decision: "clean" | "warned" | "reject", candidateId: string | null, warnings: string[], reasons: string[]}}
  */
-export function validateCreativePreviewSelection({ config, bakeoff, gate } = {}) {
+export function validateCreativePreviewSelection({
+  config,
+  bakeoff,
+  gate,
+  repairSummary,
+} = {}) {
   const reasons = [];
   const experience = config?.design?.experience;
   const renderer = experience?.renderer;
@@ -36,8 +70,7 @@ export function validateCreativePreviewSelection({ config, bakeoff, gate } = {})
     reasons.push("bakeoff selection does not match the configured candidate");
 
   const gateResult = classifyVisualGateReport(gate);
-  if (gateResult.decision === "reject")
-    reasons.push(...gateResult.reasons);
+  if (gateResult.decision === "reject") reasons.push(...gateResult.reasons);
 
   const candidates = Array.isArray(bakeoff?.candidates)
     ? bakeoff.candidates
@@ -48,7 +81,15 @@ export function validateCreativePreviewSelection({ config, bakeoff, gate } = {})
     null;
   if (!selectedCandidate)
     reasons.push("selected candidate is missing from the bakeoff report");
-  const warnings = [...gateResult.warnings];
+  const warnings = [
+    ...(selectionMode === "creative-near-miss" &&
+    bakeoff?.nearMissSelection === true &&
+    bakeoff?.selectedCandidateId === candidateId &&
+    selectedCandidate
+      ? nearMissReviewWarnings(repairSummary, candidateId)
+      : []),
+    ...gateResult.warnings,
+  ];
   if (selectedCandidate) {
     const split = splitFailureLines(selectedCandidate.failures || []);
     const hard = [...split.hard];
@@ -73,9 +114,10 @@ export function validateCreativePreviewSelection({ config, bakeoff, gate } = {})
     // is image-led in intent and graphic in result. Never call that clean: the
     // approved imagery contract was not met, even when the graphic stand-in is
     // deliberate and readable.
-    const mediaViewports = (Array.isArray(selectedCandidate.viewports)
-      ? selectedCandidate.viewports
-      : []
+    const mediaViewports = (
+      Array.isArray(selectedCandidate.viewports)
+        ? selectedCandidate.viewports
+        : []
     ).filter((viewport) => Number(viewport?.heroMediaRegionCount) > 0);
     const noRenderedMedia =
       mediaViewports.length > 0 &&
@@ -84,9 +126,7 @@ export function validateCreativePreviewSelection({ config, bakeoff, gate } = {})
       );
     const coverage = selectedCandidate.imageCoverage;
     const emptyCoverage =
-      coverage &&
-      Number(coverage.count) === 0 &&
-      coverage.required === true;
+      coverage && Number(coverage.count) === 0 && coverage.required === true;
     if (noRenderedMedia)
       warnings.push(
         "Image-led composition rendered no approved imagery; the preview uses a graphic stand-in.",
@@ -127,17 +167,24 @@ export function validateCreativePreviewSelection({ config, bakeoff, gate } = {})
   return {
     decision,
     candidateId: candidateId || null,
-    warnings,
+    warnings: [...new Set(warnings)],
     reasons,
   };
 }
 
 function parseArgs(argv = []) {
   const args = {};
-  const valueFlags = new Set(["config", "bakeoff", "gate", "out"]);
+  const valueFlags = new Set([
+    "config",
+    "bakeoff",
+    "gate",
+    "repair-summary",
+    "out",
+  ]);
   for (let index = 0; index < argv.length; index += 1) {
     const token = String(argv[index] || "");
-    if (!token.startsWith("--")) throw new Error(`Unexpected argument: ${token}`);
+    if (!token.startsWith("--"))
+      throw new Error(`Unexpected argument: ${token}`);
     const key = token.slice(2);
     if (!valueFlags.has(key)) throw new Error(`Unknown option: ${token}`);
     const value = String(argv[index + 1] || "");
@@ -155,20 +202,36 @@ async function readJson(file) {
   return JSON.parse(await fs.readFile(path.resolve(file), "utf8"));
 }
 
+async function readOptionalRepairSummary(file) {
+  if (!file) return undefined;
+  try {
+    return await readJson(file);
+  } catch (error) {
+    if (error?.code === "ENOENT" || error instanceof SyntaxError)
+      return undefined;
+    throw error;
+  }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const result = validateCreativePreviewSelection({
     config: await readJson(args.config),
     bakeoff: await readJson(args.bakeoff),
     gate: await readJson(args.gate),
+    repairSummary: await readOptionalRepairSummary(args["repair-summary"]),
   });
   const text = `${JSON.stringify(result, null, 2)}\n`;
   if (args.out) {
     const output = path.resolve(args.out);
     await fs.mkdir(path.dirname(output), { recursive: true });
     await fs.writeFile(output, text);
+    process.stdout.write(
+      `${JSON.stringify({ decision: result.decision, warningCount: result.warnings.length, reasonCount: result.reasons.length })}\n`,
+    );
+  } else {
+    process.stdout.write(text);
   }
-  process.stdout.write(text);
   if (result.decision === "reject") process.exitCode = 1;
 }
 

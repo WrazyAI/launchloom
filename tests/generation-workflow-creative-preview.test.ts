@@ -16,7 +16,10 @@ describe("creative preview workflow", () => {
       'selectionMode == "creative-preview" or .design.experience.selectionMode == "creative-bakeoff"',
     );
     expect(workflow).not.toContain(
-      'jq -e --arg candidate "$CANDIDATE_ID" \'.selectedCandidateId == $candidate and .fallback == false\'',
+      "jq -e --arg candidate \"$CANDIDATE_ID\" '.selectedCandidateId == $candidate and .fallback == false'",
+    );
+    expect(workflow).toContain(
+      "--repair-summary .launchloom/creative-repair/summary.json",
     );
     expect(workflow).toContain("generation_delivery=");
     expect(workflow).toContain("generation_warnings=");
@@ -32,14 +35,14 @@ describe("creative preview workflow", () => {
     expect(workflow).toContain("data-experience-pack");
 
     const creativeDeploy = workflow.slice(
-      workflow.indexOf('test -f .launchloom/creative-bakeoff.json'),
-      workflow.indexOf('- name: Record preview deploy stage'),
+      workflow.indexOf("test -f .launchloom/creative-bakeoff.json"),
+      workflow.indexOf("- name: Record preview deploy stage"),
     );
     const warningsCommit = creativeDeploy.indexOf(
       'git commit -m "Record repaired creative candidate"',
     );
     const finalSha = creativeDeploy.indexOf(
-      'FINAL_BUILD_SHA=$(git rev-parse HEAD)',
+      "FINAL_BUILD_SHA=$(git rev-parse HEAD)",
     );
     expect(warningsCommit).toBeGreaterThan(-1);
     expect(finalSha).toBeGreaterThan(warningsCommit);

@@ -1465,6 +1465,7 @@ jobs:
             --config src/site.config.json \
             --bakeoff .launchloom/creative-bakeoff.json \
             --gate .launchloom/creative-repair/final/visual-gate.json \
+            --repair-summary .launchloom/creative-repair/summary.json \
             --out "$RUNNER_TEMP/creative-preview-decision.json"
           CREATIVE_DECISION=$(jq -r '.decision' "$RUNNER_TEMP/creative-preview-decision.json")
           CREATIVE_WARNINGS=$(jq -r '.warnings | length' "$RUNNER_TEMP/creative-preview-decision.json")
