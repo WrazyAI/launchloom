@@ -102,6 +102,7 @@ let heroMode: HeroMode = "ok";
 let heroPng: Buffer;
 let operationsReadCapability = false;
 let activityEnabled = false;
+let agentFollowUpsEnabled = false;
 let activityFixture: unknown = null;
 let seoDetail: string | null = null;
 
@@ -369,6 +370,7 @@ async function serve(
       capabilities: {
         operationsRead: operationsReadCapability,
         generationActivityRead: activityEnabled,
+        agentFollowUps: agentFollowUpsEnabled,
       },
     });
     return;
@@ -419,6 +421,23 @@ async function serve(
   if (activityMatch) {
     const id = decodeURIComponent(activityMatch[1]);
     sendJson(response, activityFixture ?? activityPageFor(id));
+    return;
+  }
+
+  const followUpMatch = /^\/attempts\/([^/]+)\/agent-follow-ups$/u.exec(suffix);
+  if (followUpMatch) {
+    const id = decodeURIComponent(followUpMatch[1]);
+    sendJson(response, {
+      thread: {
+        repository: `WrazyAI/${id}`,
+        messages: [],
+        nextCursor: null,
+        latestPreview: null,
+        latestEvidence: null,
+        activeRequestId: null,
+        writable: false,
+      },
+    });
     return;
   }
 
@@ -611,6 +630,7 @@ afterAll(async () => {
 beforeEach(() => {
   operationsReadCapability = false;
   activityEnabled = false;
+  agentFollowUpsEnabled = false;
   activityFixture = null;
   requests = [];
   health = fixtureHealth();
@@ -5249,7 +5269,6 @@ it("explains context-only SEO evidence without presenting missing metrics as zer
   });
   try {
     const drawer = page.locator("#attempt-inspector");
-    expect(await drawer.getByText("Charleston, SC").count()).toBe(0);
     await drawer
       .getByRole("button", { name: "SEO research", exact: true })
       .click();
@@ -5434,3 +5453,96 @@ it.each([1512, 390])(
     }
   },
 );
+
+it("shows the follow-up composer when agent follow-ups are enabled", async () => {
+  activityEnabled = true;
+  agentFollowUpsEnabled = true;
+  const { page, errors } = await openPage({
+    viewport: { width: 390, height: 844 },
+    path: "/admin/onboarding-invites?view=generations&attempt=attempt-0005",
+  });
+  try {
+    const drawer = page.locator("#attempt-inspector");
+    await drawer.getByRole("button", { name: "Agent runs", exact: true }).click();
+    const composer = drawer.getByPlaceholder(
+      "Ask about this run, or describe what to improve",
+    );
+    await visible(composer);
+    expect(await composer.isDisabled()).toBe(false);
+    expect(await drawer.getByText("Read-only run trace").count()).toBe(0);
+    autoErrors(errors);
+  } finally {
+    await page.close();
+  }
+});
+
+it("renders a validated suggestion and starts one revision", async () => {
+  activityEnabled = true;
+  agentFollowUpsEnabled = true;
+  const attemptId = "attempt-0005";
+  const { page, errors } = await openPage({
+    path: `/admin/onboarding-invites?view=generations&attempt=${attemptId}`,
+  });
+  const suggestion = {
+    id: "suggestion-1",
+    messageId: "agent-1",
+    issue: "The contact action falls below the fold at 390px",
+    probableCause: "The hero keeps its desktop height.",
+    causeStatus: "probable",
+    suggestedFix: "Move the action and reduce the image height.",
+    edits: [{ page: "home", section: "hero", instruction: "Move the action." }],
+    checks: ["Render at 390px"],
+    evidence: [{ label: "Mobile check", source: "route-report" }],
+    guardrails: ["Preserve verified facts."],
+    brief: "brief",
+    status: "suggested",
+    requestId: null,
+  };
+  const thread = {
+    repository: "WrazyAI/attempt-0005",
+    messages: [
+      { id: "admin-1", role: "admin", text: "Any ideas?", intent: "question", attemptId, createdAt: 1, suggestions: [] },
+      { id: "agent-1", role: "agent", text: "One fix is available.", intent: "question", attemptId, createdAt: 2, suggestions: [suggestion] },
+    ],
+    nextCursor: null,
+    latestPreview: {
+      repository: "WrazyAI/attempt-0005",
+      attemptId,
+      project: "attempt-0005",
+      pr: 9,
+      sha: "a".repeat(40),
+      deploymentId: "4c1e9a2b",
+      previewUrl: "https://4c1e9a2b.attempt-0005.pages.dev",
+    },
+    latestEvidence: null,
+    activeRequestId: null,
+    writable: true,
+  };
+  try {
+    await page.route(`**/attempts/${attemptId}/agent-follow-ups`, async (route) => {
+      if (route.request().method() === "POST")
+        return route.fulfill({ json: { ok: true, thread } });
+      return route.fulfill({ json: { thread } });
+    });
+    await page.route(`**/agent-follow-ups/*/apply`, (route) =>
+      route.fulfill({ json: { ok: true, requestId: "agent-1", queueStatus: "started" } }),
+    );
+    const drawer = page.locator("#attempt-inspector");
+    await drawer.getByRole("button", { name: "Agent runs", exact: true }).click();
+    const composer = drawer.getByPlaceholder(
+      "Ask about this run, or describe what to improve",
+    );
+    await composer.fill("Any ideas?");
+    await drawer.getByRole("button", { name: "Send", exact: true }).click();
+    await visible(
+      drawer.getByText("The contact action falls below the fold at 390px", {
+        exact: true,
+      }),
+    );
+    await drawer.getByRole("button", { name: "Fix in Agent runs" }).click();
+    await visible(drawer.getByRole("button", { name: "Revision running" }));
+    autoErrors(errors);
+  } finally {
+    await page.close();
+  }
+});

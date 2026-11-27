@@ -1,0 +1,171 @@
+name: Process agent follow-up
+
+on:
+  repository_dispatch:
+    types: [process-agent-follow-up]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  revise:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    concurrency:
+      group: agent-revision-${{ github.event.client_payload.repo }}
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
+      CREATIVE_EXPERIENCE_PROVIDER: opencode-go
+      SITE_COPY_PROVIDER: opencode-go
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+      REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
+      REVISION_REQUEST_ID: ${{ github.event.client_payload.requestId }}
+      CLIENT_REPO: ${{ github.event.client_payload.repo }}
+      CLIENT_PR: ${{ github.event.client_payload.pr }}
+      REVIEWED_PAGE: ${{ github.event.client_payload.reviewedPage }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/data/reference-library/dossiers/
+            !/data/reference-library/*.png
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - name: Claim agent revision
+        id: claim
+        env:
+          REVISION_QUEUE_ACTION: claim
+          AGENT_REQUEST_PATH: ${{ runner.temp }}/agent-request.json
+        run: node scripts/revision-queue-client.mjs
+      - name: Install revision tooling
+        if: steps.claim.outputs.run == 'true'
+        run: npm ci
+      - name: Install revision verifier browser
+        if: steps.claim.outputs.run == 'true'
+        uses: ./.github/actions/install-playwright-chromium
+      - name: Clone pinned base
+        if: steps.claim.outputs.run == 'true'
+        id: base
+        run: |
+          BASE_SHA=$(jq -r '.baseSha' "$RUNNER_TEMP/agent-request.json")
+          test -n "$BASE_SHA" && test "$BASE_SHA" != null
+          git clone "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/${CLIENT_REPO}.git" "$RUNNER_TEMP/client"
+          git -C "$RUNNER_TEMP/client" fetch origin "$BASE_SHA"
+          git -C "$RUNNER_TEMP/client" checkout --detach "$BASE_SHA"
+          jq -r '.brief' "$RUNNER_TEMP/agent-request.json" > "$RUNNER_TEMP/agent-feedback.txt"
+          test -s "$RUNNER_TEMP/agent-feedback.txt"
+          echo "sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+      - name: Apply the approved brief
+        if: steps.claim.outputs.run == 'true'
+        run: |
+          FEEDBACK_TEXT="$(cat "$RUNNER_TEMP/agent-feedback.txt")" \
+          CLIENT_CONFIG_PATH="$RUNNER_TEMP/client/src/site.config.json" \
+          FEEDBACK_ISSUE="$CLIENT_PR" \
+          FEEDBACK_STAGE=developer \
+          FEEDBACK_SUMMARY_PATH="$RUNNER_TEMP/agent-feedback.txt" \
+          FEEDBACK_OUTCOME_PATH="$RUNNER_TEMP/agent-outcome.txt" \
+          node scripts/apply-feedback.mjs
+      - name: Install client dependencies
+        if: steps.claim.outputs.run == 'true'
+        working-directory: ${{ runner.temp }}/client
+        run: npm ci
+      - name: Refine authored creative source when required
+        id: creative_revision
+        if: steps.claim.outputs.run == 'true'
+        working-directory: ${{ runner.temp }}/client
+        run: |
+          RESULT=$(node "$GITHUB_WORKSPACE/scripts/prepare-creative-revision-candidate.mjs" --client "$PWD" --out "$RUNNER_TEMP/creative-revision-candidates")
+          echo "$RESULT"
+          CREATIVE=$(printf '%s' "$RESULT" | jq -r '.creative // false')
+          REQUIRED=$(printf '%s' "$RESULT" | jq -r '.repairRequired // false')
+          echo "repair_required=$REQUIRED" >> "$GITHUB_OUTPUT"
+          if [ "$CREATIVE" = true ] && [ "$REQUIRED" = true ]; then
+            SESSION_ARGS=()
+            if [ -f ".launchloom/reasoning-preflight.json" ]; then
+              SESSION_ARGS=(--session ".launchloom/reasoning-preflight.json")
+            fi
+            node "$GITHUB_WORKSPACE/scripts/run-rendered-creative-repair.mjs" \
+              --site-dir "$PWD" \
+              --candidates "$RUNNER_TEMP/creative-revision-candidates" \
+              --out "$RUNNER_TEMP/human-revision" \
+              --mode preview \
+              --model deepseek/deepseek-v4.1-flash \
+              --max-cycles 2 \
+              --require-diversity false \
+              --feedback-file "$RUNNER_TEMP/agent-feedback.txt" \
+              --visual-gate-script "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" \
+              "${SESSION_ARGS[@]}"
+            jq -e '.status == "passed" and .visualGatePass == true and .humanRevisionPass == true and (.selectedCandidateId != null)' "$RUNNER_TEMP/human-revision/summary.json" >/dev/null
+          fi
+      - name: Build and verify the revision
+        if: steps.claim.outputs.run == 'true'
+        working-directory: ${{ runner.temp }}/client
+        run: |
+          node "$GITHUB_WORKSPACE/scripts/sync-revision-template.mjs" --client "$PWD" --guidelines-written "$RUNNER_TEMP/guidelines-written.json"
+          node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" create --client "$PWD" --base "${{ steps.base.outputs.sha }}" --out "$RUNNER_TEMP/revision-scope.json" --guidelines-written "$RUNNER_TEMP/guidelines-written.json" --repair-required "${{ steps.creative_revision.outputs.repair_required || 'false' }}"
+          node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$PWD" --manifest "$RUNNER_TEMP/revision-scope.json" --stage
+          PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
+          node "$GITHUB_WORKSPACE/scripts/verify-revision.mjs" --config src/site.config.json --dist dist
+          PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/agent-screenshots"
+          node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist --report "$RUNNER_TEMP/agent-technical.json"
+          if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
+      - name: Commit request branch
+        if: steps.claim.outputs.run == 'true'
+        working-directory: ${{ runner.temp }}/client
+        run: |
+          git config user.name "LaunchLoom"
+          git config user.email "automation@launchloom.app"
+          git checkout -b "agent-revision/${REVISION_REQUEST_ID}"
+          git add -A
+          git commit -m "Apply agent follow-up ${REVISION_REQUEST_ID}"
+          git push origin "HEAD:refs/heads/agent-revision/${REVISION_REQUEST_ID}"
+      - name: Deploy private preview
+        if: steps.claim.outputs.run == 'true'
+        id: deploy
+        working-directory: ${{ runner.temp }}/client
+        run: |
+          PROJECT=$(jq -r '.project' .launchloom-deployment.json)
+          SHA=$(git rev-parse HEAD)
+          npx wrangler pages deploy dist --project-name "$PROJECT" --branch "agent-revision-${REVISION_REQUEST_ID}" --commit-hash "$SHA" --commit-message "Agent follow-up ${REVISION_REQUEST_ID}" 2>&1 | tee "$RUNNER_TEMP/agent-pages.log"
+          RESULT=$(node "$GITHUB_WORKSPACE/scripts/read-pages-deployment.mjs" "$RUNNER_TEMP/agent-pages.log")
+          echo "url=$(printf '%s' "$RESULT" | jq -r '.url')" >> "$GITHUB_OUTPUT"
+          echo "id=$(printf '%s' "$RESULT" | jq -r '.id')" >> "$GITHUB_OUTPUT"
+          echo "project=$PROJECT" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+      - name: Complete the revision
+        if: steps.claim.outputs.run == 'true'
+        env:
+          REVISION_QUEUE_ACTION: complete
+          REVISION_PREVIEW_URL: ${{ steps.deploy.outputs.url }}
+          REVISION_PREVIEW_DEPLOYMENT_ID: ${{ steps.deploy.outputs.id }}
+          REVISION_PREVIEW_PROJECT: ${{ steps.deploy.outputs.project }}
+          REVISION_PREVIEW_PR: ${{ github.event.client_payload.pr }}
+          REVISION_PREVIEW_SHA: ${{ steps.deploy.outputs.sha }}
+          REVISION_RESULT_BASE_SHA: ${{ steps.base.outputs.sha }}
+        run: node scripts/revision-queue-client.mjs
+      - name: Pause the agent queue after failure
+        if: failure() && steps.claim.outputs.run == 'true'
+        env:
+          REVISION_QUEUE_ACTION: fail
+          REVISION_FAILURE_REASON: Agent follow-up workflow failed.
+          REVISION_FAILURE_SITE_URL: ${{ steps.deploy.outputs.url || github.event.client_payload.reviewedPage }}
+          REVISION_FAILURE_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/revision-queue-client.mjs
+      - name: Preserve failure evidence
+        if: failure() && steps.claim.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-revision-failure-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/agent-outcome.txt
+            ${{ runner.temp }}/agent-screenshots

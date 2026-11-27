@@ -41,6 +41,7 @@ import {
 } from "./generation-activity-format";
 import { formatRelativeTime } from "./format";
 import { useGenerationActivity } from "./useGenerationActivity";
+import { AgentFollowUpThread } from "./AgentFollowUpThread";
 
 const FILTERS: Array<{ value: ActivityFilter; label: string }> = [
   { value: "all", label: "All" },
@@ -1214,6 +1215,7 @@ export function GenerationActivity({
   identity,
   active,
   enabled,
+  followUpsEnabled = false,
   threaded = false,
   topBanner,
   dockFooter,
@@ -1222,6 +1224,7 @@ export function GenerationActivity({
   identity: TraceIdentity;
   active: boolean;
   enabled: boolean;
+  followUpsEnabled?: boolean;
   threaded?: boolean;
   topBanner?: ReactNode;
   dockFooter?: ReactNode;
@@ -1810,7 +1813,15 @@ export function GenerationActivity({
                 </svg>
               </button>
             ) : null}
-            <LockedAgentComposer />
+            {followUpsEnabled ? (
+              <AgentFollowUpThread
+                api={api}
+                attemptId={identity.attemptId}
+                enabled={followUpsEnabled}
+              />
+            ) : (
+              <LockedAgentComposer />
+            )}
             <div className="admin-chat__dock-bar">
               <p className="admin-chat__dock-note">
                 Only recorded actions and visible output are shown. Private

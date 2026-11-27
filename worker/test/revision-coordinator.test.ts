@@ -538,3 +538,283 @@ describe("lead rate limiting", () => {
     expect((await coordinator.allowLead("visitor-new", start + 60 * 60_000)).allowed).toBe(true);
   });
 });
+
+describe("agent follow-up thread", () => {
+  const preview = {
+    repository: "WrazyAI/site-a",
+    attemptId: "attempt-a",
+    project: "site-a",
+    pr: 9,
+    sha: "a".repeat(40),
+    deploymentId: "4c1e9a2b",
+    previewUrl: "https://4c1e9a2b.site-a.pages.dev",
+  };
+
+  it("keeps one thread per repository and separates sites", async () => {
+    const first = env.REVISION_COORDINATOR.getByName("wrazyai/site-a");
+    const second = env.REVISION_COORDINATOR.getByName("wrazyai/site-b");
+    await first.recordPreviewDelivery(preview);
+    await first.recordAgentRunEvidence({
+      attemptId: "attempt-a",
+      repository: "WrazyAI/site-a",
+      siteId: "site-a",
+      issueNumber: 9,
+      profile: "full-preview",
+      renderer: "creative",
+      verdict: "passed",
+      selectedCandidateId: "candidate-b",
+      candidates: [],
+      gates: [],
+      failures: [],
+      routeChecks: [],
+      assets: null,
+      preview,
+      recordedAt: 1_700_000_000_000,
+    });
+    await first.appendAgentExchange({
+      repo: "WrazyAI/site-a",
+      attemptId: "attempt-a",
+      adminText: "Why did the mobile check fail?",
+      agentText: "The contact action fell below the fold.",
+      intent: "question",
+      suggestions: [],
+    });
+    const thread = await first.readAgentThread("WrazyAI/site-a");
+    expect(thread.messages).toHaveLength(2);
+    expect(thread.writable).toBe(true);
+    expect((await second.readAgentThread("WrazyAI/site-b")).messages).toHaveLength(0);
+  });
+
+  it("reads a question thread for a failed attempt without a preview", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName("wrazyai/failed-site");
+    await coordinator.appendAgentExchange({
+      repo: "WrazyAI/failed-site",
+      attemptId: "attempt-failed",
+      adminText: "Why did the run fail?",
+      agentText: "The render gate failed before deployment.",
+      intent: "question",
+      suggestions: [],
+    });
+    const thread = await coordinator.readAgentThread("WrazyAI/failed-site");
+    expect(thread.latestPreview).toBeNull();
+    expect(thread.writable).toBe(false);
+    expect(thread.messages[0]?.text).toContain("Why did the run fail?");
+  });
+});
+
+describe("agent follow-up apply", () => {
+  let dispatchPayloads: Array<Record<string, any>> = [];
+  beforeEach(() => {
+    dispatchPayloads = [];
+    network.use(
+      http.post(
+        "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+        async ({ request }) => {
+          dispatchPayloads.push((await request.json()) as Record<string, any>);
+          return new HttpResponse(null, { status: 204 });
+        },
+      ),
+    );
+  });
+  const preview = {
+    repository: "WrazyAI/apply-site",
+    attemptId: "attempt-apply",
+    project: "apply-site",
+    pr: 9,
+    sha: "c".repeat(40),
+    deploymentId: "4c1e9a2b",
+    previewUrl: "https://4c1e9a2b.apply-site.pages.dev",
+  };
+  const suggestion = {
+    issue: "The contact action falls below the fold",
+    probableCause: "The hero keeps its desktop height.",
+    causeStatus: "probable" as const,
+    suggestedFix: "Move the action and reduce the image height.",
+    edits: [{ page: "home", section: "hero", instruction: "Move the action." }],
+    checks: ["Render at 390px"],
+    evidence: [{ label: "Mobile check", source: "route-report" }],
+    guardrails: ["Preserve verified facts."],
+    brief: "Issue\nThe contact action falls below the fold",
+    baseDeploymentId: preview.deploymentId,
+    baseSha: preview.sha,
+  };
+
+  it("starts one revision from the pinned preview and rejects a moved base", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName("wrazyai/apply-site");
+    await coordinator.recordPreviewDelivery(preview);
+    await coordinator.recordAgentRunEvidence({
+      attemptId: "attempt-apply",
+      repository: "WrazyAI/apply-site",
+      siteId: "apply-site",
+      issueNumber: 9,
+      profile: "full-preview",
+      renderer: "creative",
+      verdict: "passed",
+      selectedCandidateId: "candidate-b",
+      candidates: [],
+      gates: [],
+      failures: [],
+      routeChecks: [],
+      assets: null,
+      preview,
+      recordedAt: 1,
+    });
+    const exchange = await coordinator.appendAgentExchange({
+      repo: "WrazyAI/apply-site",
+      attemptId: "attempt-apply",
+      adminText: "The button is hidden.",
+      agentText: "Here is a fix.",
+      intent: "improvement",
+      suggestions: [suggestion],
+    });
+    const suggestionId = exchange.message.suggestions[0].id;
+    const storedSuggestion = (
+      await coordinator.readAgentThread("WrazyAI/apply-site")
+    ).messages
+      .flatMap((message) => message.suggestions)
+      .find((item) => item.id === suggestionId);
+    expect(storedSuggestion?.baseDeploymentId).toBe(preview.deploymentId);
+    expect(storedSuggestion?.baseSha).toBe(preview.sha);
+
+    const accepted = await coordinator.enqueueAgentFollowUp({
+      requestId: "agent-1",
+      repo: "WrazyAI/apply-site",
+      baseSha: preview.sha,
+      baseDeploymentId: preview.deploymentId,
+      brief: suggestion.brief,
+      suggestionId,
+    });
+    expect(accepted).toMatchObject({ ok: true, queueStatus: "started" });
+    expect(dispatchPayloads[0]?.client_payload.pr).toBe(9);
+    expect(Object.keys(dispatchPayloads[0]?.client_payload || {}).length).toBeLessThanOrEqual(10);
+
+    const duplicate = await coordinator.enqueueAgentFollowUp({
+      requestId: "agent-1",
+      repo: "WrazyAI/apply-site",
+      baseSha: preview.sha,
+      baseDeploymentId: preview.deploymentId,
+      brief: suggestion.brief,
+      suggestionId,
+    });
+    expect(duplicate).toMatchObject({ ok: true, queueStatus: "duplicate" });
+
+    const stale = await coordinator.enqueueAgentFollowUp({
+      requestId: "agent-2",
+      repo: "WrazyAI/apply-site",
+      baseSha: "d".repeat(40),
+      baseDeploymentId: "old",
+      brief: suggestion.brief,
+      suggestionId,
+    });
+    expect(stale).toMatchObject({ ok: false, code: "preview_base_moved" });
+  });
+});
+
+describe("agent follow-up completion atomicity", () => {
+  it("rolls back the receipt, evidence and card when the terminal commit fails", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName("wrazyai/atomic-site");
+    const basePreview = {
+      repository: "WrazyAI/atomic-site",
+      attemptId: "attempt-atomic",
+      project: "atomic-site",
+      pr: 9,
+      sha: "e".repeat(40),
+      deploymentId: "4c1e9a2b",
+      previewUrl: "https://4c1e9a2b.atomic-site.pages.dev",
+    };
+    const nextPreview = {
+      ...basePreview,
+      attemptId: "agent:atomic-1",
+      sha: "f".repeat(40),
+      deploymentId: "5d2f0b3c",
+      previewUrl: "https://5d2f0b3c.atomic-site.pages.dev",
+    };
+    await coordinator.recordPreviewDelivery(basePreview);
+    await coordinator.recordAgentRunEvidence({
+      attemptId: "attempt-atomic",
+      repository: "WrazyAI/atomic-site",
+      siteId: "atomic-site",
+      issueNumber: 9,
+      profile: "full-preview",
+      renderer: "creative",
+      verdict: "passed",
+      selectedCandidateId: "candidate-b",
+      candidates: [],
+      gates: [],
+      failures: [],
+      routeChecks: [],
+      assets: null,
+      preview: basePreview,
+      recordedAt: 1,
+    });
+    const exchange = await coordinator.appendAgentExchange({
+      repo: "WrazyAI/atomic-site",
+      attemptId: "attempt-atomic",
+      adminText: "Move the action.",
+      agentText: "Here is a fix.",
+      intent: "improvement",
+      suggestions: [{
+        issue: "The action is hidden.",
+        probableCause: "The hero is too tall.",
+        causeStatus: "probable",
+        suggestedFix: "Move the action and reduce the height.",
+        edits: [{ page: "home", section: "hero", instruction: "Move it." }],
+        checks: ["Render at 390px"],
+        evidence: [{ label: "Mobile check", source: "route-report" }],
+        guardrails: ["Preserve verified facts."],
+        brief: "Issue\nThe action is hidden.",
+        baseDeploymentId: basePreview.deploymentId,
+        baseSha: basePreview.sha,
+      }],
+    });
+    const suggestionId = exchange.message.suggestions[0].id;
+    await coordinator.enqueueAgentFollowUp({
+      requestId: "atomic-1",
+      repo: "WrazyAI/atomic-site",
+      baseSha: basePreview.sha,
+      baseDeploymentId: basePreview.deploymentId,
+      brief: "Issue\nThe action is hidden.",
+      suggestionId,
+    });
+    await coordinator.claim("atomic-1");
+
+    await runInDurableObject(coordinator, async (instance, state) => {
+      const typed = instance as unknown as {
+        complete(
+          requestId: string,
+          result: { baseSha: string; preview: typeof nextPreview },
+        ): Promise<unknown>;
+        latestPreviewDelivery(repo: string): Promise<{ deploymentId: string } | null>;
+        readAgentThread(repo: string): Promise<{
+          messages: Array<{
+            suggestions: Array<{ id: string; status: string }>;
+          }>;
+        }>;
+      };
+      const original = state.storage.sql.exec.bind(state.storage.sql);
+      state.storage.sql.exec = ((query: string, ...args: unknown[]) => {
+        if (query.includes("SET status = 'completed'"))
+          throw new Error("forced terminal failure");
+        return original(query, ...args);
+      }) as typeof state.storage.sql.exec;
+      try {
+        await expect(
+          typed.complete("atomic-1", {
+            baseSha: basePreview.sha,
+            preview: nextPreview,
+          }),
+        ).rejects.toThrow("forced terminal failure");
+      } finally {
+        state.storage.sql.exec = original as typeof state.storage.sql.exec;
+      }
+      expect(
+        await typed.latestPreviewDelivery("WrazyAI/atomic-site"),
+      ).toMatchObject({ deploymentId: basePreview.deploymentId });
+      const thread = await typed.readAgentThread("WrazyAI/atomic-site");
+      const stored = thread.messages
+        .flatMap((message) => message.suggestions)
+        .find((item) => item.id === suggestionId);
+      expect(stored?.status).toBe("started");
+    });
+  });
+});

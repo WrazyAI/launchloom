@@ -351,6 +351,7 @@ export type DispatchRequest = {
 export type WorkspaceCapabilities = {
   operationsRead: boolean;
   generationActivityRead: boolean;
+  agentFollowUps: boolean;
 };
 
 export type RevisionStage = "developer" | "client";

@@ -1372,7 +1372,9 @@ jobs:
           # falls back to a noindex diagnostic preview for developer review.
           deploy_review_preview() {
             local branch="$1" message="$2"
-            npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch "$branch" --commit-hash "$FINAL_BUILD_SHA" --commit-message "$message"
+            npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch "$branch" --commit-hash "$FINAL_BUILD_SHA" --commit-message "$message" 2>&1 | tee "$RUNNER_TEMP/pages-deploy.log"
+            record_preview_delivery
+            publish_run_evidence
             if [ "$branch" = "review-diagnostic" ]; then
               echo "preview=https://review-diagnostic.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
               echo "diagnostic=true" >> "$GITHUB_OUTPUT"
@@ -1381,6 +1383,33 @@ jobs:
               echo "diagnostic=false" >> "$GITHUB_OUTPUT"
             fi
             echo "sha=$FINAL_BUILD_SHA" >> "$GITHUB_OUTPUT"
+          }
+          record_preview_delivery() {
+            if [ -z "${TRACK_ATTEMPT:-}" ]; then
+              echo "Preview receipt skipped: this run has no attempt identity."
+              return 0
+            fi
+            if ! node "$GITHUB_WORKSPACE/scripts/publish-preview-delivery.mjs" \
+              --log "$RUNNER_TEMP/pages-deploy.log" \
+              --project "${{ steps.client.outputs.project }}" \
+              --repo "${{ steps.client.outputs.repo }}" \
+              --attempt "$TRACK_ATTEMPT" \
+              --pr "${{ steps.branch.outputs.pr }}" \
+              --sha "$FINAL_BUILD_SHA" > "$RUNNER_TEMP/preview-delivery.json"; then
+              echo "Preview receipt was not recorded; follow-ups stay disabled for this site." >&2
+              rm -f "$RUNNER_TEMP/preview-delivery.json"
+            fi
+          }
+          publish_run_evidence() {
+            [ -f "$RUNNER_TEMP/preview-delivery.json" ] || return 0
+            if ! node "$GITHUB_WORKSPACE/scripts/publish-agent-run-evidence.mjs" \
+              --preview "$RUNNER_TEMP/preview-delivery.json" \
+              --report "$PWD/.launchloom/pipeline-test-report.json" \
+              --creative-summary "$PWD/.launchloom/creative-bakeoff.json" \
+              --assets "$PWD/.launchloom/generated-assets.json" \
+              --route-report "$RUNNER_TEMP/initial-screenshots/route-browser-report.json"; then
+              echo "Run evidence was not recorded; answers will use the trace and say what is missing." >&2
+            fi
           }
           run_seo_gate() {
             if node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist --report "$RUNNER_TEMP/route-technical-report.json"; then
@@ -1505,7 +1534,9 @@ jobs:
           # the UTF-8 byte sequence by coincidence and is not page copy.
           if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
           if run_seo_gate; then
-            npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$FINAL_BUILD_SHA" --commit-message "Initial LaunchLoom preview"
+            npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$FINAL_BUILD_SHA" --commit-message "Initial LaunchLoom preview" 2>&1 | tee "$RUNNER_TEMP/pages-deploy.log"
+            record_preview_delivery
+            publish_run_evidence
             echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
             echo "diagnostic=false" >> "$GITHUB_OUTPUT"
             echo "sha=$FINAL_BUILD_SHA" >> "$GITHUB_OUTPUT"

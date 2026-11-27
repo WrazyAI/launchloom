@@ -13,6 +13,28 @@ if (!action || !repo || !requestId || !secret)
     "REVISION_QUEUE_ACTION, CLIENT_REPO, REVISION_REQUEST_ID, and REVISION_COORDINATOR_SECRET are required.",
   );
 
+const resultBody =
+  action === "complete" &&
+  process.env.REVISION_PREVIEW_URL &&
+  process.env.REVISION_PREVIEW_DEPLOYMENT_ID &&
+  process.env.REVISION_PREVIEW_PROJECT &&
+  process.env.REVISION_RESULT_BASE_SHA
+    ? {
+        result: {
+          baseSha: process.env.REVISION_RESULT_BASE_SHA,
+          preview: {
+            repository: repo,
+            attemptId: `agent:${requestId}`,
+            project: process.env.REVISION_PREVIEW_PROJECT,
+            pr: Number(process.env.REVISION_PREVIEW_PR || 0),
+            sha: process.env.REVISION_PREVIEW_SHA || "",
+            deploymentId: process.env.REVISION_PREVIEW_DEPLOYMENT_ID,
+            previewUrl: process.env.REVISION_PREVIEW_URL,
+          },
+        },
+      }
+    : {};
+
 const response = await fetch(`${api}/api/internal/revisions`, {
   method: "POST",
   headers: {
@@ -26,6 +48,7 @@ const response = await fetch(`${api}/api/internal/revisions`, {
     reason: process.env.REVISION_FAILURE_REASON || undefined,
     failureSiteUrl: process.env.REVISION_FAILURE_SITE_URL || undefined,
     failureRunUrl: process.env.REVISION_FAILURE_RUN_URL || undefined,
+    ...resultBody,
   }),
   signal: AbortSignal.timeout(20_000),
 });
@@ -43,6 +66,17 @@ async function output(name, value) {
 if (action === "claim") {
   await output("run", String(Boolean(result.run)));
   await output("status", String(result.status || "unknown"));
+  if (result.request && process.env.AGENT_REQUEST_PATH) {
+    await fs.writeFile(
+      process.env.AGENT_REQUEST_PATH,
+      `${JSON.stringify(result.request)}\n`,
+      "utf8",
+    );
+  }
+}
+
+if (action === "complete" && result.request) {
+  await output("request", JSON.stringify(result.request));
 }
 
 if (action === "complete") {

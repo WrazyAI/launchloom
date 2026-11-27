@@ -125,3 +125,5 @@
 2026-11-26T20:41:38Z | branch=codex/launchloom-agent-run-chat-plan | sha=a088d401 | Agent runs read-only improvements verified locally: 3,382 application and 562 Worker tests passed; follow-up writes remain convergence-gated
 2026-11-27T15:12:30Z | branch=codex/launchloom-agent-runs-closeout | sha=fa0aa7fc | PR #383 merged and deployed at fa0aa7fc; Cloudflare Pages and Worker production readback verified
 2026-11-27T17:07:09Z | branch=codex/launchloom-agent-run-diffs-integrate | sha=ceaa0c31 | Merged PR #386 and deployed Agent runs diff inspection; production bundle verified
+2026-11-27T19:10:45Z | branch=codex/launchloom-agent-followups-design | sha=826f6135 | Agent follow-ups implemented and locally verified: 3,413 application and 576 Worker tests passed; hosted canary and flag activation remain pending
+2026-11-27T20:14:58Z | branch=codex/launchloom-agent-followups-design | sha=853e6b48 | Agent follow-ups implemented and locally verified on the final head: 3,413 application and 576 Worker tests passed; hosted canary, merge and flag activation remain pending

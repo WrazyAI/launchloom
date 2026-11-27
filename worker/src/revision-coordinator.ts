@@ -7,6 +7,14 @@ import {
   feedbackStructureSummary,
   parseFeedbackStructure,
 } from "./feedback-structure";
+import type {
+  AgentExchangeInput,
+  AgentMessage,
+  AgentRunEvidence,
+  AgentSuggestion,
+  AgentThreadPage,
+  PreviewDelivery,
+} from "../../src/lib/agent-follow-ups";
 
 export type RevisionStage = "developer" | "client";
 export type QueueStatus =
@@ -34,6 +42,11 @@ export interface RevisionRequestInput {
   feedback: string;
   structure?: string;
   creativeRepairSessionId?: string;
+  source?: "feedback" | "agent_follow_up";
+  brief?: string;
+  baseSha?: string;
+  baseDeploymentId?: string;
+  suggestionId?: string;
 }
 
 export const MAX_FEEDBACK_STRUCTURE_LENGTH = 6_000;
@@ -63,6 +76,10 @@ type RevisionRow = {
   publication_id: string | null;
   base_sha: string | null;
   reviewed_sha: string | null;
+  source: "feedback" | "agent_follow_up";
+  brief: string | null;
+  base_deployment_id: string | null;
+  suggestion_id: string | null;
 };
 
 type FailureNotice = {
@@ -72,6 +89,15 @@ type FailureNotice = {
   siteUrl?: string;
   runUrl?: string;
   nextAttemptAt: number;
+};
+
+export type AgentFollowUpRequest = {
+  requestId: string;
+  repo: string;
+  baseSha: string;
+  baseDeploymentId: string;
+  brief: string;
+  suggestionId: string;
 };
 
 export type EnqueueResult =
@@ -86,11 +112,27 @@ export type EnqueueResult =
         | "revision_queue_full"
         | "creative_override_started"
         | "revision_request_mismatch"
-        | "revision_request_failed";
+        | "revision_request_failed"
+        | "preview_base_moved"
+        | "suggestion_missing"
+        | "suggestion_already_started"
+        | "revision_in_progress";
       error: string;
     };
 
-export type ClaimResult = { run: boolean; status: QueueStatus | "missing" };
+export type ClaimResult = {
+  run: boolean;
+  status: QueueStatus | "missing";
+  request?: {
+    source: "feedback" | "agent_follow_up";
+    brief: string | null;
+    baseSha: string | null;
+    baseDeploymentId: string | null;
+    suggestionId: string | null;
+    repo: string;
+    pr: number | null;
+  };
+};
 
 export type CompletionResult = {
   ok: true;
@@ -386,6 +428,56 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         );
         CREATE INDEX IF NOT EXISTS revision_requests_status ON revision_requests(status, created_at);
         CREATE INDEX IF NOT EXISTS revision_requests_fingerprint ON revision_requests(fingerprint, created_at);
+        CREATE TABLE IF NOT EXISTS preview_deliveries (
+          repo TEXT NOT NULL,
+          attempt_id TEXT NOT NULL,
+          project TEXT NOT NULL,
+          pr INTEGER NOT NULL,
+          sha TEXT NOT NULL,
+          deployment_id TEXT NOT NULL,
+          preview_url TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          PRIMARY KEY (repo, attempt_id)
+        );
+        CREATE INDEX IF NOT EXISTS preview_deliveries_repo_created ON preview_deliveries(repo, created_at DESC);
+        CREATE TABLE IF NOT EXISTS agent_run_evidence (
+          repo TEXT NOT NULL,
+          attempt_id TEXT NOT NULL,
+          evidence_json TEXT NOT NULL,
+          recorded_at INTEGER NOT NULL,
+          PRIMARY KEY (repo, attempt_id)
+        );
+        CREATE TABLE IF NOT EXISTS agent_threads (
+          repo TEXT PRIMARY KEY,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS agent_messages (
+          message_id TEXT PRIMARY KEY,
+          repo TEXT NOT NULL,
+          role TEXT NOT NULL CHECK(role IN ('admin','agent')),
+          text TEXT NOT NULL,
+          intent TEXT,
+          attempt_id TEXT NOT NULL,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS agent_messages_repo_created ON agent_messages(repo, created_at);
+        CREATE TABLE IF NOT EXISTS agent_suggestions (
+          suggestion_id TEXT PRIMARY KEY,
+          message_id TEXT NOT NULL,
+          repo TEXT NOT NULL,
+          payload_json TEXT NOT NULL,
+          status TEXT NOT NULL,
+          request_id TEXT,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS agent_suggestions_message ON agent_suggestions(message_id);
+        CREATE TABLE IF NOT EXISTS agent_commands (
+          repo TEXT NOT NULL,
+          request_id TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          PRIMARY KEY (repo, request_id)
+        );
         CREATE TABLE IF NOT EXISTS ai_chat_limits (
           visitor_key TEXT PRIMARY KEY,
           window_started_at INTEGER NOT NULL,
@@ -462,6 +554,20 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       for (const name of ["publication_id", "base_sha", "reviewed_sha"]) {
         const columns = this.ctx.storage.sql.exec<{name:string}>("PRAGMA table_info(revision_requests)").toArray();
         if (!columns.some(column=>column.name===name))this.ctx.storage.sql.exec(`ALTER TABLE revision_requests ADD COLUMN ${name} TEXT`);
+      }
+      for (const [name, type] of [
+        ["source", "TEXT NOT NULL DEFAULT 'feedback'"],
+        ["brief", "TEXT"],
+        ["base_deployment_id", "TEXT"],
+        ["suggestion_id", "TEXT"],
+      ] as const) {
+        const columns = this.ctx.storage.sql
+          .exec<{ name: string }>("PRAGMA table_info(revision_requests)")
+          .toArray();
+        if (!columns.some((column) => column.name === name))
+          this.ctx.storage.sql.exec(
+            `ALTER TABLE revision_requests ADD COLUMN ${name} ${type}`,
+          );
       }
       await this.migrateLegacyFailureNotice();
     });
@@ -604,7 +710,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     if (
       this.ctx.storage.sql
         .exec(
-          "SELECT request_id FROM revision_requests WHERE status = 'failed' LIMIT 1",
+          "SELECT request_id FROM revision_requests WHERE status = 'failed' AND source != 'agent_follow_up' LIMIT 1",
         )
         .toArray().length
     )
@@ -876,7 +982,309 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       .toArray()[0];
   }
 
+  private writePreviewDelivery(input: PreviewDelivery) {
+    this.ctx.storage.sql.exec(
+      `INSERT INTO preview_deliveries (
+        repo, attempt_id, project, pr, sha, deployment_id, preview_url, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(repo, attempt_id) DO UPDATE SET
+        project = excluded.project,
+        pr = excluded.pr,
+        sha = excluded.sha,
+        deployment_id = excluded.deployment_id,
+        preview_url = excluded.preview_url,
+        created_at = CASE
+          WHEN preview_deliveries.preview_url = excluded.preview_url
+          THEN preview_deliveries.created_at
+          ELSE excluded.created_at
+        END`,
+      input.repository,
+      input.attemptId,
+      input.project,
+      input.pr,
+      input.sha,
+      input.deploymentId,
+      input.previewUrl,
+      Date.now(),
+    );
+  }
+
   /** Read-only timeline for the authenticated admin workspace. */
+  async recordPreviewDelivery(input: PreviewDelivery): Promise<{ ok: true }> {
+    this.writePreviewDelivery(input);
+    return { ok: true };
+  }
+
+  async latestPreviewDelivery(repo: string): Promise<PreviewDelivery | null> {
+    const row = this.ctx.storage.sql
+      .exec<{
+        repo: string;
+        attempt_id: string;
+        project: string;
+        pr: number;
+        sha: string;
+        deployment_id: string;
+        preview_url: string;
+      }>(
+        "SELECT repo, attempt_id, project, pr, sha, deployment_id, preview_url FROM preview_deliveries WHERE repo = ? ORDER BY created_at DESC LIMIT 1",
+        repo,
+      )
+      .toArray()[0];
+    if (!row) return null;
+    return {
+      repository: row.repo,
+      attemptId: row.attempt_id,
+      project: row.project,
+      pr: row.pr,
+      sha: row.sha,
+      deploymentId: row.deployment_id,
+      previewUrl: row.preview_url,
+    };
+  }
+
+  private writeAgentRunEvidence(evidence: AgentRunEvidence) {
+    this.ctx.storage.sql.exec(
+      `INSERT INTO agent_run_evidence (repo, attempt_id, evidence_json, recorded_at)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(repo, attempt_id) DO UPDATE SET
+         evidence_json = excluded.evidence_json,
+         recorded_at = excluded.recorded_at`,
+      evidence.repository,
+      evidence.attemptId,
+      JSON.stringify(evidence),
+      evidence.recordedAt,
+    );
+  }
+
+  async recordAgentRunEvidence(
+    evidence: AgentRunEvidence,
+  ): Promise<{ ok: true }> {
+    this.writeAgentRunEvidence(evidence);
+    return { ok: true };
+  }
+
+  async latestAgentRunEvidence(repo: string): Promise<AgentRunEvidence | null> {
+    const row = this.ctx.storage.sql
+      .exec<{ evidence_json: string }>(
+        "SELECT evidence_json FROM agent_run_evidence WHERE repo = ? ORDER BY recorded_at DESC LIMIT 1",
+        repo,
+      )
+      .toArray()[0];
+    if (!row) return null;
+    try {
+      return JSON.parse(row.evidence_json) as AgentRunEvidence;
+    } catch {
+      return null;
+    }
+  }
+
+  async agentRunEvidence(
+    repo: string,
+    attemptId: string,
+  ): Promise<AgentRunEvidence | null> {
+    const row = this.ctx.storage.sql
+      .exec<{ evidence_json: string }>(
+        "SELECT evidence_json FROM agent_run_evidence WHERE repo = ? AND attempt_id = ? LIMIT 1",
+        repo,
+        attemptId,
+      )
+      .toArray()[0];
+    if (!row) return null;
+    try {
+      return JSON.parse(row.evidence_json) as AgentRunEvidence;
+    } catch {
+      return null;
+    }
+  }
+
+  private setSuggestionStatusByRequest(
+    requestId: string,
+    status: AgentSuggestion["status"],
+    failure: string | null = null,
+  ) {
+    const rows = this.ctx.storage.sql
+      .exec<{ suggestion_id: string; payload_json: string }>(
+        "SELECT suggestion_id, payload_json FROM agent_suggestions WHERE request_id = ?",
+        requestId,
+      )
+      .toArray();
+    for (const row of rows) {
+      try {
+        const suggestion = JSON.parse(row.payload_json) as AgentSuggestion;
+        suggestion.status = status;
+        suggestion.failure = failure;
+        this.ctx.storage.sql.exec(
+          "UPDATE agent_suggestions SET status = ?, payload_json = ? WHERE suggestion_id = ?",
+          status,
+          JSON.stringify(suggestion),
+          row.suggestion_id,
+        );
+      } catch {
+        // A malformed historical suggestion cannot block the queue.
+      }
+    }
+  }
+
+  async reserveAgentCommand(
+    repo: string,
+    requestId: string,
+  ): Promise<{ duplicate: boolean }> {
+    const existing = this.ctx.storage.sql
+      .exec<{ request_id: string }>(
+        "SELECT request_id FROM agent_commands WHERE repo = ? AND request_id = ?",
+        repo,
+        requestId,
+      )
+      .toArray()[0];
+    if (existing) return { duplicate: true };
+    this.ctx.storage.sql.exec(
+      "INSERT INTO agent_commands (repo, request_id, created_at) VALUES (?, ?, ?)",
+      repo,
+      requestId,
+      Date.now(),
+    );
+    return { duplicate: false };
+  }
+
+  async appendAgentExchange(
+    input: AgentExchangeInput,
+  ): Promise<{ message: AgentMessage }> {
+    const now = Date.now();
+    const adminId = crypto.randomUUID();
+    const agentId = crypto.randomUUID();
+    let suggestions: AgentSuggestion[] = [];
+    this.ctx.storage.transactionSync(() => {
+      this.ctx.storage.sql.exec(
+        `INSERT INTO agent_threads (repo, created_at, updated_at) VALUES (?, ?, ?)
+         ON CONFLICT(repo) DO UPDATE SET updated_at = excluded.updated_at`,
+        input.repo,
+        now,
+        now,
+      );
+      this.ctx.storage.sql.exec(
+        "INSERT INTO agent_messages (message_id, repo, role, text, intent, attempt_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        adminId,
+        input.repo,
+        "admin",
+        input.adminText,
+        null,
+        input.attemptId,
+        now,
+      );
+      this.ctx.storage.sql.exec(
+        "INSERT INTO agent_messages (message_id, repo, role, text, intent, attempt_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        agentId,
+        input.repo,
+        "agent",
+        input.agentText,
+        input.intent,
+        input.attemptId,
+        now + 1,
+      );
+      suggestions = input.suggestions.map((suggestion) => {
+        const id = crypto.randomUUID();
+        const stored: AgentSuggestion = {
+          ...suggestion,
+          baseDeploymentId: suggestion.baseDeploymentId ?? null,
+          baseSha: suggestion.baseSha ?? null,
+          id,
+          messageId: agentId,
+          status: "suggested",
+          requestId: null,
+        };
+        this.ctx.storage.sql.exec(
+          "INSERT INTO agent_suggestions (suggestion_id, message_id, repo, payload_json, status, request_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+          id,
+          agentId,
+          input.repo,
+          JSON.stringify(stored),
+          stored.status,
+          null,
+          now + 1,
+        );
+        return stored;
+      });
+    });
+    return {
+      message: {
+        id: agentId,
+        role: "agent",
+        text: input.agentText,
+        intent: input.intent,
+        attemptId: input.attemptId,
+        createdAt: now + 1,
+        suggestions,
+      },
+    };
+  }
+
+  async readAgentThread(
+    repo: string,
+    options: { cursor?: string | null; limit?: number } = {},
+  ): Promise<AgentThreadPage> {
+    const limit = Math.max(1, Math.min(100, options.limit ?? 100));
+    const rows = this.ctx.storage.sql
+      .exec<{
+        message_id: string;
+        role: "admin" | "agent";
+        text: string;
+        intent: AgentMessage["intent"];
+        attempt_id: string;
+        created_at: number;
+      }>(
+        "SELECT message_id, role, text, intent, attempt_id, created_at FROM agent_messages WHERE repo = ? ORDER BY created_at DESC LIMIT ?",
+        repo,
+        limit,
+      )
+      .toArray()
+      .reverse();
+    const suggestions = this.ctx.storage.sql
+      .exec<{ message_id: string; payload_json: string }>(
+        "SELECT message_id, payload_json FROM agent_suggestions WHERE repo = ? ORDER BY created_at ASC",
+        repo,
+      )
+      .toArray();
+    const byMessage = new Map<string, AgentSuggestion[]>();
+    for (const row of suggestions) {
+      try {
+        const parsed = JSON.parse(row.payload_json) as AgentSuggestion;
+        const list = byMessage.get(row.message_id) || [];
+        list.push(parsed);
+        byMessage.set(row.message_id, list);
+      } catch {
+        // A malformed stored suggestion is ignored rather than rendered.
+      }
+    }
+    const latestPreview = await this.latestPreviewDelivery(repo);
+    const latestEvidence = await this.latestAgentRunEvidence(repo);
+    const active = this.ctx.storage.sql
+      .exec<{ request_id: string }>(
+        `SELECT request_id FROM revision_requests WHERE status IN ${ACTIVE} ORDER BY created_at LIMIT 1`,
+      )
+      .toArray()[0];
+    const writable =
+      latestPreview !== null &&
+      latestEvidence?.preview?.deploymentId === latestPreview.deploymentId &&
+      latestEvidence?.preview?.previewUrl === latestPreview.previewUrl;
+    return {
+      repository: repo,
+      messages: rows.map((row) => ({
+        id: row.message_id,
+        role: row.role,
+        text: row.text,
+        intent: row.intent,
+        attemptId: row.attempt_id,
+        createdAt: row.created_at,
+        suggestions: byMessage.get(row.message_id) || [],
+      })),
+      nextCursor: null,
+      latestPreview,
+      latestEvidence,
+      activeRequestId: active?.request_id ?? null,
+      writable,
+    };
+  }
+
   async list(limit = 20) {
     const rows = this.ctx.storage.sql
       .exec<RevisionRow>(
@@ -1190,7 +1598,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       row.request_id,
     );
     let pending = this.row(row.request_id)!;
-    if (!pending.comment_id) {
+    if (pending.source !== "agent_follow_up" && !pending.comment_id) {
       const commentId = await this.createFeedbackComment(pending);
       this.ctx.storage.sql.exec(
         "UPDATE revision_requests SET comment_id = ? WHERE request_id = ?",
@@ -1203,22 +1611,36 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
   }
 
   private async dispatchRow(row: RevisionRow) {
-    if (!row.comment_id) throw new Error("Feedback comment was not persisted.");
+    const agentFollowUp = row.source === "agent_follow_up";
+    if (!agentFollowUp && !row.comment_id)
+      throw new Error("Feedback comment was not persisted.");
     await github(this.env, "/repos/WrazyAI/launchloom/dispatches", {
       method: "POST",
       body: JSON.stringify({
-        event_type:
-          row.stage === "developer" && !row.base_sha
+        event_type: agentFollowUp
+          ? "process-agent-follow-up"
+          : row.stage === "developer" && !row.base_sha
             ? "process-developer-feedback"
             : "process-client-feedback",
         client_payload: {
           requestId: row.request_id,
-          feedbackComment: row.comment_id,
+          ...(agentFollowUp ? {} : { feedbackComment: row.comment_id }),
           repo: row.repo,
           pr: row.pr,
           feedbackIssue: row.feedback_issue,
           reviewedPage: row.reviewed_page,
-          ...(row.base_sha
+          ...(agentFollowUp
+            ? {
+                agentFollowUp: true,
+                agent: {
+                  brief: row.brief,
+                  baseSha: row.base_sha,
+                  baseDeploymentId: row.base_deployment_id,
+                  suggestionId: row.suggestion_id,
+                },
+              }
+            : {}),
+          ...(row.base_sha && !agentFollowUp
             ? {
                 baseSha: row.base_sha,
                 originalStage: row.stage,
@@ -1267,6 +1689,15 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         reason,
       }),
     );
+    if (row.source === "agent_follow_up") {
+      this.ctx.storage.sql.exec(
+        "UPDATE agent_suggestions SET status = 'failed' WHERE request_id = ?",
+        row.request_id,
+      );
+      this.setSuggestionStatusByRequest(row.request_id, "failed", reason);
+      await this.scheduleCoordinatorAlarm();
+      return;
+    }
     const noticeKey = failureNoticeKey(row.request_id);
     if (
       await notifyFailure(
@@ -1290,6 +1721,92 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         nextAttemptAt: Date.now() + 5 * 60_000,
       });
     await this.scheduleCoordinatorAlarm();
+  }
+
+  async enqueueAgentFollowUp(
+    input: AgentFollowUpRequest,
+  ): Promise<EnqueueResult> {
+    const existing = this.row(input.requestId);
+    if (existing)
+      return {
+        ok: true,
+        requestId: input.requestId,
+        queueStatus: "duplicate",
+      };
+    const preview = await this.latestPreviewDelivery(input.repo);
+    if (
+      !preview ||
+      preview.sha !== input.baseSha ||
+      preview.deploymentId !== input.baseDeploymentId
+    )
+      return {
+        ok: false,
+        code: "preview_base_moved",
+        error: "The preview moved. Open the latest preview before applying this fix.",
+      };
+    const busy = this.ctx.storage.sql
+      .exec<{ request_id: string }>(
+        `SELECT request_id FROM revision_requests WHERE status IN ${ACTIVE} OR status = 'queued' LIMIT 1`,
+      )
+      .toArray()[0];
+    if (busy)
+      return {
+        ok: false,
+        code: "revision_in_progress",
+        error: "A revision is already running for this site.",
+      };
+    if (this.publications.held())
+      return {
+        ok: false,
+        code: "revision_in_progress",
+        error: "A publication is already in progress for this site.",
+      };
+    const suggestion = this.ctx.storage.sql
+      .exec<{ payload_json: string; status: string }>(
+        "SELECT payload_json, status FROM agent_suggestions WHERE suggestion_id = ? AND repo = ? LIMIT 1",
+        input.suggestionId,
+        input.repo,
+      )
+      .toArray()[0];
+    if (!suggestion)
+      return {
+        ok: false,
+        code: "suggestion_missing",
+        error: "This suggestion is no longer available.",
+      };
+    if (suggestion.status !== "suggested")
+      return {
+        ok: false,
+        code: "suggestion_already_started",
+        error: "This suggestion already has a revision.",
+      };
+    const result = await this.enqueue({
+      requestId: input.requestId,
+      fingerprint: `agent:${input.suggestionId}:${input.baseSha}`,
+      stage: "developer",
+      repo: input.repo,
+      pr: preview.pr,
+      siteId: preview.project,
+      clientEmail: "",
+      reviewedPage: preview.previewUrl,
+      reviewedSha: input.baseSha,
+      category: "Agent follow-up",
+      feedback: input.brief,
+      source: "agent_follow_up",
+      brief: input.brief,
+      baseSha: input.baseSha,
+      baseDeploymentId: input.baseDeploymentId,
+      suggestionId: input.suggestionId,
+    });
+    if (result.ok && result.queueStatus !== "duplicate") {
+      this.ctx.storage.sql.exec(
+        "UPDATE agent_suggestions SET status = 'started', request_id = ? WHERE suggestion_id = ?",
+        input.requestId,
+        input.suggestionId,
+      );
+      this.setSuggestionStatusByRequest(input.requestId, "started");
+    }
+    return result;
   }
 
   async enqueue(input: RevisionRequestInput): Promise<EnqueueResult> {
@@ -1364,7 +1881,11 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       )
       .toArray()[0];
     const publication = this.publications.held();
-    const context=publication||this.publications.feedbackContext(input.pr,input.reviewedSha);
+    const context =
+      input.source === "agent_follow_up"
+        ? null
+        : publication ||
+          this.publications.feedbackContext(input.pr, input.reviewedSha);
     if (active && queued && !context)
       return {
         ok: false,
@@ -1378,8 +1899,8 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       `INSERT INTO revision_requests (
         request_id, fingerprint, stage, repo, pr, feedback_issue, site_id,
         client_email, reviewed_page, category, feedback, structure, status,
-        created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        created_at, source, brief, base_deployment_id, suggestion_id, base_sha
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       input.requestId,
       input.fingerprint,
       input.stage,
@@ -1394,13 +1915,18 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       input.structure || null,
       status,
       now,
+      input.source || "feedback",
+      input.brief || null,
+      input.baseDeploymentId || null,
+      input.suggestionId || null,
+      input.baseSha || null,
     );
     if (context)this.ctx.storage.sql.exec("UPDATE revision_requests SET publication_id = ?, reviewed_sha = ?, base_sha = ? WHERE request_id = ?",context.id,input.reviewedSha||(input.stage==='developer'?context.head_sha:null),context.state==='published'?context.approved_sha:null,input.requestId);
     else if(input.reviewedSha)this.ctx.storage.sql.exec('UPDATE revision_requests SET reviewed_sha = ? WHERE request_id = ?',input.reviewedSha,input.requestId);
     const row = this.row(input.requestId)!;
     try {
       if (status === "dispatching") await this.prepareAndDispatchRow(row);
-      else {
+      else if (row.source !== "agent_follow_up") {
         const commentId = await this.createFeedbackComment(row);
         this.ctx.storage.sql.exec(
           "UPDATE revision_requests SET comment_id = ? WHERE request_id = ?",
@@ -1450,13 +1976,50 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     console.log(
       JSON.stringify({ event: "revision.claimed", repo: row.repo, requestId }),
     );
-    return { run: true, status: "running" };
+    return {
+      run: true,
+      status: "running",
+      ...(row.source === "agent_follow_up"
+        ? {
+            request: {
+              source: row.source,
+              brief: row.brief,
+              baseSha: row.base_sha,
+              baseDeploymentId: row.base_deployment_id,
+              suggestionId: row.suggestion_id,
+              repo: row.repo,
+              pr: row.pr,
+            },
+          }
+        : {}),
+    };
   }
 
-  async complete(requestId: string): Promise<CompletionResult> {
+  async complete(
+    requestId: string,
+    result?: { baseSha: string; preview: PreviewDelivery },
+  ): Promise<CompletionResult> {
     const row = this.row(requestId);
     if (!row) throw new Error("Revision request was not found.");
     if (row.status === "failed") throw new Error("Revision queue is halted.");
+    if (row.source === "agent_follow_up") {
+      if (!result)
+        throw new Error("An agent revision requires a preview receipt.");
+      if (row.status === "completed")
+        return { ok: true, promoted: null };
+      if (
+        result.preview.repository !== row.repo ||
+        result.preview.project !== row.site_id ||
+        result.preview.pr !== row.pr
+      )
+        throw new Error("Revision receipt does not match the claimed site.");
+    }
+    if (result) {
+      if (row.source !== "agent_follow_up")
+        throw new Error("Only an agent follow-up can record a preview result.");
+      if (row.base_sha && row.base_sha !== result.baseSha)
+        throw new Error("Revision result does not match the pinned base.");
+    }
     let promoted = row.promoted_request_id
       ? this.row(row.promoted_request_id)
       : undefined;
@@ -1465,13 +2028,41 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       !["dispatching", "dispatched", "running"].includes(promoted.status)
     )
       promoted = undefined;
-    if (row.status !== "completed") {
+    const terminal = row.status !== "completed";
+    if (terminal) {
       promoted = this.ctx.storage.sql
         .exec<RevisionRow>(
           "SELECT * FROM revision_requests WHERE status = 'queued' ORDER BY created_at LIMIT 1",
         )
         .toArray()[0];
-      this.ctx.storage.transactionSync(() => {
+    }
+    this.ctx.storage.transactionSync(() => {
+      if (result) {
+        this.writePreviewDelivery(result.preview);
+        this.writeAgentRunEvidence({
+          attemptId: `agent:${requestId}`,
+          repository: row.repo,
+          siteId: row.site_id,
+          issueNumber: null,
+          profile: "revision",
+          renderer: null,
+          verdict: "unknown",
+          selectedCandidateId: null,
+          candidates: [],
+          gates: [],
+          failures: [],
+          routeChecks: [],
+          assets: null,
+          preview: result.preview,
+          recordedAt: Date.now(),
+        });
+        this.ctx.storage.sql.exec(
+          "UPDATE agent_suggestions SET status = 'delivered' WHERE request_id = ?",
+          requestId,
+        );
+        this.setSuggestionStatusByRequest(requestId, "delivered");
+      }
+      if (terminal) {
         this.ctx.storage.sql.exec(
           "UPDATE revision_requests SET status = 'completed', completed_at = ?, failure = NULL, promoted_request_id = ? WHERE request_id = ?",
           Date.now(),
@@ -1483,7 +2074,9 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
             "UPDATE revision_requests SET status = 'dispatching' WHERE request_id = ?",
             promoted.request_id,
           );
-      });
+      }
+    });
+    if (terminal) {
       console.log(
         JSON.stringify({
           event: "revision.completed",
@@ -1625,7 +2218,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     if (this.publications.held()) return {allowed:false,code:"revision_in_progress"};
     const failed = this.ctx.storage.sql
       .exec(
-        "SELECT request_id FROM revision_requests WHERE status = 'failed' LIMIT 1",
+        "SELECT request_id FROM revision_requests WHERE status = 'failed' AND source != 'agent_follow_up' LIMIT 1",
       )
       .toArray()[0];
     if (failed) return { allowed: false, code: "revision_queue_halted" };
