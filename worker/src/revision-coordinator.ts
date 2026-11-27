@@ -2001,6 +2001,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         return { ok: true, promoted: null };
       if (
         result.preview.repository !== row.repo ||
+        result.preview.project !== row.site_id ||
         result.preview.pr !== row.pr
       )
         throw new Error("Revision receipt does not match the claimed site.");
