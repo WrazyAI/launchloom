@@ -140,9 +140,33 @@ describe("judge finding classification", () => {
         severity: "major",
         category: "content-integrity",
         evidence:
+          "Mobile footer lists only FAQs and Contact under the business name and contact details, while the desktop footer lists Services, FAQs, Contact.",
+      }),
+    ).toBe("open");
+    expect(
+      classifyJudgeFinding({
+        severity: "critical",
+        category: "content-integrity",
+        evidence:
+          "The mobile capture begins at the hero body copy with the Request a quote button, phone number, and hero photo immediately below.",
+      }),
+    ).toBe("open");
+    expect(
+      classifyJudgeFinding({
+        severity: "major",
+        category: "content-integrity",
+        evidence:
           "The hero section invents a 24/7 emergency guarantee not present in the client intake.",
       }),
     ).toBe("hard");
+    expect(
+      classifyJudgeFinding({
+        severity: "critical",
+        category: "content-integrity",
+        evidence:
+          "The footer displays a wrong phone number that does not match the intake.",
+      }),
+    ).toBe("critical");
   });
 });
 
