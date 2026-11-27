@@ -1359,7 +1359,6 @@ jobs:
       - name: Build and direct-upload public preview
         id: deploy
         if: always() && (success() || steps.pack_fallback.outputs.active == 'true')
-        shell: bash
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           export PATH="$PATH:$GITHUB_WORKSPACE/node_modules/.bin"

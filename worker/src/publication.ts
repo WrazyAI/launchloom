@@ -250,7 +250,7 @@ export class PublicationStore {
         };
       const failed = this.storage.sql
         .exec(
-          "SELECT request_id FROM revision_requests WHERE status = 'failed' LIMIT 1",
+          "SELECT request_id FROM revision_requests WHERE status = 'failed' AND source != 'agent_follow_up' LIMIT 1",
         )
         .toArray()[0];
       if (failed)

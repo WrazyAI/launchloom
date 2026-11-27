@@ -75,7 +75,7 @@ describe("agent follow-up preview deliveries", () => {
           issueNumber: 9,
           profile: "full-preview",
           renderer: "creative",
-          verdict: "failed",
+          verdict: "unknown",
           selectedCandidateId: "candidate-b",
           candidates: [{ id: "candidate-b", score: 58, selected: true }],
           gates: [{ name: "technical", status: "failed", summary: "Contrast failed." }],

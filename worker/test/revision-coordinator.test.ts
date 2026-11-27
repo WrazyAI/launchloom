@@ -635,6 +635,8 @@ describe("agent follow-up apply", () => {
     evidence: [{ label: "Mobile check", source: "route-report" }],
     guardrails: ["Preserve verified facts."],
     brief: "Issue\nThe contact action falls below the fold",
+    baseDeploymentId: preview.deploymentId,
+    baseSha: preview.sha,
   };
 
   it("starts one revision from the pinned preview and rejects a moved base", async () => {
@@ -666,6 +668,13 @@ describe("agent follow-up apply", () => {
       suggestions: [suggestion],
     });
     const suggestionId = exchange.message.suggestions[0].id;
+    const storedSuggestion = (
+      await coordinator.readAgentThread("WrazyAI/apply-site")
+    ).messages
+      .flatMap((message) => message.suggestions)
+      .find((item) => item.id === suggestionId);
+    expect(storedSuggestion?.baseDeploymentId).toBe(preview.deploymentId);
+    expect(storedSuggestion?.baseSha).toBe(preview.sha);
 
     const accepted = await coordinator.enqueueAgentFollowUp({
       requestId: "agent-1",
