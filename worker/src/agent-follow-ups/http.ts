@@ -1,7 +1,11 @@
 import type {
   AgentRunEvidence,
+  AgentSuggestion,
   PreviewDelivery,
 } from "../../../src/lib/agent-follow-ups";
+import { buildRevisionBrief } from "./brief";
+import { classifyFollowUp } from "./classify";
+import { answerFollowUp } from "./answer";
 
 const PREVIEW_PATH = "/api/internal/agent-follow-ups/preview-deliveries";
 const EVIDENCE_PATH = "/api/internal/agent-follow-ups/run-evidence";
@@ -176,6 +180,7 @@ export async function agentFollowUpInternal(
 
 type AdminFollowUpEnv = {
   AGENT_FOLLOW_UPS_ENABLED?: string;
+  OPENCODE_GO_API_KEY?: string;
   GENERATION_LEDGER: {
     getByName(name: string): {
       getAttempt(id: string): Promise<{
@@ -186,7 +191,30 @@ type AdminFollowUpEnv = {
   };
   REVISION_COORDINATOR: {
     getByName(name: string): {
-      readAgentThread(repo: string): Promise<unknown>;
+      readAgentThread(repo: string): Promise<{
+        messages: Array<{
+          role: string;
+          text: string;
+          suggestions: AgentSuggestion[];
+        }>;
+        latestEvidence: AgentRunEvidence | null;
+        latestPreview: PreviewDelivery | null;
+        writable: boolean;
+      }>;
+      reserveAgentCommand(
+        repo: string,
+        requestId: string,
+      ): Promise<{ duplicate: boolean }>;
+      appendAgentExchange(input: {
+        repo: string;
+        attemptId: string;
+        adminText: string;
+        agentText: string;
+        intent: "question" | "improvement" | "mixed" | "unsupported";
+        suggestions: Array<
+          Omit<AgentSuggestion, "id" | "messageId" | "status" | "requestId">
+        >;
+      }): Promise<{ message: { id: string } }>;
     };
   };
 };
@@ -204,8 +232,11 @@ export async function agentFollowUpsAdmin(
   if (!match) return null;
   if (!principal?.role || !["admin", "owner"].includes(principal.role))
     return json({ error: { code: "forbidden", message: "Admin access required." } }, 403);
-  if (request.method !== "GET")
-    return json({ error: { code: "method_not_allowed", message: "Use GET." } }, 405);
+  if (request.method !== "GET" && request.method !== "POST")
+    return json(
+      { error: { code: "method_not_allowed", message: "Use GET or POST." } },
+      405,
+    );
   if (env.AGENT_FOLLOW_UPS_ENABLED !== "true")
     return json(
       { error: { code: "not_enabled", message: "Agent follow-ups are not enabled." } },
@@ -227,9 +258,120 @@ export async function agentFollowUpsAdmin(
       { error: { code: "unavailable", message: "This attempt has no client site." } },
       409,
     );
-  const thread = await env.REVISION_COORDINATOR.getByName(
+  const coordinator = env.REVISION_COORDINATOR.getByName(
     attempt.repository.toLowerCase(),
-  ).readAgentThread(attempt.repository);
-  return json({ thread });
+  );
+  if (request.method === "GET") {
+    const thread = await coordinator.readAgentThread(attempt.repository);
+    return json({ thread });
+  }
+  if (!env.OPENCODE_GO_API_KEY)
+    return json(
+      { error: { code: "unavailable", message: "The follow-up agent is unavailable." } },
+      503,
+    );
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return json({ error: { code: "invalid_input", message: "Invalid JSON." } }, 400);
+  }
+  const requestId = String(body.requestId || "");
+  const text = String(body.text || "").trim().slice(0, 2_000);
+  const mode = String(body.mode || "auto");
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u.test(requestId) ||
+    !text ||
+    !["auto", "question", "improvement"].includes(mode)
+  )
+    return json(
+      { error: { code: "invalid_input", message: "Invalid follow-up request." } },
+      400,
+    );
+  const reservation = await coordinator.reserveAgentCommand(
+    attempt.repository,
+    requestId,
+  );
+  if (reservation.duplicate) {
+    const thread = await coordinator.readAgentThread(attempt.repository);
+    return json({ thread });
+  }
+  const current = await coordinator.readAgentThread(attempt.repository);
+  if (
+    mode === "improvement" &&
+    String(body.baseDeploymentId || "") !==
+      String(current.latestPreview?.deploymentId || "")
+  )
+    return json(
+      {
+        error: {
+          code: "preview_base_moved",
+          message: "Open the latest preview before requesting this change.",
+        },
+      },
+      409,
+    );
+  const history = current.messages
+    .slice(-12)
+    .map((message) => `${message.role}: ${message.text}`)
+    .join("\n");
+  let intent: "question" | "improvement" | "mixed" | "unsupported" =
+    mode === "improvement" ? "improvement" : "question";
+  if (mode === "auto") {
+    try {
+      const classified = await classifyFollowUp({
+        apiKey: env.OPENCODE_GO_API_KEY,
+        text,
+        evidence: current.latestEvidence,
+        signal: AbortSignal.timeout(20_000),
+      });
+      intent = classified.intent;
+    } catch {
+      await coordinator.appendAgentExchange({
+        repo: attempt.repository,
+        attemptId,
+        adminText: text,
+        agentText: "Please choose Ask about this run or Request an improvement.",
+        intent: "unsupported",
+        suggestions: [],
+      });
+      return json({ ok: true, fallback: "choose_mode" });
+    }
+  }
+  let answer: string;
+  let rawSuggestions: Awaited<ReturnType<typeof answerFollowUp>>["suggestions"];
+  try {
+    const result = await answerFollowUp({
+      apiKey: env.OPENCODE_GO_API_KEY,
+      text,
+      intent,
+      evidence: current.latestEvidence,
+      history,
+      signal: AbortSignal.timeout(45_000),
+    });
+    answer = result.answer;
+    rawSuggestions = result.suggestions;
+  } catch {
+    answer = "The agent could not answer this request. Retry in a moment.";
+    rawSuggestions = [];
+  }
+  const preview = current.latestPreview;
+  const suggestions = rawSuggestions.map((suggestion) => ({
+    ...suggestion,
+    brief: buildRevisionBrief({
+      suggestion,
+      adminText: text,
+      preview,
+    }),
+  }));
+  await coordinator.appendAgentExchange({
+    repo: attempt.repository,
+    attemptId,
+    adminText: text,
+    agentText: answer,
+    intent,
+    suggestions,
+  });
+  const thread = await coordinator.readAgentThread(attempt.repository);
+  return json({ ok: true, thread });
 }
-

@@ -34,6 +34,8 @@ export async function opencodeGoCompletion({
   apiKey,
   system,
   user,
+  model = OPENCODE_GO_WORKER_MODEL,
+  outputFormat,
   maxOutputTokens,
   signal,
   sessionId = "launchloom-worker",
@@ -41,6 +43,10 @@ export async function opencodeGoCompletion({
   apiKey: string;
   system: string;
   user: string;
+  model?: string;
+  outputFormat?:
+    | { type: "json" }
+    | { type: "json-schema"; name: string; schema: Record<string, unknown> };
   maxOutputTokens: number;
   signal?: AbortSignal;
   sessionId?: string;
@@ -57,7 +63,7 @@ export async function opencodeGoCompletion({
       "User-Agent": "launchloom-worker/0.1",
     },
     body: JSON.stringify({
-      model: OPENCODE_GO_WORKER_MODEL,
+      model,
       input: [
         {
           role: "system",
@@ -71,6 +77,21 @@ export async function opencodeGoCompletion({
       max_output_tokens: maxOutputTokens,
       reasoning: { effort: "low" },
       store: false,
+      ...(outputFormat
+        ? {
+            text: {
+              format:
+                outputFormat.type === "json"
+                  ? { type: "json_object" }
+                  : {
+                      type: "json_schema",
+                      name: outputFormat.name,
+                      strict: true,
+                      schema: outputFormat.schema,
+                    },
+            },
+          }
+        : {}),
     }),
     signal,
   });
@@ -96,7 +117,7 @@ export async function opencodeGoCompletion({
 
   return {
     text,
-    model: String(payload.model || OPENCODE_GO_WORKER_MODEL),
+    model: String(payload.model || model),
     usage: payload.usage || null,
   };
 }
