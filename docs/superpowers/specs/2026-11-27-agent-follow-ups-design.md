@@ -27,7 +27,7 @@ This design connects the existing activity evidence to the existing revision mac
 - Keep the previous preview available when a revision fails.
 - Keep the admin in one site-level conversation across runs.
 - Allow several related edits in one suggestion and one revision.
-- Keep OpenRouter classification isolated from the generation path.
+- Keep classification isolated from the generation path and on the same inference provider.
 
 ## Non-goals
 
@@ -64,16 +64,16 @@ These are settled:
 7. An unconfirmed probable cause still offers **Fix in Agent runs**. Verification decides whether it worked.
 8. **Needs review** is reserved for unsupported edits or a missing or moved preview base.
 9. DeepSeek through OpenCode Go produces the answer and suggestions.
-10. OpenRouter classifies the request and extracts proposed edits, in one isolated server-side module, subject to the policy exception in this document.
-11. The classifier default is `openai/gpt-6-luna`, because `openai/gpt-6-luna-decisions` is not in the public model catalog. It supports structured output and tools. The model ID is configurable.
+10. The classifier uses OpenCode Go with `gpt-6-luna`, in one isolated server-side module. There is no OpenRouter exception.
+11. `openai/gpt-6-luna-decisions` is not in the public model catalog. The Go classifier model is configurable and defaults to `gpt-6-luna`. DeepSeek V4.1 Flash remains the answering and suggestion model.
 12. The owning agent receives a complete brief: issue, probable cause, suggested solution, edits, checks, evidence, guardrails and base preview.
 
 ## Verified current state
 
 - Agent runs already receives sanitized model output, actions, stage changes, gate activity and repair activity through authenticated cursor polling. Trace retention is 30 days.
-- The Worker uses OpenCode Go for all Worker AI features. The previous OpenRouter service-suggestion and client-assistant calls were migrated to OpenCode Go, and `OPENROUTER_API_KEY` is no longer configured for the Worker. Using OpenRouter for the classifier would deliberately reverse that policy.
-- The reviewed OpenCode Go profile supports text, JSON and JSON schema output. It does not currently expose native tool calling.
-- `deploy-platform.yml` already configures `OPENCODE_GO_API_KEY` and `OPENROUTER_API_KEY` for the API Worker, so the classifier and answering agent can run server-side without a new dispatch workflow.
+- The Worker uses OpenCode Go for all Worker AI features. The previous OpenRouter calls were migrated to OpenCode Go, and `OPENROUTER_API_KEY` is no longer configured for the Worker.
+- The reviewed OpenCode Go profile supports text, JSON and JSON schema output. It does not currently expose native tool calling. The Worker helper currently pins `deepseek-v4.1-flash`, so the plan must extend it to accept the classifier model.
+- `deploy-platform.yml` already configures `OPENCODE_GO_API_KEY` for the API Worker, so the classifier and answering agent can run server-side without a new dispatch workflow or credential.
 - `RevisionCoordinator` already queues, claims, retries and recovers revision requests. It deduplicates by request ID and fingerprint, enforces one active request, and interlocks with publication.
 - The developer revision workflow currently starts from the current review PR head and may update a branch alias and send email. It does not yet provide an exact-base, preview-only mode.
 - The run summary needed for grounding is not currently a single stored artifact. Attempt detail holds delivery, execution, stages and events, while candidate scores, gate findings, route checks and asset status live in the private pipeline report and activity trace. The design adds a bounded summary at completion rather than reconstructing it from prose.
@@ -158,7 +158,7 @@ The classifier does not dispatch, does not choose a preview and does not call `s
 
 The classifier returns `mixed` when the message asks a question and proposes a change. The thread answers the question first, then shows any suggestion cards. Nothing is dispatched automatically. If the classifier is unavailable, low confidence or `unsupported`, the admin chooses **Ask** or **Improve** and the request proceeds without classification.
 
-The production policy currently rejects OpenRouter in Worker AI. Using it for the classifier is a deliberate, single-module exception, not an existing pattern. The plan needs the credential, deployment configuration, a recorded exception and a test that rejects OpenRouter outside the classifier module. If the owner declines the exception, the classifier uses OpenCode Go with the same contract.
+The classifier runs on OpenCode Go with `gpt-6-luna`. It reuses the Worker's existing OpenCode Go credential and the reviewed Responses profile. The model ID is configuration, not client input. No OpenRouter credential or exception is introduced.
 
 ## Answering agent
 
@@ -271,7 +271,7 @@ Implementation should sit behind an admin capability flag. The flag stays off in
 - a synthetic site completes one question and one suggested-fix revision
 - the previous preview remains available after a failed revision
 - no email or publication is emitted
-- OpenRouter usage is limited to the approved classifier module, with a recorded policy exception and a test that rejects all other imports. The existing Worker AI features stay on OpenCode Go.
+- The classifier and answering agent both use OpenCode Go. No OpenRouter credential or route is added.
 - every writable preview has an immutable deployment URL and matches the preview on screen
 - the admin-only authorization and base pinning have browser and Worker coverage
 
@@ -288,7 +288,7 @@ Implementation should sit behind an admin capability flag. The flag stays off in
 
 ## Open decisions for review
 
-1. OpenRouter is currently disabled in Worker AI. The classifier requires a deliberate single-module exception, credentials, deployment configuration and a recorded policy reversal. If the owner does not want that, the classifier uses OpenCode Go with the same contract.
+1. The classifier uses OpenCode Go with `gpt-6-luna`. OpenRouter stays disabled in Worker AI. No policy exception is needed.
 2. The proposal requires an immutable deployment URL. Existing delivered sites without one stay read-only until a new run records it.
 3. The revision brief is stored but not shown by default. A **View brief** disclosure can be added without changing the card.
-4. The exact classifier model is configurable. The public default is `openai/gpt-6-luna`.
+4. The classifier model is configurable and defaults to `gpt-6-luna` on OpenCode Go.
