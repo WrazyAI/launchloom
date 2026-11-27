@@ -124,34 +124,23 @@ export function classifyJudgeFinding(finding) {
   const isFactualIntegrityDefect = (detail) => {
     const text = String(detail || "").trim();
     if (!text) return true;
-    return /fabricat|invent|unverified|not present|missing from|not in manifest|absent from|wrong business|placeholder|lorem|ipsum|sealed|raw token|broken image|missing image|image.{0,32}(?:fail|not load|didn't load|unloaded|broken|missing)|(?:fail|not load|didn't load|unloaded|broken|missing).{0,32}image|\b404\b|trail(?:s|ed|ing)?\s+off|mid-sentence|incomplete\s+sentence|credential|price|pricing|review|guarantee|licen[cs]e|(?:wrong|fake|mismatch|missing|absent|incorrect).{0,32}(?:phone|email|address|contact)|(?:phone|email|address|contact).{0,32}(?:wrong|fake|mismatch|missing|absent|incorrect|not in|not present)/iu.test(
+    return /fabricat|invent|unverified|hallucinat|unsupported\s+claim|false\s+claim|(?:not\s+present|missing|absent|not\s+found)\s+(?:in|from)\s+(?:the\s+)?(?:client|intake|manifest|brief|source|verified)|not\s+in\s+manifest|wrong\s+business|placeholder|lorem|ipsum|sealed|raw\s+token|broken\s+image|missing\s+image|image.{0,32}(?:fail|not\s+load|didn't\s+load|unloaded|broken|missing)|(?:fail|not\s+load|didn't\s+load|unloaded|broken|missing).{0,32}image|\b404\b|trail(?:s|ed|ing)?\s+off|mid-sentence|incomplete\s+sentence|credential|price|pricing|guarantee|licen[cs]e|(?:customer|client|google|star|5-star|five-star|fake|fabricat\w*|invent\w*|unverified)\s+reviews?\b|\breviews?\s+(?:not\s+in|not\s+present|fabricat|invent|unverified|fake)|(?:wrong|fake|mismatch|missing|absent|incorrect).{0,32}(?:phone|email|address|contact)|(?:phone|email|address|contact).{0,32}(?:wrong|fake|mismatch|missing|absent|incorrect|not\s+in|not\s+present)/iu.test(
       text,
     );
   };
+  const findingEvidence = () =>
+    [finding?.evidence, finding?.message].filter(Boolean).join(" ").trim() ||
+    String(finding?.recommendation || "").trim();
   if (severity === "critical") {
     if (category === "accessibility") return "critical";
     if (category === "content-integrity") {
-      const evidence = [
-        finding?.evidence,
-        finding?.message,
-        finding?.recommendation,
-      ]
-        .filter(Boolean)
-        .join(" ");
-      return isFactualIntegrityDefect(evidence) ? "critical" : "open";
+      return isFactualIntegrityDefect(findingEvidence()) ? "critical" : "open";
     }
     return "open";
   }
   if (severity === "major" && category === "accessibility") return "hard";
   if (severity === "major" && category === "content-integrity") {
-    const evidence = [
-      finding?.evidence,
-      finding?.message,
-      finding?.recommendation,
-    ]
-      .filter(Boolean)
-      .join(" ");
-    return isFactualIntegrityDefect(evidence) ? "hard" : "open";
+    return isFactualIntegrityDefect(findingEvidence()) ? "hard" : "open";
   }
   return "open";
 }
