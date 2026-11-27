@@ -217,12 +217,12 @@ export function AgentFollowUpThread({
                   onApply={() => void apply(suggestion)}
                   onOpenLatest={() => {
                     if (!thread.latestPreview) return;
-                    const opened = window.open(
+                    window.open(
                       thread.latestPreview.previewUrl,
                       "_blank",
                       "noopener,noreferrer",
                     );
-                    if (opened) setOpenedLatest(true);
+                    setOpenedLatest(true);
                   }}
                 />
               ))}

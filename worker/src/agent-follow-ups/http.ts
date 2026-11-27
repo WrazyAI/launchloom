@@ -81,8 +81,7 @@ export function parsePreviewDelivery(
     preview.protocol !== "https:" ||
     preview.search ||
     preview.hash ||
-    !preview.hostname.endsWith(".pages.dev") ||
-    !preview.hostname.startsWith(`${deploymentId}.`)
+    preview.hostname !== `${deploymentId}.${project}.pages.dev`
   )
     return null;
   return {
@@ -131,14 +130,78 @@ export function parseRunEvidence(value: unknown): AgentRunEvidence | null {
       typeof body.selectedCandidateId === "string"
         ? body.selectedCandidateId.slice(0, 80)
         : null,
-    candidates: body.candidates.slice(0, 12) as AgentRunEvidence["candidates"],
-    gates: body.gates.slice(0, 20) as AgentRunEvidence["gates"],
-    failures: body.failures.slice(0, 8) as AgentRunEvidence["failures"],
-    routeChecks: body.routeChecks.slice(0, 20) as AgentRunEvidence["routeChecks"],
+    candidates: body.candidates
+      .slice(0, 12)
+      .flatMap((item) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+        const row = item as Record<string, unknown>;
+        if (typeof row.id !== "string") return [];
+        return [{
+          id: row.id.slice(0, 80),
+          score: Number.isFinite(Number(row.score)) ? Number(row.score) : null,
+          selected: row.selected === true,
+        }];
+      }),
+    gates: body.gates
+      .slice(0, 20)
+      .flatMap((item) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+        const row = item as Record<string, unknown>;
+        if (typeof row.name !== "string") return [];
+        return [{
+          name: row.name.slice(0, 80),
+          status:
+            typeof row.status === "string" ? row.status.slice(0, 40) : "unknown",
+          summary:
+            typeof row.summary === "string" ? row.summary.slice(0, 240) : null,
+        }];
+      }),
+    failures: body.failures
+      .slice(0, 8)
+      .flatMap((item) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+        const row = item as Record<string, unknown>;
+        if (typeof row.stage !== "string") return [];
+        return [{
+          stage: row.stage.slice(0, 80),
+          code: typeof row.code === "string" ? row.code.slice(0, 80) : null,
+          summary:
+            typeof row.summary === "string" ? row.summary.slice(0, 240) : null,
+        }];
+      }),
+    routeChecks: body.routeChecks
+      .slice(0, 20)
+      .flatMap((item) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+        const row = item as Record<string, unknown>;
+        if (typeof row.route !== "string") return [];
+        return [{
+          route: row.route.slice(0, 160),
+          viewport:
+            typeof row.viewport === "string" ? row.viewport.slice(0, 40) : "unknown",
+          status:
+            typeof row.status === "string" ? row.status.slice(0, 40) : "unknown",
+          issues: Array.isArray(row.issues)
+            ? row.issues
+                .slice(0, 8)
+                .flatMap((issue) =>
+                  typeof issue === "string" ? [issue.slice(0, 160)] : [],
+                )
+            : [],
+        }];
+      }),
     assets:
-      body.assets === null
-        ? null
-        : (body.assets as AgentRunEvidence["assets"]),
+      body.assets && typeof body.assets === "object" && !Array.isArray(body.assets)
+        ? {
+            requested: Math.max(0, Number((body.assets as Record<string, unknown>).requested) || 0),
+            placed: Math.max(0, Number((body.assets as Record<string, unknown>).placed) || 0),
+            skipped: Math.max(0, Number((body.assets as Record<string, unknown>).skipped) || 0),
+            providerFailure:
+              typeof (body.assets as Record<string, unknown>).providerFailure === "string"
+                ? String((body.assets as Record<string, unknown>).providerFailure).slice(0, 240)
+                : null,
+          }
+        : null,
     preview,
     recordedAt: Number(body.recordedAt),
   };
@@ -159,6 +222,9 @@ export async function agentFollowUpInternal(
   if (!sameSecret(supplied, env.REVISION_COORDINATOR_SECRET))
     return json({ error: "Unauthorized" }, 401);
   let value: unknown;
+  const length = Number(request.headers.get("Content-Length") || 0);
+  if (Number.isFinite(length) && length > 200_000)
+    return json({ error: "Payload too large." }, 413);
   try {
     value = await request.json();
   } catch {
@@ -286,6 +352,25 @@ async function applyAgentSuggestion(
     attempt.repository.toLowerCase(),
   );
   const thread = await coordinator.readAgentThread(attempt.repository);
+  const ownerId = thread.latestPreview?.attemptId;
+  if (ownerId && !ownerId.startsWith("agent:") && ownerId !== attemptId) {
+    const owner = await env.GENERATION_LEDGER.getByName(
+      "launchloom-generations",
+    ).getAttempt(ownerId);
+    if (
+      !owner ||
+      !["preview_ready", "published"].includes(String(owner.deliveryStatus))
+    )
+      return json(
+        {
+          error: {
+            code: "preview_not_writable",
+            message: "The pinned preview is not a verified delivery.",
+          },
+        },
+        409,
+      );
+  }
   const suggestion = thread.messages
     .flatMap((message) => message.suggestions)
     .find((item) => item.id === suggestionId);
@@ -300,6 +385,16 @@ async function applyAgentSuggestion(
         error: {
           code: "preview_base_missing",
           message: "This suggestion has no pinned preview. Ask for a new suggestion.",
+        },
+      },
+      409,
+    );
+  if (baseDeploymentId !== suggestion.baseDeploymentId)
+    return json(
+      {
+        error: {
+          code: "preview_base_moved",
+          message: "The preview moved. Open the latest preview before applying this fix.",
         },
       },
       409,
@@ -393,7 +488,7 @@ export async function agentFollowUpsAdmin(
       attempt.repository,
       attempt.attemptId,
     );
-    if (selectedEvidence) thread.latestEvidence = selectedEvidence;
+    thread.latestEvidence = selectedEvidence;
     if (
       !["preview_ready", "published"].includes(String(attempt.deliveryStatus)) ||
       thread.latestPreview?.attemptId !== attempt.attemptId
@@ -437,7 +532,7 @@ export async function agentFollowUpsAdmin(
     attempt.repository,
     attemptId,
   );
-  if (selectedEvidence) current.latestEvidence = selectedEvidence;
+  current.latestEvidence = selectedEvidence;
   if (
     mode === "improvement" &&
     String(body.baseDeploymentId || "") !==

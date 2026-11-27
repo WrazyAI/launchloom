@@ -994,7 +994,11 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         sha = excluded.sha,
         deployment_id = excluded.deployment_id,
         preview_url = excluded.preview_url,
-        created_at = excluded.created_at`,
+        created_at = CASE
+          WHEN preview_deliveries.preview_url = excluded.preview_url
+          THEN preview_deliveries.created_at
+          ELSE excluded.created_at
+        END`,
       input.repository,
       input.attemptId,
       input.project,
@@ -1743,6 +1747,12 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         code: "revision_in_progress",
         error: "A revision is already running for this site.",
       };
+    if (this.publications.held())
+      return {
+        ok: false,
+        code: "revision_in_progress",
+        error: "A publication is already in progress for this site.",
+      };
     const suggestion = this.ctx.storage.sql
       .exec<{ payload_json: string; status: string }>(
         "SELECT payload_json, status FROM agent_suggestions WHERE suggestion_id = ? AND repo = ? LIMIT 1",
@@ -1863,7 +1873,11 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       )
       .toArray()[0];
     const publication = this.publications.held();
-    const context=publication||this.publications.feedbackContext(input.pr,input.reviewedSha);
+    const context =
+      input.source === "agent_follow_up"
+        ? null
+        : publication ||
+          this.publications.feedbackContext(input.pr, input.reviewedSha);
     if (active && queued && !context)
       return {
         ok: false,
@@ -1980,20 +1994,40 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     const row = this.row(requestId);
     if (!row) throw new Error("Revision request was not found.");
     if (row.status === "failed") throw new Error("Revision queue is halted.");
+    if (row.source === "agent_follow_up") {
+      if (!result)
+        throw new Error("An agent revision requires a preview receipt.");
+      if (row.status === "completed")
+        return { ok: true, promoted: null };
+      if (
+        result.preview.repository !== row.repo ||
+        result.preview.pr !== row.pr
+      )
+        throw new Error("Revision receipt does not match the claimed site.");
+    }
     if (result) {
       if (row.source !== "agent_follow_up")
         throw new Error("Only an agent follow-up can record a preview result.");
       if (row.base_sha && row.base_sha !== result.baseSha)
         throw new Error("Revision result does not match the pinned base.");
       await this.recordPreviewDelivery(result.preview);
-      const evidence = await this.latestAgentRunEvidence(row.repo);
-      if (evidence) {
-        await this.recordAgentRunEvidence({
-          ...evidence,
-          preview: result.preview,
-          recordedAt: Date.now(),
-        });
-      }
+      await this.recordAgentRunEvidence({
+        attemptId: `agent:${requestId}`,
+        repository: row.repo,
+        siteId: row.site_id,
+        issueNumber: null,
+        profile: "revision",
+        renderer: null,
+        verdict: "unknown",
+        selectedCandidateId: null,
+        candidates: [],
+        gates: [],
+        failures: [],
+        routeChecks: [],
+        assets: null,
+        preview: result.preview,
+        recordedAt: Date.now(),
+      });
       this.ctx.storage.sql.exec(
         "UPDATE agent_suggestions SET status = 'delivered' WHERE request_id = ?",
         requestId,
