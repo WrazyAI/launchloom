@@ -416,4 +416,42 @@ describe("visual gate report classification", () => {
         .decision,
     ).toBe("reject");
   });
+
+  it("treats a block verdict with only open findings as warned while rejecting an unexplained empty block", () => {
+    const openBlock = classifyVisualGateReport(
+      report({
+        audit: {
+          verdict: "block",
+          findings: [
+            {
+              severity: "critical",
+              category: "conversion",
+              viewport: "mobile",
+              evidence: "CTA partially overlapped by proof card",
+            },
+          ],
+        },
+        blockers: [
+          {
+            severity: "critical",
+            category: "conversion",
+            viewport: "mobile",
+            evidence: "CTA partially overlapped by proof card",
+          },
+        ],
+      }),
+    );
+    expect(openBlock.decision).toBe("warned");
+    expect(openBlock.hard).toEqual([]);
+    expect(openBlock.warnings.length).toBeGreaterThan(0);
+
+    const emptyBlock = classifyVisualGateReport(
+      report({
+        audit: { verdict: "block", findings: [] },
+        blockers: [],
+      }),
+    );
+    expect(emptyBlock.decision).toBe("reject");
+    expect(emptyBlock.hard).toEqual(["blocked verdict"]);
+  });
 });

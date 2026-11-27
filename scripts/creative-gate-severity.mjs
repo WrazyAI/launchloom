@@ -386,7 +386,11 @@ export function classifyVisualGateReport(report) {
     return { decision: "reject", hard, warnings, reasons: hard };
   if (verdict === "pass" && warnings.length === 0)
     return { decision: "clean", hard: [], warnings: [], reasons: [] };
-  if (verdict === "pass" || verdict === "revise")
+  if (
+    verdict === "pass" ||
+    verdict === "revise" ||
+    (verdict === "block" && warnings.length > 0)
+  )
     return { decision: "warned", hard: [], warnings, reasons: [] };
   return {
     decision: "reject",
