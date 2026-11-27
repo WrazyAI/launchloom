@@ -79,12 +79,39 @@ jobs:
         if: steps.claim.outputs.run == 'true'
         working-directory: ${{ runner.temp }}/client
         run: npm ci
+      - name: Refine authored creative source when required
+        id: creative_revision
+        if: steps.claim.outputs.run == 'true'
+        working-directory: ${{ runner.temp }}/client
+        run: |
+          RESULT=$(node "$GITHUB_WORKSPACE/scripts/prepare-creative-revision-candidate.mjs" --client "$PWD" --out "$RUNNER_TEMP/creative-revision-candidates")
+          echo "$RESULT"
+          CREATIVE=$(printf '%s' "$RESULT" | jq -r '.creative // false')
+          REQUIRED=$(printf '%s' "$RESULT" | jq -r '.repairRequired // false')
+          echo "repair_required=$REQUIRED" >> "$GITHUB_OUTPUT"
+          if [ "$CREATIVE" = true ] && [ "$REQUIRED" = true ]; then
+            SESSION_ARGS=()
+            if [ -f ".launchloom/reasoning-preflight.json" ]; then
+              SESSION_ARGS=(--session ".launchloom/reasoning-preflight.json")
+            fi
+            node "$GITHUB_WORKSPACE/scripts/run-rendered-creative-repair.mjs" \
+              --site-dir "$PWD" \
+              --candidates "$RUNNER_TEMP/creative-revision-candidates" \
+              --out "$RUNNER_TEMP/human-revision" \
+              --mode preview \
+              --max-cycles 2 \
+              --require-diversity false \
+              --feedback-file "$RUNNER_TEMP/agent-feedback.txt" \
+              --visual-gate-script "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" \
+              "${SESSION_ARGS[@]}"
+            jq -e '.status == "passed" and .visualGatePass == true and .humanRevisionPass == true and (.selectedCandidateId != null)' "$RUNNER_TEMP/human-revision/summary.json" >/dev/null
+          fi
       - name: Build and verify the revision
         if: steps.claim.outputs.run == 'true'
         working-directory: ${{ runner.temp }}/client
         run: |
           node "$GITHUB_WORKSPACE/scripts/sync-revision-template.mjs" --client "$PWD" --guidelines-written "$RUNNER_TEMP/guidelines-written.json"
-          node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" create --client "$PWD" --base "${{ steps.base.outputs.sha }}" --out "$RUNNER_TEMP/revision-scope.json" --guidelines-written "$RUNNER_TEMP/guidelines-written.json" --repair-required false
+          node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" create --client "$PWD" --base "${{ steps.base.outputs.sha }}" --out "$RUNNER_TEMP/revision-scope.json" --guidelines-written "$RUNNER_TEMP/guidelines-written.json" --repair-required "${{ steps.creative_revision.outputs.repair_required || 'false' }}"
           node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$PWD" --manifest "$RUNNER_TEMP/revision-scope.json" --stage
           PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
           node "$GITHUB_WORKSPACE/scripts/verify-revision.mjs" --config src/site.config.json --dist dist
