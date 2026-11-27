@@ -639,6 +639,7 @@ export async function verifyApprovedRoutes({
           const disclosures = page.locator("main details");
           for (const detail of await disclosures.all()) {
             const summary = detail.locator("summary").first();
+            if (!(await summary.isVisible())) continue;
             await detail.evaluate((node) => (node.open = false));
             await summary.focus();
             await page.keyboard.press("Enter");

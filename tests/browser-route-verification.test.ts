@@ -591,3 +591,34 @@ it("blocks a missing required contact form on a service route", async () => {
   expect(report.status).toBe("fail");
   expect(report.failures.join(" ")).toContain("conversion");
 });
+
+it("skips CSS-hidden responsive details menus when verifying keyboard disclosure on desktop", async () => {
+  const srv = http.createServer((req, res) => {
+    const route = new URL(req.url || "/", "http://127.0.0.1").pathname;
+    if (route !== "/" && route !== "/services/drain-cleaning/") {
+      res.writeHead(404, { "content-type": "text/html; charset=utf-8" });
+      res.end("<!doctype html><main><h1>Not found</h1></main>");
+      return;
+    }
+    const body = html(route).replace(
+      "<main>",
+      `<style>@media (min-width: 900px) { .mobile-only-nav { display: none; } }</style><main><details class="mobile-only-nav"><summary>Menu</summary><a href="/">Home</a></details>`,
+    );
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+    res.end(body);
+  });
+  await new Promise<void>((resolve) => srv.listen(0, "127.0.0.1", resolve));
+  owned.push(srv);
+  const { port } = srv.address() as any;
+  const report: any = await verifyApprovedRoutes({
+    config,
+    origin: `http://127.0.0.1:${port}`,
+    formMode: "mocked",
+    viewports: [
+      { name: "desktop", width: 1440, height: 900 },
+      { name: "mobile", width: 390, height: 844 },
+    ],
+    timeout: 1500,
+  });
+  expect(report.status, JSON.stringify(report.failures)).toBe("pass");
+});
