@@ -42,6 +42,11 @@ export interface RevisionRequestInput {
   feedback: string;
   structure?: string;
   creativeRepairSessionId?: string;
+  source?: "feedback" | "agent_follow_up";
+  brief?: string;
+  baseSha?: string;
+  baseDeploymentId?: string;
+  suggestionId?: string;
 }
 
 export const MAX_FEEDBACK_STRUCTURE_LENGTH = 6_000;
@@ -71,6 +76,10 @@ type RevisionRow = {
   publication_id: string | null;
   base_sha: string | null;
   reviewed_sha: string | null;
+  source: "feedback" | "agent_follow_up";
+  brief: string | null;
+  base_deployment_id: string | null;
+  suggestion_id: string | null;
 };
 
 type FailureNotice = {
@@ -80,6 +89,15 @@ type FailureNotice = {
   siteUrl?: string;
   runUrl?: string;
   nextAttemptAt: number;
+};
+
+export type AgentFollowUpRequest = {
+  requestId: string;
+  repo: string;
+  baseSha: string;
+  baseDeploymentId: string;
+  brief: string;
+  suggestionId: string;
 };
 
 export type EnqueueResult =
@@ -94,11 +112,26 @@ export type EnqueueResult =
         | "revision_queue_full"
         | "creative_override_started"
         | "revision_request_mismatch"
-        | "revision_request_failed";
+        | "revision_request_failed"
+        | "preview_base_moved"
+        | "suggestion_missing"
+        | "suggestion_already_started";
       error: string;
     };
 
-export type ClaimResult = { run: boolean; status: QueueStatus | "missing" };
+export type ClaimResult = {
+  run: boolean;
+  status: QueueStatus | "missing";
+  request?: {
+    source: "feedback" | "agent_follow_up";
+    brief: string | null;
+    baseSha: string | null;
+    baseDeploymentId: string | null;
+    suggestionId: string | null;
+    repo: string;
+    pr: number | null;
+  };
+};
 
 export type CompletionResult = {
   ok: true;
@@ -438,6 +471,12 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           created_at INTEGER NOT NULL
         );
         CREATE INDEX IF NOT EXISTS agent_suggestions_message ON agent_suggestions(message_id);
+        CREATE TABLE IF NOT EXISTS agent_commands (
+          repo TEXT NOT NULL,
+          request_id TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          PRIMARY KEY (repo, request_id)
+        );
         CREATE TABLE IF NOT EXISTS ai_chat_limits (
           visitor_key TEXT PRIMARY KEY,
           window_started_at INTEGER NOT NULL,
@@ -514,6 +553,20 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       for (const name of ["publication_id", "base_sha", "reviewed_sha"]) {
         const columns = this.ctx.storage.sql.exec<{name:string}>("PRAGMA table_info(revision_requests)").toArray();
         if (!columns.some(column=>column.name===name))this.ctx.storage.sql.exec(`ALTER TABLE revision_requests ADD COLUMN ${name} TEXT`);
+      }
+      for (const [name, type] of [
+        ["source", "TEXT NOT NULL DEFAULT 'feedback'"],
+        ["brief", "TEXT"],
+        ["base_deployment_id", "TEXT"],
+        ["suggestion_id", "TEXT"],
+      ] as const) {
+        const columns = this.ctx.storage.sql
+          .exec<{ name: string }>("PRAGMA table_info(revision_requests)")
+          .toArray();
+        if (!columns.some((column) => column.name === name))
+          this.ctx.storage.sql.exec(
+            `ALTER TABLE revision_requests ADD COLUMN ${name} ${type}`,
+          );
       }
       await this.migrateLegacyFailureNotice();
     });
@@ -1012,6 +1065,27 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     }
   }
 
+  async reserveAgentCommand(
+    repo: string,
+    requestId: string,
+  ): Promise<{ duplicate: boolean }> {
+    const existing = this.ctx.storage.sql
+      .exec<{ request_id: string }>(
+        "SELECT request_id FROM agent_commands WHERE repo = ? AND request_id = ?",
+        repo,
+        requestId,
+      )
+      .toArray()[0];
+    if (existing) return { duplicate: true };
+    this.ctx.storage.sql.exec(
+      "INSERT INTO agent_commands (repo, request_id, created_at) VALUES (?, ?, ?)",
+      repo,
+      requestId,
+      Date.now(),
+    );
+    return { duplicate: false };
+  }
+
   async appendAgentExchange(
     input: AgentExchangeInput,
   ): Promise<{ message: AgentMessage }> {
@@ -1460,7 +1534,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       row.request_id,
     );
     let pending = this.row(row.request_id)!;
-    if (!pending.comment_id) {
+    if (pending.source !== "agent_follow_up" && !pending.comment_id) {
       const commentId = await this.createFeedbackComment(pending);
       this.ctx.storage.sql.exec(
         "UPDATE revision_requests SET comment_id = ? WHERE request_id = ?",
@@ -1473,12 +1547,15 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
   }
 
   private async dispatchRow(row: RevisionRow) {
-    if (!row.comment_id) throw new Error("Feedback comment was not persisted.");
+    const agentFollowUp = row.source === "agent_follow_up";
+    if (!agentFollowUp && !row.comment_id)
+      throw new Error("Feedback comment was not persisted.");
     await github(this.env, "/repos/WrazyAI/launchloom/dispatches", {
       method: "POST",
       body: JSON.stringify({
-        event_type:
-          row.stage === "developer" && !row.base_sha
+        event_type: agentFollowUp
+          ? "process-agent-follow-up"
+          : row.stage === "developer" && !row.base_sha
             ? "process-developer-feedback"
             : "process-client-feedback",
         client_payload: {
@@ -1488,6 +1565,15 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           pr: row.pr,
           feedbackIssue: row.feedback_issue,
           reviewedPage: row.reviewed_page,
+          ...(agentFollowUp
+            ? {
+                agentFollowUp: true,
+                brief: row.brief,
+                baseSha: row.base_sha,
+                baseDeploymentId: row.base_deployment_id,
+                suggestionId: row.suggestion_id,
+              }
+            : {}),
           ...(row.base_sha
             ? {
                 baseSha: row.base_sha,
@@ -1560,6 +1646,73 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         nextAttemptAt: Date.now() + 5 * 60_000,
       });
     await this.scheduleCoordinatorAlarm();
+  }
+
+  async enqueueAgentFollowUp(
+    input: AgentFollowUpRequest,
+  ): Promise<EnqueueResult> {
+    const existing = this.row(input.requestId);
+    if (existing)
+      return {
+        ok: true,
+        requestId: input.requestId,
+        queueStatus: "duplicate",
+      };
+    const preview = await this.latestPreviewDelivery(input.repo);
+    if (
+      !preview ||
+      preview.sha !== input.baseSha ||
+      preview.deploymentId !== input.baseDeploymentId
+    )
+      return {
+        ok: false,
+        code: "preview_base_moved",
+        error: "The preview moved. Open the latest preview before applying this fix.",
+      };
+    const suggestion = this.ctx.storage.sql
+      .exec<{ payload_json: string; status: string }>(
+        "SELECT payload_json, status FROM agent_suggestions WHERE suggestion_id = ? AND repo = ? LIMIT 1",
+        input.suggestionId,
+        input.repo,
+      )
+      .toArray()[0];
+    if (!suggestion)
+      return {
+        ok: false,
+        code: "suggestion_missing",
+        error: "This suggestion is no longer available.",
+      };
+    if (suggestion.status !== "suggested")
+      return {
+        ok: false,
+        code: "suggestion_already_started",
+        error: "This suggestion already has a revision.",
+      };
+    const result = await this.enqueue({
+      requestId: input.requestId,
+      fingerprint: `agent:${input.suggestionId}:${input.baseSha}`,
+      stage: "developer",
+      repo: input.repo,
+      siteId: input.repo.split("/").at(-1) || "site",
+      clientEmail: "",
+      reviewedPage: preview.previewUrl,
+      reviewedSha: input.baseSha,
+      category: "Agent follow-up",
+      feedback: input.brief,
+      source: "agent_follow_up",
+      brief: input.brief,
+      baseSha: input.baseSha,
+      baseDeploymentId: input.baseDeploymentId,
+      suggestionId: input.suggestionId,
+    });
+    if (result.ok && result.queueStatus !== "duplicate") {
+      this.ctx.storage.sql.exec(
+        "UPDATE agent_suggestions SET status = 'started', request_id = ? WHERE suggestion_id = ?",
+        input.requestId,
+        input.suggestionId,
+      );
+    }
+    return result;
   }
 
   async enqueue(input: RevisionRequestInput): Promise<EnqueueResult> {
@@ -1648,8 +1801,8 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       `INSERT INTO revision_requests (
         request_id, fingerprint, stage, repo, pr, feedback_issue, site_id,
         client_email, reviewed_page, category, feedback, structure, status,
-        created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        created_at, source, brief, base_deployment_id, suggestion_id, base_sha
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       input.requestId,
       input.fingerprint,
       input.stage,
@@ -1664,13 +1817,18 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       input.structure || null,
       status,
       now,
+      input.source || "feedback",
+      input.brief || null,
+      input.baseDeploymentId || null,
+      input.suggestionId || null,
+      input.baseSha || null,
     );
     if (context)this.ctx.storage.sql.exec("UPDATE revision_requests SET publication_id = ?, reviewed_sha = ?, base_sha = ? WHERE request_id = ?",context.id,input.reviewedSha||(input.stage==='developer'?context.head_sha:null),context.state==='published'?context.approved_sha:null,input.requestId);
     else if(input.reviewedSha)this.ctx.storage.sql.exec('UPDATE revision_requests SET reviewed_sha = ? WHERE request_id = ?',input.reviewedSha,input.requestId);
     const row = this.row(input.requestId)!;
     try {
       if (status === "dispatching") await this.prepareAndDispatchRow(row);
-      else {
+      else if (row.source !== "agent_follow_up") {
         const commentId = await this.createFeedbackComment(row);
         this.ctx.storage.sql.exec(
           "UPDATE revision_requests SET comment_id = ? WHERE request_id = ?",
@@ -1720,13 +1878,47 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     console.log(
       JSON.stringify({ event: "revision.claimed", repo: row.repo, requestId }),
     );
-    return { run: true, status: "running" };
+    return {
+      run: true,
+      status: "running",
+      request: {
+        source: row.source,
+        brief: row.brief,
+        baseSha: row.base_sha,
+        baseDeploymentId: row.base_deployment_id,
+        suggestionId: row.suggestion_id,
+        repo: row.repo,
+        pr: row.pr,
+      },
+    };
   }
 
-  async complete(requestId: string): Promise<CompletionResult> {
+  async complete(
+    requestId: string,
+    result?: { baseSha: string; preview: PreviewDelivery },
+  ): Promise<CompletionResult> {
     const row = this.row(requestId);
     if (!row) throw new Error("Revision request was not found.");
     if (row.status === "failed") throw new Error("Revision queue is halted.");
+    if (result) {
+      if (row.source !== "agent_follow_up")
+        throw new Error("Only an agent follow-up can record a preview result.");
+      if (row.base_sha && row.base_sha !== result.baseSha)
+        throw new Error("Revision result does not match the pinned base.");
+      await this.recordPreviewDelivery(result.preview);
+      const evidence = await this.latestAgentRunEvidence(row.repo);
+      if (evidence) {
+        await this.recordAgentRunEvidence({
+          ...evidence,
+          preview: result.preview,
+          recordedAt: Date.now(),
+        });
+      }
+      this.ctx.storage.sql.exec(
+        "UPDATE agent_suggestions SET status = 'delivered' WHERE request_id = ?",
+        requestId,
+      );
+    }
     let promoted = row.promoted_request_id
       ? this.row(row.promoted_request_id)
       : undefined;

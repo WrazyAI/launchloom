@@ -601,3 +601,95 @@ describe("agent follow-up thread", () => {
     expect(thread.messages[0]?.text).toContain("Why did the run fail?");
   });
 });
+
+describe("agent follow-up apply", () => {
+  beforeEach(() => {
+    network.use(
+      http.post(
+        "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+    );
+  });
+  const preview = {
+    repository: "WrazyAI/apply-site",
+    attemptId: "attempt-apply",
+    project: "apply-site",
+    pr: 9,
+    sha: "c".repeat(40),
+    deploymentId: "4c1e9a2b",
+    previewUrl: "https://4c1e9a2b.apply-site.pages.dev",
+  };
+  const suggestion = {
+    issue: "The contact action falls below the fold",
+    probableCause: "The hero keeps its desktop height.",
+    causeStatus: "probable" as const,
+    suggestedFix: "Move the action and reduce the image height.",
+    edits: [{ page: "home", section: "hero", instruction: "Move the action." }],
+    checks: ["Render at 390px"],
+    evidence: [{ label: "Mobile check", source: "route-report" }],
+    guardrails: ["Preserve verified facts."],
+    brief: "Issue\nThe contact action falls below the fold",
+  };
+
+  it("starts one revision from the pinned preview and rejects a moved base", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName("wrazyai/apply-site");
+    await coordinator.recordPreviewDelivery(preview);
+    await coordinator.recordAgentRunEvidence({
+      attemptId: "attempt-apply",
+      repository: "WrazyAI/apply-site",
+      siteId: "apply-site",
+      issueNumber: 9,
+      profile: "full-preview",
+      renderer: "creative",
+      verdict: "passed",
+      selectedCandidateId: "candidate-b",
+      candidates: [],
+      gates: [],
+      failures: [],
+      routeChecks: [],
+      assets: null,
+      preview,
+      recordedAt: 1,
+    });
+    const exchange = await coordinator.appendAgentExchange({
+      repo: "WrazyAI/apply-site",
+      attemptId: "attempt-apply",
+      adminText: "The button is hidden.",
+      agentText: "Here is a fix.",
+      intent: "improvement",
+      suggestions: [suggestion],
+    });
+    const suggestionId = exchange.message.suggestions[0].id;
+
+    const accepted = await coordinator.enqueueAgentFollowUp({
+      requestId: "agent-1",
+      repo: "WrazyAI/apply-site",
+      baseSha: preview.sha,
+      baseDeploymentId: preview.deploymentId,
+      brief: suggestion.brief,
+      suggestionId,
+    });
+    expect(accepted).toMatchObject({ ok: true, queueStatus: "started" });
+
+    const duplicate = await coordinator.enqueueAgentFollowUp({
+      requestId: "agent-1",
+      repo: "WrazyAI/apply-site",
+      baseSha: preview.sha,
+      baseDeploymentId: preview.deploymentId,
+      brief: suggestion.brief,
+      suggestionId,
+    });
+    expect(duplicate).toMatchObject({ ok: true, queueStatus: "duplicate" });
+
+    const stale = await coordinator.enqueueAgentFollowUp({
+      requestId: "agent-2",
+      repo: "WrazyAI/apply-site",
+      baseSha: "d".repeat(40),
+      baseDeploymentId: "old",
+      brief: suggestion.brief,
+      suggestionId,
+    });
+    expect(stale).toMatchObject({ ok: false, code: "preview_base_moved" });
+  });
+});

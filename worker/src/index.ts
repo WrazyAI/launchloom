@@ -42,7 +42,11 @@ import {
   generationActivityIngest,
   generationActivityRead,
 } from "./generation-activity/http";
-import { agentFollowUpInternal, agentFollowUpsAdmin } from "./agent-follow-ups/http";
+import {
+  agentFollowUpInternal,
+  agentFollowUpsAdmin,
+  parsePreviewDelivery,
+} from "./agent-follow-ups/http";
 import {
   operationsAdminApi, scheduledReconciliation, type ReconciliationEnvironment,
 } from "./operations/reconcile";
@@ -3505,8 +3509,18 @@ async function revisionCoordinator(request: Request, env: Env) {
       return json({ error: "Invalid revision request." }, 400);
     const coordinator = env.REVISION_COORDINATOR.getByName(repo.toLowerCase());
     if (action === "claim") return json(await coordinator.claim(requestId));
-    if (action === "complete")
+    if (action === "complete") {
+      const result = body.result;
+      if (result && typeof result === "object" && !Array.isArray(result)) {
+        const value = result as Record<string, unknown>;
+        const preview = parsePreviewDelivery(value.preview);
+        const baseSha = clean(value.baseSha, 40);
+        if (!preview || !/^[a-f0-9]{40}$/u.test(baseSha))
+          return json({ error: "Invalid revision result." }, 400);
+        return json(await coordinator.complete(requestId, { baseSha, preview }));
+      }
       return json(await coordinator.complete(requestId));
+    }
     if (action === "fail")
       return json(
         await coordinator.fail(

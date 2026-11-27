@@ -11,6 +11,7 @@ const PREVIEW_PATH = "/api/internal/agent-follow-ups/preview-deliveries";
 const EVIDENCE_PATH = "/api/internal/agent-follow-ups/run-evidence";
 const ADMIN_PREFIX = "/api/admin/onboarding-invites/workspace";
 const ADMIN_THREAD = /^\/attempts\/([^/]+)\/agent-follow-ups$/u;
+const ADMIN_APPLY = /^\/attempts\/([^/]+)\/agent-follow-ups\/([^/]+)\/apply$/u;
 const REPO = /^WrazyAI\/[a-z0-9][a-z0-9-]{0,100}$/u;
 const ATTEMPT = /^[A-Za-z0-9:_-]{1,160}$/u;
 const PROJECT = /^[a-z0-9][a-z0-9-]{0,62}$/u;
@@ -215,9 +216,100 @@ type AdminFollowUpEnv = {
           Omit<AgentSuggestion, "id" | "messageId" | "status" | "requestId">
         >;
       }): Promise<{ message: { id: string } }>;
+      enqueueAgentFollowUp(input: {
+        requestId: string;
+        repo: string;
+        baseSha: string;
+        baseDeploymentId: string;
+        brief: string;
+        suggestionId: string;
+      }): Promise<
+        | { ok: true; requestId: string; queueStatus: string }
+        | { ok: false; code: string; error: string }
+      >;
     };
   };
 };
+
+async function applyAgentSuggestion(
+  request: Request,
+  env: AdminFollowUpEnv,
+  attemptId: string,
+  suggestionId: string,
+): Promise<Response> {
+  if (request.method !== "POST")
+    return json({ error: { code: "method_not_allowed", message: "Use POST." } }, 405);
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return json({ error: { code: "invalid_input", message: "Invalid JSON." } }, 400);
+  }
+  const requestId = String(body.requestId || "");
+  const baseDeploymentId = String(body.baseDeploymentId || "");
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u.test(
+      requestId,
+    ) ||
+    !DEPLOYMENT.test(baseDeploymentId)
+  )
+    return json(
+      { error: { code: "invalid_input", message: "Invalid apply request." } },
+      400,
+    );
+  const attempt = await env.GENERATION_LEDGER.getByName(
+    "launchloom-generations",
+  ).getAttempt(attemptId);
+  if (!attempt)
+    return json({ error: { code: "not_found", message: "Attempt not found." } }, 404);
+  if (!attempt.repository)
+    return json(
+      { error: { code: "unavailable", message: "This attempt has no client site." } },
+      409,
+    );
+  const coordinator = env.REVISION_COORDINATOR.getByName(
+    attempt.repository.toLowerCase(),
+  );
+  const thread = await coordinator.readAgentThread(attempt.repository);
+  const suggestion = thread.messages
+    .flatMap((message) => message.suggestions)
+    .find((item) => item.id === suggestionId);
+  if (!suggestion)
+    return json(
+      { error: { code: "not_found", message: "Suggestion not found." } },
+      404,
+    );
+  if (suggestion.status !== "suggested")
+    return json(
+      {
+        error: {
+          code: "suggestion_already_started",
+          message: "This suggestion already has a revision.",
+        },
+      },
+      409,
+    );
+  const result = await coordinator.enqueueAgentFollowUp({
+    requestId,
+    repo: attempt.repository,
+    baseSha: thread.latestPreview?.sha || "",
+    baseDeploymentId,
+    brief: suggestion.brief,
+    suggestionId,
+  });
+  if (!result.ok) {
+    const status = result.code === "preview_base_moved" ? 409 : 409;
+    return json({ error: { code: result.code, message: result.error } }, status);
+  }
+  return json(
+    {
+      ok: true,
+      requestId: result.requestId,
+      queueStatus: result.queueStatus,
+    },
+    202,
+  );
+}
 
 export async function agentFollowUpsAdmin(
   request: Request,
@@ -228,6 +320,25 @@ export async function agentFollowUpsAdmin(
   const suffix = pathname.startsWith(ADMIN_PREFIX)
     ? pathname.slice(ADMIN_PREFIX.length)
     : pathname;
+  const applyMatch = ADMIN_APPLY.exec(suffix);
+  if (applyMatch) {
+    if (!principal?.role || !["admin", "owner"].includes(principal.role))
+      return json({ error: { code: "forbidden", message: "Admin access required." } }, 403);
+    if (env.AGENT_FOLLOW_UPS_ENABLED !== "true")
+      return json(
+        { error: { code: "not_enabled", message: "Agent follow-ups are not enabled." } },
+        503,
+      );
+    let attemptId: string;
+    let suggestionId: string;
+    try {
+      attemptId = decodeURIComponent(applyMatch[1]);
+      suggestionId = decodeURIComponent(applyMatch[2]);
+    } catch {
+      return json({ error: { code: "invalid_input", message: "Invalid request." } }, 400);
+    }
+    return applyAgentSuggestion(request, env, attemptId, suggestionId);
+  }
   const match = ADMIN_THREAD.exec(suffix);
   if (!match) return null;
   if (!principal?.role || !["admin", "owner"].includes(principal.role))
