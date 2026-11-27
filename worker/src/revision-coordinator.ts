@@ -1649,6 +1649,15 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         reason,
       }),
     );
+    if (row.source === "agent_follow_up") {
+      this.ctx.storage.sql.exec(
+        "UPDATE agent_suggestions SET status = 'failed' WHERE request_id = ?",
+        row.request_id,
+      );
+      this.setSuggestionStatusByRequest(row.request_id, "failed");
+      await this.scheduleCoordinatorAlarm();
+      return;
+    }
     const noticeKey = failureNoticeKey(row.request_id);
     if (
       await notifyFailure(

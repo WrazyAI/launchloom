@@ -123,6 +123,14 @@ jobs:
           REVISION_PREVIEW_SHA: ${{ steps.deploy.outputs.sha }}
           REVISION_RESULT_BASE_SHA: ${{ steps.base.outputs.sha }}
         run: node scripts/revision-queue-client.mjs
+      - name: Pause the agent queue after failure
+        if: failure() && steps.claim.outputs.run == 'true'
+        env:
+          REVISION_QUEUE_ACTION: fail
+          REVISION_FAILURE_REASON: Agent follow-up workflow failed.
+          REVISION_FAILURE_SITE_URL: ${{ steps.deploy.outputs.url || github.event.client_payload.reviewedPage }}
+          REVISION_FAILURE_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/revision-queue-client.mjs
       - name: Preserve failure evidence
         if: failure() && steps.claim.outputs.run == 'true'
         uses: actions/upload-artifact@v4
