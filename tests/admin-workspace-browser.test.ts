@@ -4346,8 +4346,9 @@ it("renders model calls, actions, usage and inspectable evidence in a dedicated 
     });
     await visible(inspector);
     expect(await inspector.locator(".admin-activity").count()).toBe(0);
+    await visible(inspector.getByText("Run code changes", { exact: true }));
     expect(requests.some((request) => request.path.endsWith("/activity"))).toBe(
-      false,
+      true,
     );
     await inspector
       .getByRole("button", { name: "Agent runs", exact: true })
@@ -4375,21 +4376,15 @@ it("renders model calls, actions, usage and inspectable evidence in a dedicated 
       .toBeGreaterThanOrEqual(4);
     expect(await activity.locator('[data-kind="model"]').count()).toBe(1);
     expect(await activity.locator('[data-kind="action"]').count()).toBe(1);
-    await expect
-      .poll(() => activity.locator(".admin-activity__summary").textContent())
-      .toContain("1.2k in");
-    await expect
-      .poll(() => activity.locator(".admin-activity__summary").textContent())
-      .toContain("$0.1200 actual");
+    const usage = activity.locator(".admin-chat__meta-strip .admin-activity__summary");
+    await expect.poll(() => usage.textContent()).toContain("1.2k in");
+    await expect.poll(() => usage.textContent()).toContain("$0.1200 actual");
     await expect
       .poll(() =>
         activity.locator(".admin-activity__coverage summary").textContent(),
       )
       .toContain("Coverage: 1 instrumented");
-    await expect
-      .poll(() =>
-        activity.locator(".admin-activity__summary").getAttribute("title"),
-      )
+    await expect.poll(() => usage.getAttribute("title"))
       .toContain("Token totals cover completed calls only");
 
     await activity.getByRole("button", { name: /Model request/u }).click();
