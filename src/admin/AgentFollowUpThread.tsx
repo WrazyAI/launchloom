@@ -72,6 +72,7 @@ export function AgentFollowUpThread({
   const [mode, setMode] =
     useState<AgentFollowUpSubmission["mode"]>("auto");
   const [busy, setBusy] = useState(false);
+  const [openedLatest, setOpenedLatest] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const mounted = useRef(true);
@@ -131,7 +132,7 @@ export function AgentFollowUpThread({
 
   async function apply(suggestion: AgentSuggestion) {
     const preview = thread?.latestPreview;
-    if (!preview || !thread?.writable) return;
+    if (!preview || (!thread?.writable && !openedLatest)) return;
     setError(null);
     try {
       await api.applyAgentSuggestion(attemptId, suggestion.id, {
@@ -177,16 +178,17 @@ export function AgentFollowUpThread({
                 <Card
                   key={suggestion.id}
                   suggestion={suggestion}
-                  writable={thread.writable}
+                  writable={thread.writable || openedLatest}
                   active={Boolean(thread.activeRequestId)}
                   onApply={() => void apply(suggestion)}
                   onOpenLatest={() => {
-                    if (thread.latestPreview)
-                      window.open(
-                        thread.latestPreview.previewUrl,
-                        "_blank",
-                        "noopener,noreferrer",
-                      );
+                    if (!thread.latestPreview) return;
+                    setOpenedLatest(true);
+                    window.open(
+                      thread.latestPreview.previewUrl,
+                      "_blank",
+                      "noopener,noreferrer",
+                    );
                   }}
                 />
               ))}

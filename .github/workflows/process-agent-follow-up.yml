@@ -50,6 +50,9 @@ jobs:
       - name: Install revision tooling
         if: steps.claim.outputs.run == 'true'
         run: npm ci
+      - name: Install revision verifier browser
+        if: steps.claim.outputs.run == 'true'
+        uses: ./.github/actions/install-playwright-chromium
       - name: Clone pinned base
         if: steps.claim.outputs.run == 'true'
         id: base

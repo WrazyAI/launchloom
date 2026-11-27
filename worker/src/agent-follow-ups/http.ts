@@ -377,8 +377,7 @@ export async function agentFollowUpsAdmin(
     const thread = await coordinator.readAgentThread(attempt.repository);
     if (
       thread.latestPreview &&
-      attempt.previewUrl &&
-      thread.latestPreview.previewUrl !== attempt.previewUrl
+      thread.latestPreview.previewUrl !== (attempt.previewUrl || "")
     )
       thread.writable = false;
     return json({ thread });
@@ -493,8 +492,7 @@ export async function agentFollowUpsAdmin(
   const thread = await coordinator.readAgentThread(attempt.repository);
   if (
     thread.latestPreview &&
-    attempt.previewUrl &&
-    thread.latestPreview.previewUrl !== attempt.previewUrl
+    thread.latestPreview.previewUrl !== (attempt.previewUrl || "")
   )
     thread.writable = false;
   return json({ ok: true, thread });
