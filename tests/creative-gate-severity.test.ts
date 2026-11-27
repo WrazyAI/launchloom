@@ -117,6 +117,33 @@ describe("judge finding classification", () => {
   it("declares the hard judge categories", () => {
     expect(HARD_JUDGE_CATEGORIES).toEqual(["content-integrity", "accessibility"]);
   });
+
+  it("warns on major content-integrity UI/repetition findings while keeping fabricated facts hard", () => {
+    expect(
+      classifyJudgeFinding({
+        severity: "major",
+        category: "content-integrity",
+        evidence:
+          "The footer navigation reads Services, FAQs, Contact, Services, repeating the Services link.",
+      }),
+    ).toBe("open");
+    expect(
+      classifyJudgeFinding({
+        severity: "major",
+        category: "content-integrity",
+        evidence:
+          "The hero CTA row includes an empty dark button immediately to the right of the Request a quote button.",
+      }),
+    ).toBe("open");
+    expect(
+      classifyJudgeFinding({
+        severity: "major",
+        category: "content-integrity",
+        evidence:
+          "The hero section invents a 24/7 emergency guarantee not present in the client intake.",
+      }),
+    ).toBe("hard");
+  });
 });
 
 describe("near-miss assessment", () => {

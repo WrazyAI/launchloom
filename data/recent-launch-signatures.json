@@ -1,115 +1,7 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-26T20:02:29.156Z",
+  "updatedAt": "2026-11-26T23:17:35.433Z",
   "launches": [
-    {
-      "id": "2026-10-28-northline-dental-studio-attempt-202-run-40722030520-attempt-1",
-      "launchedAt": "2026-10-28T16:09:32.713Z",
-      "stage": "attempt",
-      "reservationKey": "202-run-40722030520-attempt-1",
-      "businessName": "Northline Dental Studio",
-      "businessKind": "dental",
-      "recipe": "care-editorial",
-      "packId": "kinetic-poster",
-      "variantId": "full-bleed",
-      "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-      "creativeFamilyId": "",
-      "referenceFamilyId": "",
-      "routeFamilyIds": [
-        "guided-conversation",
-        "html5up-dimension-clinic",
-        "market-collage",
-        "web-dental-gartside-street-family",
-        "web-dental-smile-san-francisco-family"
-      ],
-      "heroArchetypes": [
-        "image-led-editorial",
-        "image-overlay",
-        "image-panel"
-      ],
-      "referenceIds": [
-        "html5up-dental-dimension",
-        "web-dental-gartside-street",
-        "web-dental-smile-san-francisco"
-      ],
-      "routeSignatures": [
-        "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
-        "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
-        "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
-      ]
-    },
-    {
-      "id": "2026-10-28-northline-dental-studio-attempt-202-run-40737253021-attempt-1",
-      "launchedAt": "2026-10-28T17:46:51.329Z",
-      "stage": "attempt",
-      "reservationKey": "202-run-40737253021-attempt-1",
-      "businessName": "Northline Dental Studio",
-      "businessKind": "dental",
-      "recipe": "care-editorial",
-      "packId": "kinetic-poster",
-      "variantId": "full-bleed",
-      "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-      "creativeFamilyId": "",
-      "referenceFamilyId": "",
-      "routeFamilyIds": [
-        "attested-dapper-dental-dark",
-        "attested-omp-dental-editorial",
-        "cinematic-stage",
-        "editorial-monument",
-        "typographic-poster",
-        "web-dental-glint-austin-family"
-      ],
-      "heroArchetypes": [
-        "image-overlay",
-        "split-media-copy"
-      ],
-      "referenceIds": [
-        "attested-dapper-dental",
-        "attested-one-manor-place-dental",
-        "web-dental-glint-austin"
-      ],
-      "routeSignatures": [
-        "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
-        "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
-        "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
-      ]
-    },
-    {
-      "id": "2026-10-29-northline-dental-studio-attempt-202-run-40947786674-attempt-1",
-      "launchedAt": "2026-10-29T20:22:06.106Z",
-      "stage": "attempt",
-      "reservationKey": "202-run-40947786674-attempt-1",
-      "businessName": "Northline Dental Studio",
-      "businessKind": "dental",
-      "recipe": "care-editorial",
-      "packId": "kinetic-poster",
-      "variantId": "full-bleed",
-      "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-      "creativeFamilyId": "",
-      "referenceFamilyId": "",
-      "routeFamilyIds": [
-        "attested-dapper-dental-dark",
-        "attested-omp-dental-editorial",
-        "editorial-monument",
-        "guided-conversation",
-        "html5up-dimension-clinic",
-        "typographic-poster"
-      ],
-      "heroArchetypes": [
-        "image-overlay",
-        "split-media-copy"
-      ],
-      "referenceIds": [
-        "attested-dapper-dental",
-        "attested-one-manor-place-dental",
-        "html5up-dental-dimension"
-      ],
-      "routeSignatures": [
-        "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
-        "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
-        "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail"
-      ]
-    },
     {
       "id": "2026-10-29-northline-dental-studio-attempt-202-run-40953294123-attempt-1",
       "launchedAt": "2026-10-29T20:59:59.027Z",
@@ -1785,119 +1677,118 @@
         "deep green wordmark and direct service navigation|split-media|service grid followed by a clear contact close|large clean sans heading with a calm local-service voice|navigation -> split-hero -> about -> service-grid -> team -> contact-form -> tes|wide garden photography and approved service imagery",
         "thin red availability strip over a white service bar with a yellow booking contr|a garage and electrician photograph is interrupted by a red halftone message cir|dark squared tiles with yellow line icons and short task labels|bold compact sans headings and short neutral supporting copy|service navigation -> photo and halftone opening -> black electrical service gri|uniformed electrician photographs in large circular crops plus household electri"
       ]
+    },
+    {
+      "id": "2026-11-26-crestline-electrical-attempt-379-run-45895278801-attempt-1",
+      "launchedAt": "2026-11-26T21:06:07.704Z",
+      "stage": "attempt",
+      "reservationKey": "379-run-45895278801-attempt-1",
+      "businessName": "Crestline Electrical",
+      "businessKind": "home-services",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "standard",
+      "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "cinematic-stage",
+        "htmlcodex-gardener-garden-services",
+        "typographic-poster",
+        "utility-diagnostic",
+        "web-homeservices-aptive",
+        "web-homeservices-morris-jenkins"
+      ],
+      "heroArchetypes": [
+        "image-led-editorial",
+        "image-overlay"
+      ],
+      "referenceIds": [
+        "htmlcodex-gardener-garden-services",
+        "web-homeservices-aptive",
+        "web-homeservices-morris-jenkins"
+      ],
+      "routeSignatures": [
+        "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
+        "light service navigation with a strong quote control and a slim offer strip|a dark-green photographic stage with a technician in a yard and a bright lime ca|small pest-category pictograms and a three-part inspection-treatment-communicati|rounded modern sans statements with calm small explanatory copy|service navigation -> technician-led image hero -> four prevention benefits -> p|technician and home-garden scenes framed by organic leaf and lawn imagery",
+        "wordmark and direct service navigation|media-overlay|service grid with concise scope and a clear contact close|bold sans headings with a direct local-service voice|navigation -> full-bleed-hero -> trust-band -> about -> service-grid -> project-|wide garden photography and approved service imagery"
+      ]
+    },
+    {
+      "id": "2026-11-26-crestline-electrical-attempt-379-run-45902307131-attempt-1",
+      "launchedAt": "2026-11-26T22:08:14.901Z",
+      "stage": "attempt",
+      "reservationKey": "379-run-45902307131-attempt-1",
+      "businessName": "Crestline Electrical",
+      "businessKind": "home-services",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "standard",
+      "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "cinematic-stage",
+        "htmlcodex-gardener-garden-services",
+        "market-collage",
+        "spicer-landscaping-season-wheel",
+        "typographic-poster",
+        "web-homeservices-mister-sparky"
+      ],
+      "heroArchetypes": [
+        "collage-mosaic",
+        "image-led-editorial"
+      ],
+      "referenceIds": [
+        "htmlcodex-gardener-garden-services",
+        "spicer-landscaping-season-wheel",
+        "web-homeservices-mister-sparky"
+      ],
+      "routeSignatures": [
+        "quiet-wordmark-and-direct-section-anchors|portfolio-led-landscape-hero-with-season-selector|project-grid-plus-seasonal-planning-and-maintenance-comparison|editorial-serif-with-neutral-sans|portfolio-to-season-wheel-to-plan-matrix-to-estimator-to-coverage|ai-generated-garden-hero-with-inline-svg-project-illustrations",
+        "thin red availability strip over a white service bar with a yellow booking contr|a garage and electrician photograph is interrupted by a red halftone message cir|dark squared tiles with yellow line icons and short task labels|bold compact sans headings and short neutral supporting copy|service navigation -> photo and halftone opening -> black electrical service gri|uniformed electrician photographs in large circular crops plus household electri",
+        "wordmark and direct service navigation|media-overlay|service grid with concise scope and a clear contact close|bold sans headings with a direct local-service voice|navigation -> full-bleed-hero -> trust-band -> about -> service-grid -> project-|wide garden photography and approved service imagery"
+      ]
+    },
+    {
+      "id": "2026-11-26-crestline-electrical-attempt-382-run-45909647328-attempt-1",
+      "launchedAt": "2026-11-26T23:17:35.431Z",
+      "stage": "attempt",
+      "reservationKey": "382-run-45909647328-attempt-1",
+      "businessName": "Crestline Electrical",
+      "businessKind": "home-services",
+      "recipe": "local-trades",
+      "packId": "results-ledger",
+      "variantId": "standard",
+      "layoutFingerprint": "results-ledger|standard|minimal-inline|results-ledger|confidential-request|oversized-rows|results-table|conversation-handoff|editorial-contrast|typographic-ledger|editorial|still|css|0|editorial-stack|hero/conversion/services/process/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "editorial-monument",
+        "orgarden-gardening-services",
+        "typographic-poster",
+        "utility-diagnostic",
+        "web-homeservices-aptive",
+        "web-homeservices-morris-jenkins"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "split-media-copy"
+      ],
+      "referenceIds": [
+        "orgarden-gardening-services",
+        "web-homeservices-aptive",
+        "web-homeservices-morris-jenkins"
+      ],
+      "routeSignatures": [
+        "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
+        "deep green wordmark and direct service navigation|split-media|service grid followed by a clear contact close|large clean sans heading with a calm local-service voice|navigation -> split-hero -> about -> service-grid -> team -> contact-form -> tes|wide garden photography and approved service imagery",
+        "light service navigation with a strong quote control and a slim offer strip|a dark-green photographic stage with a technician in a yard and a bright lime ca|small pest-category pictograms and a three-part inspection-treatment-communicati|rounded modern sans statements with calm small explanatory copy|service navigation -> technician-led image hero -> four prevention benefits -> p|technician and home-garden scenes framed by organic leaf and lawn imagery"
+      ]
     }
   ],
   "launchesByBusinessKind": {
     "dental": [
-      {
-        "id": "2026-10-28-northline-dental-studio-attempt-202-run-40713717954-attempt-1",
-        "launchedAt": "2026-10-28T15:18:42.396Z",
-        "stage": "attempt",
-        "reservationKey": "202-run-40713717954-attempt-1",
-        "businessName": "Northline Dental Studio",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "results-ledger",
-        "variantId": "standard",
-        "layoutFingerprint": "results-ledger|standard|minimal-inline|results-ledger|confidential-request|oversized-rows|results-table|conversation-handoff|editorial-contrast|typographic-ledger|editorial|still|css|0|editorial-stack|hero/conversion/services/process/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "attested-omp-dental-editorial",
-          "cinematic-stage",
-          "editorial-monument",
-          "market-collage",
-          "web-dental-glint-austin-family",
-          "web-dental-smile-san-francisco-family"
-        ],
-        "heroArchetypes": [
-          "image-overlay",
-          "image-panel",
-          "split-media-copy"
-        ],
-        "referenceIds": [
-          "attested-one-manor-place-dental",
-          "web-dental-glint-austin",
-          "web-dental-smile-san-francisco"
-        ],
-        "routeSignatures": [
-          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
-          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops",
-          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
-        ]
-      },
-      {
-        "id": "2026-10-28-northline-dental-studio-attempt-202-run-40722030520-attempt-1",
-        "launchedAt": "2026-10-28T16:09:32.713Z",
-        "stage": "attempt",
-        "reservationKey": "202-run-40722030520-attempt-1",
-        "businessName": "Northline Dental Studio",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "guided-conversation",
-          "html5up-dimension-clinic",
-          "market-collage",
-          "web-dental-gartside-street-family",
-          "web-dental-smile-san-francisco-family"
-        ],
-        "heroArchetypes": [
-          "image-led-editorial",
-          "image-overlay",
-          "image-panel"
-        ],
-        "referenceIds": [
-          "html5up-dental-dimension",
-          "web-dental-gartside-street",
-          "web-dental-smile-san-francisco"
-        ],
-        "routeSignatures": [
-          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
-          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
-          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
-        ]
-      },
-      {
-        "id": "2026-10-28-northline-dental-studio-attempt-202-run-40737253021-attempt-1",
-        "launchedAt": "2026-10-28T17:46:51.329Z",
-        "stage": "attempt",
-        "reservationKey": "202-run-40737253021-attempt-1",
-        "businessName": "Northline Dental Studio",
-        "businessKind": "dental",
-        "recipe": "care-editorial",
-        "packId": "kinetic-poster",
-        "variantId": "full-bleed",
-        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
-        "creativeFamilyId": "",
-        "referenceFamilyId": "",
-        "routeFamilyIds": [
-          "attested-dapper-dental-dark",
-          "attested-omp-dental-editorial",
-          "cinematic-stage",
-          "editorial-monument",
-          "typographic-poster",
-          "web-dental-glint-austin-family"
-        ],
-        "heroArchetypes": [
-          "image-overlay",
-          "split-media-copy"
-        ],
-        "referenceIds": [
-          "attested-dapper-dental",
-          "attested-one-manor-place-dental",
-          "web-dental-glint-austin"
-        ],
-        "routeSignatures": [
-          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
-          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
-          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
-        ]
-      },
       {
         "id": "2026-10-29-northline-dental-studio-attempt-202-run-40947786674-attempt-1",
         "launchedAt": "2026-10-29T20:22:06.106Z",
@@ -2151,6 +2042,115 @@
           "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
           "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
           "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail"
+        ]
+      },
+      {
+        "id": "2026-10-28-northline-dental-studio-attempt-202-run-40737253021-attempt-1",
+        "launchedAt": "2026-10-28T17:46:51.329Z",
+        "stage": "attempt",
+        "reservationKey": "202-run-40737253021-attempt-1",
+        "businessName": "Northline Dental Studio",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-dapper-dental-dark",
+          "attested-omp-dental-editorial",
+          "cinematic-stage",
+          "editorial-monument",
+          "typographic-poster",
+          "web-dental-glint-austin-family"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "attested-dapper-dental",
+          "attested-one-manor-place-dental",
+          "web-dental-glint-austin"
+        ],
+        "routeSignatures": [
+          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
+          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
+          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
+        ]
+      },
+      {
+        "id": "2026-10-28-northline-dental-studio-attempt-202-run-40722030520-attempt-1",
+        "launchedAt": "2026-10-28T16:09:32.713Z",
+        "stage": "attempt",
+        "reservationKey": "202-run-40722030520-attempt-1",
+        "businessName": "Northline Dental Studio",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "guided-conversation",
+          "html5up-dimension-clinic",
+          "market-collage",
+          "web-dental-gartside-street-family",
+          "web-dental-smile-san-francisco-family"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-overlay",
+          "image-panel"
+        ],
+        "referenceIds": [
+          "html5up-dental-dimension",
+          "web-dental-gartside-street",
+          "web-dental-smile-san-francisco"
+        ],
+        "routeSignatures": [
+          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
+          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
+        ]
+      },
+      {
+        "id": "2026-10-28-northline-dental-studio-attempt-202-run-40713717954-attempt-1",
+        "launchedAt": "2026-10-28T15:18:42.396Z",
+        "stage": "attempt",
+        "reservationKey": "202-run-40713717954-attempt-1",
+        "businessName": "Northline Dental Studio",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "results-ledger",
+        "variantId": "standard",
+        "layoutFingerprint": "results-ledger|standard|minimal-inline|results-ledger|confidential-request|oversized-rows|results-table|conversation-handoff|editorial-contrast|typographic-ledger|editorial|still|css|0|editorial-stack|hero/conversion/services/process/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-omp-dental-editorial",
+          "cinematic-stage",
+          "editorial-monument",
+          "market-collage",
+          "web-dental-glint-austin-family",
+          "web-dental-smile-san-francisco-family"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "image-panel",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "attested-one-manor-place-dental",
+          "web-dental-glint-austin",
+          "web-dental-smile-san-francisco"
+        ],
+        "routeSignatures": [
+          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
+          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops",
+          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
         ]
       },
       {
@@ -2624,6 +2624,115 @@
         ]
       },
       {
+        "id": "2026-11-26-crestline-electrical-attempt-377-run-45887476139-attempt-1",
+        "launchedAt": "2026-11-26T20:02:29.154Z",
+        "stage": "attempt",
+        "reservationKey": "377-run-45887476139-attempt-1",
+        "businessName": "Crestline Electrical",
+        "businessKind": "home-services",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "colorlib-fixwell-quote-desk",
+          "editorial-monument",
+          "orgarden-gardening-services",
+          "typographic-poster",
+          "utility-diagnostic",
+          "web-homeservices-mister-sparky"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "split-form",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "colorlib-fixwell-quote-desk",
+          "orgarden-gardening-services",
+          "web-homeservices-mister-sparky"
+        ],
+        "routeSignatures": [
+          "call-forward-trade-utility-navigation|hero-integrated-quote-form|problem-oriented-service-index|bold-practical-grotesk|quote-opening-to-needs-to-coverage-to-process-to-questions|bright-work-context-image-with-soft-overlay",
+          "deep green wordmark and direct service navigation|split-media|service grid followed by a clear contact close|large clean sans heading with a calm local-service voice|navigation -> split-hero -> about -> service-grid -> team -> contact-form -> tes|wide garden photography and approved service imagery",
+          "thin red availability strip over a white service bar with a yellow booking contr|a garage and electrician photograph is interrupted by a red halftone message cir|dark squared tiles with yellow line icons and short task labels|bold compact sans headings and short neutral supporting copy|service navigation -> photo and halftone opening -> black electrical service gri|uniformed electrician photographs in large circular crops plus household electri"
+        ]
+      },
+      {
+        "id": "2026-11-26-crestline-electrical-attempt-379-run-45895278801-attempt-1",
+        "launchedAt": "2026-11-26T21:06:07.704Z",
+        "stage": "attempt",
+        "reservationKey": "379-run-45895278801-attempt-1",
+        "businessName": "Crestline Electrical",
+        "businessKind": "home-services",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "standard",
+        "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "cinematic-stage",
+          "htmlcodex-gardener-garden-services",
+          "typographic-poster",
+          "utility-diagnostic",
+          "web-homeservices-aptive",
+          "web-homeservices-morris-jenkins"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-overlay"
+        ],
+        "referenceIds": [
+          "htmlcodex-gardener-garden-services",
+          "web-homeservices-aptive",
+          "web-homeservices-morris-jenkins"
+        ],
+        "routeSignatures": [
+          "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
+          "light service navigation with a strong quote control and a slim offer strip|a dark-green photographic stage with a technician in a yard and a bright lime ca|small pest-category pictograms and a three-part inspection-treatment-communicati|rounded modern sans statements with calm small explanatory copy|service navigation -> technician-led image hero -> four prevention benefits -> p|technician and home-garden scenes framed by organic leaf and lawn imagery",
+          "wordmark and direct service navigation|media-overlay|service grid with concise scope and a clear contact close|bold sans headings with a direct local-service voice|navigation -> full-bleed-hero -> trust-band -> about -> service-grid -> project-|wide garden photography and approved service imagery"
+        ]
+      },
+      {
+        "id": "2026-11-26-crestline-electrical-attempt-379-run-45902307131-attempt-1",
+        "launchedAt": "2026-11-26T22:08:14.901Z",
+        "stage": "attempt",
+        "reservationKey": "379-run-45902307131-attempt-1",
+        "businessName": "Crestline Electrical",
+        "businessKind": "home-services",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "standard",
+        "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "cinematic-stage",
+          "htmlcodex-gardener-garden-services",
+          "market-collage",
+          "spicer-landscaping-season-wheel",
+          "typographic-poster",
+          "web-homeservices-mister-sparky"
+        ],
+        "heroArchetypes": [
+          "collage-mosaic",
+          "image-led-editorial"
+        ],
+        "referenceIds": [
+          "htmlcodex-gardener-garden-services",
+          "spicer-landscaping-season-wheel",
+          "web-homeservices-mister-sparky"
+        ],
+        "routeSignatures": [
+          "quiet-wordmark-and-direct-section-anchors|portfolio-led-landscape-hero-with-season-selector|project-grid-plus-seasonal-planning-and-maintenance-comparison|editorial-serif-with-neutral-sans|portfolio-to-season-wheel-to-plan-matrix-to-estimator-to-coverage|ai-generated-garden-hero-with-inline-svg-project-illustrations",
+          "thin red availability strip over a white service bar with a yellow booking contr|a garage and electrician photograph is interrupted by a red halftone message cir|dark squared tiles with yellow line icons and short task labels|bold compact sans headings and short neutral supporting copy|service navigation -> photo and halftone opening -> black electrical service gri|uniformed electrician photographs in large circular crops plus household electri",
+          "wordmark and direct service navigation|media-overlay|service grid with concise scope and a clear contact close|bold sans headings with a direct local-service voice|navigation -> full-bleed-hero -> trust-band -> about -> service-grid -> project-|wide garden photography and approved service imagery"
+        ]
+      },
+      {
         "id": "2026-10-27-harbor-pine-landscape-co-attempt-197-run-40574638778-attempt-1",
         "launchedAt": "2026-10-27T20:08:15.183Z",
         "stage": "attempt",
@@ -2769,40 +2878,39 @@
         ]
       },
       {
-        "id": "2026-11-26-crestline-electrical-attempt-377-run-45887476139-attempt-1",
-        "launchedAt": "2026-11-26T20:02:29.154Z",
+        "id": "2026-11-26-crestline-electrical-attempt-382-run-45909647328-attempt-1",
+        "launchedAt": "2026-11-26T23:17:35.431Z",
         "stage": "attempt",
-        "reservationKey": "377-run-45887476139-attempt-1",
+        "reservationKey": "382-run-45909647328-attempt-1",
         "businessName": "Crestline Electrical",
         "businessKind": "home-services",
         "recipe": "local-trades",
-        "packId": "bold-utility",
-        "variantId": "portrait",
-        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "packId": "results-ledger",
+        "variantId": "standard",
+        "layoutFingerprint": "results-ledger|standard|minimal-inline|results-ledger|confidential-request|oversized-rows|results-table|conversation-handoff|editorial-contrast|typographic-ledger|editorial|still|css|0|editorial-stack|hero/conversion/services/process/social-proof/faq/location-map/contact",
         "creativeFamilyId": "",
         "referenceFamilyId": "",
         "routeFamilyIds": [
-          "colorlib-fixwell-quote-desk",
           "editorial-monument",
           "orgarden-gardening-services",
           "typographic-poster",
           "utility-diagnostic",
-          "web-homeservices-mister-sparky"
+          "web-homeservices-aptive",
+          "web-homeservices-morris-jenkins"
         ],
         "heroArchetypes": [
-          "image-led-editorial",
-          "split-form",
+          "image-overlay",
           "split-media-copy"
         ],
         "referenceIds": [
-          "colorlib-fixwell-quote-desk",
           "orgarden-gardening-services",
-          "web-homeservices-mister-sparky"
+          "web-homeservices-aptive",
+          "web-homeservices-morris-jenkins"
         ],
         "routeSignatures": [
-          "call-forward-trade-utility-navigation|hero-integrated-quote-form|problem-oriented-service-index|bold-practical-grotesk|quote-opening-to-needs-to-coverage-to-process-to-questions|bright-work-context-image-with-soft-overlay",
+          "compact two-tier blue-and-white navigation with service categories and a high-co|a deep-blue campaign poster places a uniformed technician beside a bold home-com|large blue service tiles with yellow borders and unmistakable pictograms|heavy rounded sans statements with compact explanatory sans|service navigation -> technician campaign hero -> three service category tiles -|friendly uniformed technician photography and household-service scenes",
           "deep green wordmark and direct service navigation|split-media|service grid followed by a clear contact close|large clean sans heading with a calm local-service voice|navigation -> split-hero -> about -> service-grid -> team -> contact-form -> tes|wide garden photography and approved service imagery",
-          "thin red availability strip over a white service bar with a yellow booking contr|a garage and electrician photograph is interrupted by a red halftone message cir|dark squared tiles with yellow line icons and short task labels|bold compact sans headings and short neutral supporting copy|service navigation -> photo and halftone opening -> black electrical service gri|uniformed electrician photographs in large circular crops plus household electri"
+          "light service navigation with a strong quote control and a slim offer strip|a dark-green photographic stage with a technician in a yard and a bright lime ca|small pest-category pictograms and a three-part inspection-treatment-communicati|rounded modern sans statements with calm small explanatory copy|service navigation -> technician-led image hero -> four prevention benefits -> p|technician and home-garden scenes framed by organic leaf and lawn imagery"
         ]
       }
     ],

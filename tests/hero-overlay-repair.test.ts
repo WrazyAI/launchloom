@@ -105,4 +105,20 @@ describe("media focus plate correction", () => {
     expect(second.split(MEDIA_FOCUS_CORRECTION_START)).toHaveLength(2);
     expect(second).toContain("body { color: #111; }");
   });
+
+  it("keeps sibling hero copy above background hero media without breaking interactive media controls", () => {
+    const css = mediaFocusRepairCss();
+    expect(css).toContain(
+      ":is([data-hero], [data-service-hero]) [data-hero-media]:not(:has([data-hero-copy]))",
+    );
+    expect(css).toContain("z-index: 0;");
+    expect(css).toContain(
+      ':is([data-hero], [data-service-hero]) [data-hero-media] [aria-hidden="true"]',
+    );
+    expect(css).toContain("pointer-events: none;");
+    expect(css).toContain(
+      ":is([data-hero], [data-service-hero]) [data-hero-copy]",
+    );
+    expect(css).toContain("z-index: 2;");
+  });
 });

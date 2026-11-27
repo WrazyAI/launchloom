@@ -104,8 +104,10 @@ export function compileRepairSpanEdits(files, catalog, edits) {
     if (!span) reject("Unknown repair span ID.");
     if (selected.has(edit.spanId)) reject("Duplicate selected repair span.");
     selected.add(edit.spanId);
-    if (typeof edit.replace !== "string" || !edit.replace.length || edit.replace.length > MAX_REPAIR_EDIT_FRAGMENT_CHARS)
-      reject(`Replacement exceeds the non-empty ${MAX_REPAIR_EDIT_FRAGMENT_CHARS}-character contract.`);
+    if (typeof edit.replace !== "string" || edit.replace.length > MAX_REPAIR_EDIT_FRAGMENT_CHARS)
+      reject(`Replacement exceeds the ${MAX_REPAIR_EDIT_FRAGMENT_CHARS}-character contract.`);
+    if (!edit.replace.length && files[span.file].replace(span.find, "").trim().length === 0)
+      reject("Empty replacement cannot clear an entire source file.");
     total += span.find.length + edit.replace.length;
     if (total > MAX_REPAIR_PATCH_TEXT_CHARS) reject(`Span patch exceeds ${MAX_REPAIR_PATCH_TEXT_CHARS} total characters.`);
     const start = uniqueOffset(files[span.file], span.find);
@@ -118,6 +120,14 @@ export function compileRepairSpanEdits(files, catalog, edits) {
       find: span.find,
       replace: normalizeRepairReplacementText(edit.replace, span.file),
     });
+  }
+  for (const file of new Set(result.map((edit) => edit.file))) {
+    let next = files[file];
+    for (const edit of result) {
+      if (edit.file === file) next = next.replace(edit.find, edit.replace);
+    }
+    if (!next.trim().length)
+      reject("Span edits cannot clear an entire source file.");
   }
   return result;
 }

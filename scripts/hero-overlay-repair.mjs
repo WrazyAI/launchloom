@@ -193,6 +193,18 @@ body[data-ll-route^="/locations"] form :is(input, textarea, select):focus-visibl
   outline-offset: -4px !important;
   box-shadow: none !important;
 }
+/* Keep sibling hero copy above background hero media when an authored mobile
+   grid overlaps them without explicit z-index. */
+:is([data-hero], [data-service-hero]) [data-hero-media]:not(:has([data-hero-copy])) {
+  z-index: 0;
+}
+:is([data-hero], [data-service-hero]) [data-hero-media] [aria-hidden="true"] {
+  pointer-events: none;
+}
+:is([data-hero], [data-service-hero]) [data-hero-copy] {
+  position: relative;
+  z-index: 2;
+}
 ${MEDIA_FOCUS_CORRECTION_END}
 `;
 }
