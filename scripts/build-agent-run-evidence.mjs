@@ -86,6 +86,9 @@ function assetSummary(value) {
   };
 }
 
+/**
+ * @param {{ report?: any; creativeSummary?: any; assets?: any; routeReport?: any; preview?: any; attemptId?: string; repository?: string; recordedAt?: number }} [input]
+ */
 export function buildAgentRunEvidence({
   report = {},
   creativeSummary = null,
