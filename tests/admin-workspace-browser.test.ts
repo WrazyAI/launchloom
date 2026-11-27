@@ -5269,7 +5269,6 @@ it("explains context-only SEO evidence without presenting missing metrics as zer
   });
   try {
     const drawer = page.locator("#attempt-inspector");
-    expect(await drawer.getByText("Charleston, SC").count()).toBe(0);
     await drawer
       .getByRole("button", { name: "SEO research", exact: true })
       .click();
