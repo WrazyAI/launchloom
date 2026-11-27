@@ -8,11 +8,11 @@ describe("agent follow-up revision workflow", () => {
       "utf8",
     );
     expect(workflow).toContain("process-agent-follow-up");
-    expect(workflow).toContain('checkout --detach "$BASE_SHA"');
+    expect(workflow).toContain('git checkout --detach "$BASE_SHA"');
+    expect(workflow).toContain('FEEDBACK_TEXT="$(cat "$RUNNER_TEMP/agent-feedback.txt")"');
     expect(workflow).toContain("agent-revision/${REVISION_REQUEST_ID}");
     expect(workflow).toContain("REVISION_PREVIEW_URL");
-    expect(workflow).not.toContain("send-preview-email.mjs");
-    expect(workflow).not.toContain("create-review-link.mjs");
+    expect(workflow).not.toContain("send-preview-email.mjs");    expect(workflow).not.toContain("create-review-link.mjs");
     expect(workflow).not.toContain("publications");
   });
 
