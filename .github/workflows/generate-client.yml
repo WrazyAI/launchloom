@@ -1405,7 +1405,7 @@ jobs:
             if ! node "$GITHUB_WORKSPACE/scripts/publish-agent-run-evidence.mjs" \
               --preview "$RUNNER_TEMP/preview-delivery.json" \
               --report "$PWD/.launchloom/pipeline-test-report.json" \
-              --creative-summary "$PWD/.launchloom/creative-repair/summary.json" \
+              --creative-summary "$PWD/.launchloom/creative-bakeoff.json" \
               --assets "$PWD/.launchloom/generated-assets.json" \
               --route-report "$RUNNER_TEMP/initial-screenshots/route-browser-report.json"; then
               echo "Run evidence was not recorded; answers will use the trace and say what is missing." >&2

@@ -58,4 +58,21 @@ describe("agent run evidence", () => {
     expect(evidence.preview).toBeNull();
     expect(evidence.gates[0]?.summary).toHaveLength(240);
   });
+
+  it("maps creative bakeoff candidates when no pipeline report exists", () => {
+    const evidence = buildAgentRunEvidence({
+      creativeSummary: {
+        selectedCandidateId: "candidate-b",
+        candidates: [
+          { candidateId: "candidate-a", visualScore: 41 },
+          { candidateId: "candidate-b", visualScore: 58 },
+        ],
+      },
+    });
+    expect(evidence.verdict).toBe("unknown");
+    expect(evidence.candidates).toEqual([
+      { id: "candidate-a", score: 41, selected: false },
+      { id: "candidate-b", score: 58, selected: true },
+    ]);
+  });
 });

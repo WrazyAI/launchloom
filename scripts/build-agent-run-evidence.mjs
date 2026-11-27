@@ -31,25 +31,32 @@ function stageGates(stages) {
     });
 }
 
-function candidates(report) {
-  const declared =
-    report && Array.isArray(report.candidates) ? report.candidates : [];
+function candidates(report, creativeSummary) {
+  const declared = Array.isArray(report?.candidates)
+    ? report.candidates
+    : Array.isArray(creativeSummary?.candidates)
+      ? creativeSummary.candidates
+      : [];
+  const selectedId =
+    report?.selectedCandidateId || creativeSummary?.selectedCandidateId || null;
   if (declared.length) {
     return declared.slice(0, MAX_CANDIDATES).map((candidate, index) => ({
-      id: text(candidate?.id || candidate?.candidateId, 80) || `candidate-${index + 1}`,
+      id:
+        text(candidate?.id || candidate?.candidateId, 80) ||
+        `candidate-${index + 1}`,
       score: Number.isFinite(Number(candidate?.score ?? candidate?.visualScore))
         ? Number(candidate.score ?? candidate.visualScore)
         : null,
       selected:
         candidate?.selected === true ||
-        candidate?.id === report.selectedCandidateId ||
-        candidate?.candidateId === report.selectedCandidateId,
+        candidate?.id === selectedId ||
+        candidate?.candidateId === selectedId,
     }));
   }
   const total = Math.min(MAX_CANDIDATES, count(report?.candidateCount));
   return Array.from({ length: total }, (_, index) => {
     const id = `candidate-${String.fromCharCode(97 + index)}`;
-    return { id, score: null, selected: id === report?.selectedCandidateId };
+    return { id, score: null, selected: id === selectedId };
   });
 }
 
@@ -111,7 +118,11 @@ export function buildAgentRunEvidence({
       summary: gate.summary,
     }));
   const verdict =
-    safeReport.verdict === "passed" && !failures.length ? "passed" : "failed";
+    safeReport.verdict === "passed" && !failures.length
+      ? "passed"
+      : safeReport.verdict === "failed" || failures.length
+        ? "failed"
+        : text(creativeSummary?.verdict, 40) || "unknown";
   return {
     attemptId,
     repository,
@@ -126,7 +137,7 @@ export function buildAgentRunEvidence({
       safeReport.selectedCandidateId || creativeSummary?.selectedCandidateId || null,
       80,
     ),
-    candidates: candidates(safeReport),
+    candidates: candidates(safeReport, creativeSummary),
     gates,
     failures,
     routeChecks: routeChecks(routeReport),
