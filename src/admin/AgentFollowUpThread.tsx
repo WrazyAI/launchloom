@@ -12,11 +12,13 @@ function Card({
   writable,
   active,
   onApply,
+  onOpenLatest,
 }: {
   suggestion: AgentSuggestion;
   writable: boolean;
   active: boolean;
   onApply: () => void;
+  onOpenLatest: () => void;
 }) {
   const running = active || suggestion.status === "started";
   const delivered = suggestion.status === "delivered";
@@ -41,8 +43,8 @@ function Card({
       <button
         type="button"
         className="admin-follow-up-card__apply"
-        disabled={running || delivered || needsReview || !writable}
-        onClick={onApply}
+        disabled={running || delivered || needsReview}
+        onClick={writable ? onApply : onOpenLatest}
       >
         {label}
       </button>
@@ -178,6 +180,14 @@ export function AgentFollowUpThread({
                   writable={thread.writable}
                   active={Boolean(thread.activeRequestId)}
                   onApply={() => void apply(suggestion)}
+                  onOpenLatest={() => {
+                    if (thread.latestPreview)
+                      window.open(
+                        thread.latestPreview.previewUrl,
+                        "_blank",
+                        "noopener,noreferrer",
+                      );
+                  }}
                 />
               ))}
             </div>

@@ -187,6 +187,7 @@ type AdminFollowUpEnv = {
       getAttempt(id: string): Promise<{
         repository: string | null;
         attemptId: string;
+        previewUrl?: string | null;
       } | null>;
     };
   };
@@ -374,6 +375,12 @@ export async function agentFollowUpsAdmin(
   );
   if (request.method === "GET") {
     const thread = await coordinator.readAgentThread(attempt.repository);
+    if (
+      thread.latestPreview &&
+      attempt.previewUrl &&
+      thread.latestPreview.previewUrl !== attempt.previewUrl
+    )
+      thread.writable = false;
     return json({ thread });
   }
   if (!env.OPENCODE_GO_API_KEY)
@@ -484,5 +491,11 @@ export async function agentFollowUpsAdmin(
     suggestions,
   });
   const thread = await coordinator.readAgentThread(attempt.repository);
+  if (
+    thread.latestPreview &&
+    attempt.previewUrl &&
+    thread.latestPreview.previewUrl !== attempt.previewUrl
+  )
+    thread.writable = false;
   return json({ ok: true, thread });
 }
