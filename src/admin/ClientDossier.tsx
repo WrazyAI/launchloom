@@ -5,6 +5,7 @@ import { AdminIcon } from "./AdminIcon";
 import type { AdminApi } from "./api";
 import { WorkflowRunPanel } from "./ClientWorkflow";
 import { DeliveryStatusBadge, ExecutionStatusBadge } from "./StatusBadge";
+import { writeRouteState } from "./route-state";
 import {
   formatClientName,
   formatTimestamp,
@@ -25,6 +26,7 @@ export type ClientDossierProps = {
   attemptsLoading: boolean;
   attemptsError: string | null;
   attemptTotal: number;
+  activityEnabled: boolean;
   headingRef: RefObject<HTMLHeadingElement | null>;
   onClose: () => void;
   onRetry: () => void;
@@ -82,6 +84,7 @@ function ClientAttempts({
   error,
   nextCursor,
   total,
+  activityEnabled,
   onOpenAttempt,
   onLoadMore,
   onRetry,
@@ -91,6 +94,7 @@ function ClientAttempts({
   error: string | null;
   nextCursor: string | null;
   total: number;
+  activityEnabled: boolean;
   onOpenAttempt: (attemptId: string) => void;
   onLoadMore: () => void;
   onRetry: () => void;
@@ -174,14 +178,32 @@ function ClientAttempts({
                 </dl>
                 <p className="admin-record-id">{attempt.attemptId}</p>
               </div>
-              <button
-                type="button"
-                className="admin-link-button"
-                aria-label={`Open attempt ${attempt.attemptId} from client history`}
-                onClick={() => onOpenAttempt(attempt.attemptId)}
-              >
-                Open attempt
-              </button>
+              <div className="admin-attempt-list__actions">
+                <button
+                  type="button"
+                  className="admin-link-button"
+                  aria-label={`Open attempt ${attempt.attemptId} from client history`}
+                  onClick={() => onOpenAttempt(attempt.attemptId)}
+                >
+                  Open attempt
+                </button>
+                {activityEnabled ? (
+                  <a
+                    className="admin-link-button"
+                    href={writeRouteState({
+                      view: "generations",
+                      attemptId: attempt.attemptId,
+                      attemptView: "activity",
+                      clientId: null,
+                      filters: {},
+                      cursor: null,
+                    }).href}
+                    aria-label={`View agent activity for ${attempt.attemptId}`}
+                  >
+                    View agent activity
+                  </a>
+                ) : null}
+              </div>
             </li>
           ))}
         </ul>
@@ -279,6 +301,7 @@ export function ClientDossier({
   attemptsLoading,
   attemptsError,
   attemptTotal,
+  activityEnabled,
   headingRef,
   onClose,
   onRetry,
@@ -456,6 +479,7 @@ export function ClientDossier({
               error={attemptsError}
               nextCursor={attemptsNextCursor}
               total={attemptTotal}
+              activityEnabled={activityEnabled}
               onOpenAttempt={(attemptId) => {
                 setSelectedRun(attemptId);
                 workflowRef.current?.focus();

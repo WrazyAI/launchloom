@@ -91,6 +91,12 @@
   color: #3d443b;
 }
 
+.admin-activity__changes a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .admin-activity__warning {
   margin: 0;
   padding: 7px 10px;

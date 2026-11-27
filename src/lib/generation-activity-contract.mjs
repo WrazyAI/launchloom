@@ -527,6 +527,57 @@ function safeFields(value, policy, label) {
   return out;
 }
 
+function actionResult(result, policy, name) {
+  const counts = ["filesChanged", "additions", "deletions"];
+  if (name === "run_code_changes") {
+    exactObject(result, [...counts, "repository", "baseSha", "headSha"], "run_code_changes");
+    const sha = /^[a-f0-9]{40}$/u;
+    return {
+      filesChanged: integer(result.filesChanged, "files_changed"),
+      additions: integer(result.additions, "additions"),
+      deletions: integer(result.deletions, "deletions"),
+      repository: identifier(result.repository, /^[A-Za-z0-9-]+\/[A-Za-z0-9_][A-Za-z0-9_.-]{0,99}$/u, "repository"),
+      baseSha: identifier(result.baseSha, sha, "base_sha"),
+      headSha: identifier(result.headSha, sha, "head_sha"),
+    };
+  }
+  if (name !== "edit_candidate_files") return safeFields(result, policy, "result");
+
+  exactObject(result, counts, "edit_candidate_files", ["patch", "patchOmitted"]);
+  const totals = {
+    filesChanged: integer(result.filesChanged, "files_changed"),
+    additions: integer(result.additions, "additions"),
+    deletions: integer(result.deletions, "deletions"),
+  };
+  const { patch, patchOmitted } = result;
+  if (patchOmitted !== undefined && typeof patchOmitted !== "boolean")
+    fail("patch_omitted_invalid");
+  if (patch === undefined) return patchOmitted ? { ...totals, patchOmitted: true } : totals;
+  if (typeof patch !== "string") fail("patch_invalid");
+  if (!policy.allowSourceText || traceTextBytes(patch) > TRACE_LIMITS.maxRawInputBytes)
+    return { ...totals, patchOmitted: true };
+
+  const privateLines = policy.sensitiveValues.flatMap((value) => {
+    const lines = normalizeTraceText(value).split("\n");
+    return lines.length > 1 ? lines.map((line) => line.trim()).filter(Boolean) : [];
+  });
+  const scrubbed = scrubTraceText(patch, policy, TRACE_LIMITS.maxRawInputBytes, {
+    preserveWhitespace: true,
+  }).split("\n").map((line) => {
+    const marker = /^[+ -]/u.test(line) ? line[0] : "";
+    const content = line.slice(marker.length);
+    // A diff can split a private address across marked or elided lines.
+    if (privateLines.some((value) => content.includes(value))) return `${marker}[redacted]`;
+    return marker + scrubContactText(content);
+  }).join("\n");
+  const preview = truncateUtf8(scrubbed, 4 * 1024);
+  if (preview.length < scrubbed.length) {
+    const wholeLines = preview.slice(0, preview.lastIndexOf("\n") + 1);
+    return { ...totals, ...(wholeLines ? { patch: wholeLines } : {}), patchOmitted: true };
+  }
+  return { ...totals, patch: preview, ...(patchOmitted ? { patchOmitted: true } : {}) };
+}
+
 /** Build a flat allowlisted payload from a source object. */
 export function buildSafeFields(source, { policy }) {
   if (!record(source)) fail("source_not_object");
@@ -636,7 +687,7 @@ function validatePayload(kind, payload, policy) {
         durationMs: nullableInteger(payload.durationMs, "duration", {
           max: 86_400_000,
         }),
-        result: safeFields(payload.result, policy, "result"),
+        result: actionResult(payload.result, policy, payload.name),
       };
     }
     case "output": {

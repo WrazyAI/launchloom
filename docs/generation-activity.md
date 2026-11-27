@@ -140,6 +140,14 @@ never blocks reconciliation.
   start stays visibly "running" and is never shown as success.
 - **Evidence** shows the call's start, terminal status, visible output, usage,
   sanitized error and context. Times are UTC.
+- **View agent activity** in client history opens the attempt's retained Agent
+  runs view. Successful authored candidate writes and applied model repairs
+  show line counts and a bounded, scrubbed patch preview there.
+- **Run code changes** compares tracked source under `src/`, excluding generated
+  site configuration, from the starting client commit to the source uploaded
+  for preview. The net totals do not sum individual edits. The full private
+  GitHub comparison may also include files outside those totals. Runs without
+  a recorded commit pair show “Diff unavailable.”
 - **Usage** is response-level and provider-reported. Unknown stays "Unknown";
   zero stays zero. Cost is labelled actual, estimated or unreported.
 - **Follow** pauses while you read older rows and resumes with "Jump to latest".
