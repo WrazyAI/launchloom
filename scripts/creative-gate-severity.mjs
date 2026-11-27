@@ -118,25 +118,27 @@ export function classifyJudgeFinding(finding) {
     !KNOWN_JUDGE_CATEGORIES.has(category)
   )
     return "hard";
-  // Accessibility defects and fabricated/unverified facts stay hard. Design
-  // and copy quality findings are advisory on a warned preview; the local
-  // design repair pass owns them after delivery.
+  // Accessibility defects and fabricated/unverified facts stay hard. Design,
+  // navigation, capture, and copy quality observations are advisory on a warned
+  // preview; the human developer and local design repair pass own them.
+  const isFactualIntegrityDefect = (detail) => {
+    const text = String(detail || "").trim();
+    if (!text) return true;
+    return /fabricat|invent|unverified|not present|missing from|not in manifest|absent from|wrong business|placeholder|lorem|ipsum|sealed|raw token|broken image|missing image|image.{0,32}(?:fail|not load|didn't load|unloaded|broken|missing)|(?:fail|not load|didn't load|unloaded|broken|missing).{0,32}image|\b404\b|trail(?:s|ed|ing)?\s+off|mid-sentence|incomplete\s+sentence|credential|price|pricing|review|guarantee|licen[cs]e|(?:wrong|fake|mismatch|missing|absent|incorrect).{0,32}(?:phone|email|address|contact)|(?:phone|email|address|contact).{0,32}(?:wrong|fake|mismatch|missing|absent|incorrect|not in|not present)/iu.test(
+      text,
+    );
+  };
   if (severity === "critical") {
     if (category === "accessibility") return "critical";
     if (category === "content-integrity") {
-      const evidence = String(
-        finding?.evidence || finding?.message || finding?.recommendation || "",
-      );
-      const copyDefect =
-        /clipped|cropped|malformed|stray|truncated|overlap|fragment/iu.test(
-          evidence,
-        );
-      const factDefect =
-        /fabricat|invent|unverified|not present|missing from|credential|price|review|guarantee|licen[cs]e|contact|phone|email|address/iu.test(
-          evidence,
-        );
-      if (copyDefect && !factDefect) return "open";
-      return "critical";
+      const evidence = [
+        finding?.evidence,
+        finding?.message,
+        finding?.recommendation,
+      ]
+        .filter(Boolean)
+        .join(" ");
+      return isFactualIntegrityDefect(evidence) ? "critical" : "open";
     }
     return "open";
   }
@@ -149,16 +151,7 @@ export function classifyJudgeFinding(finding) {
     ]
       .filter(Boolean)
       .join(" ");
-    const factDefect =
-      /fabricat|invent|unverified|not present|missing from|credential|price|review|guarantee|licen[cs]e|wrong business|placeholder|lorem/iu.test(
-        evidence,
-      );
-    const uiCopyDefect =
-      /copied|templated|repeat(?:ed|ing|s)?|duplicat|filler|clipped|cropped|malformed|stray|truncated|overlap|empty\s+(?:dark\s+|light\s+|ghost\s+|outline\s+|secondary\s+)?(?:button|control|link|badge|pill|slot|card|box)|toggle\s+icon|two\s+plus/iu.test(
-        evidence,
-      );
-    if (uiCopyDefect && !factDefect) return "open";
-    return "hard";
+    return isFactualIntegrityDefect(evidence) ? "hard" : "open";
   }
   return "open";
 }
