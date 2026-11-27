@@ -73,8 +73,13 @@ export async function publishPreviewDelivery(payload, fetchImpl = fetch) {
   if (!response.ok)
     throw new Error(`Preview delivery failed with HTTP ${response.status}.`);
   return {
-    previewUrl: payload.previewUrl,
+    repository: payload.repository,
+    attemptId: payload.attemptId,
+    project: payload.project,
+    pr: payload.pr,
+    sha: payload.sha,
     deploymentId: payload.deploymentId,
+    previewUrl: payload.previewUrl,
   };
 }
 

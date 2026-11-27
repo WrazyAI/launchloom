@@ -1374,6 +1374,7 @@ jobs:
             local branch="$1" message="$2"
             npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch "$branch" --commit-hash "$FINAL_BUILD_SHA" --commit-message "$message" 2>&1 | tee "$RUNNER_TEMP/pages-deploy.log"
             record_preview_delivery
+            publish_run_evidence
             if [ "$branch" = "review-diagnostic" ]; then
               echo "preview=https://review-diagnostic.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
               echo "diagnostic=true" >> "$GITHUB_OUTPUT"
@@ -1394,8 +1395,20 @@ jobs:
               --repo "${{ steps.client.outputs.repo }}" \
               --attempt "$TRACK_ATTEMPT" \
               --pr "${{ steps.branch.outputs.pr }}" \
-              --sha "$FINAL_BUILD_SHA"; then
+              --sha "$FINAL_BUILD_SHA" > "$RUNNER_TEMP/preview-delivery.json"; then
               echo "Preview receipt was not recorded; follow-ups stay disabled for this site." >&2
+              rm -f "$RUNNER_TEMP/preview-delivery.json"
+            fi
+          }
+          publish_run_evidence() {
+            [ -f "$RUNNER_TEMP/preview-delivery.json" ] || return 0
+            if ! node "$GITHUB_WORKSPACE/scripts/publish-agent-run-evidence.mjs" \
+              --preview "$RUNNER_TEMP/preview-delivery.json" \
+              --report "$PWD/.launchloom/pipeline-test-report.json" \
+              --creative-summary "$PWD/.launchloom/creative-repair/summary.json" \
+              --assets "$PWD/.launchloom/generated-assets.json" \
+              --route-report "$RUNNER_TEMP/initial-screenshots/route-browser-report.json"; then
+              echo "Run evidence was not recorded; answers will use the trace and say what is missing." >&2
             fi
           }
           run_seo_gate() {
@@ -1523,6 +1536,7 @@ jobs:
           if run_seo_gate; then
             npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$FINAL_BUILD_SHA" --commit-message "Initial LaunchLoom preview" 2>&1 | tee "$RUNNER_TEMP/pages-deploy.log"
             record_preview_delivery
+            publish_run_evidence
             echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
             echo "diagnostic=false" >> "$GITHUB_OUTPUT"
             echo "sha=$FINAL_BUILD_SHA" >> "$GITHUB_OUTPUT"

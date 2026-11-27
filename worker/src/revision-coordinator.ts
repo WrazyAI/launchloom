@@ -7,7 +7,10 @@ import {
   feedbackStructureSummary,
   parseFeedbackStructure,
 } from "./feedback-structure";
-import type { PreviewDelivery } from "../../src/lib/agent-follow-ups";
+import type {
+  AgentRunEvidence,
+  PreviewDelivery,
+} from "../../src/lib/agent-follow-ups";
 
 export type RevisionStage = "developer" | "client";
 export type QueueStatus =
@@ -399,6 +402,13 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           PRIMARY KEY (repo, attempt_id)
         );
         CREATE INDEX IF NOT EXISTS preview_deliveries_repo_created ON preview_deliveries(repo, created_at DESC);
+        CREATE TABLE IF NOT EXISTS agent_run_evidence (
+          repo TEXT NOT NULL,
+          attempt_id TEXT NOT NULL,
+          evidence_json TEXT NOT NULL,
+          recorded_at INTEGER NOT NULL,
+          PRIMARY KEY (repo, attempt_id)
+        );
         CREATE TABLE IF NOT EXISTS ai_chat_limits (
           visitor_key TEXT PRIMARY KEY,
           window_started_at INTEGER NOT NULL,
@@ -939,6 +949,38 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       deploymentId: row.deployment_id,
       previewUrl: row.preview_url,
     };
+  }
+
+  async recordAgentRunEvidence(
+    evidence: AgentRunEvidence,
+  ): Promise<{ ok: true }> {
+    this.ctx.storage.sql.exec(
+      `INSERT INTO agent_run_evidence (repo, attempt_id, evidence_json, recorded_at)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(repo, attempt_id) DO UPDATE SET
+         evidence_json = excluded.evidence_json,
+         recorded_at = excluded.recorded_at`,
+      evidence.repository,
+      evidence.attemptId,
+      JSON.stringify(evidence),
+      evidence.recordedAt,
+    );
+    return { ok: true };
+  }
+
+  async latestAgentRunEvidence(repo: string): Promise<AgentRunEvidence | null> {
+    const row = this.ctx.storage.sql
+      .exec<{ evidence_json: string }>(
+        "SELECT evidence_json FROM agent_run_evidence WHERE repo = ? ORDER BY recorded_at DESC LIMIT 1",
+        repo,
+      )
+      .toArray()[0];
+    if (!row) return null;
+    try {
+      return JSON.parse(row.evidence_json) as AgentRunEvidence;
+    } catch {
+      return null;
+    }
   }
 
   async list(limit = 20) {

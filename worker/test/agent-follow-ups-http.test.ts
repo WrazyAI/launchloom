@@ -59,4 +59,41 @@ describe("agent follow-up preview deliveries", () => {
     ).latestPreviewDelivery("WrazyAI/example-client");
     expect(latest).toEqual(delivery);
   });
+
+  it("stores bounded run evidence for the exact repository", async () => {
+    const response = await worker.fetch(
+      new Request(`${origin}/api/internal/agent-follow-ups/run-evidence`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${secret}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          attemptId: "attempt-0001",
+          repository: "WrazyAI/example-client",
+          siteId: "example-client",
+          issueNumber: 9,
+          profile: "full-preview",
+          renderer: "creative",
+          verdict: "failed",
+          selectedCandidateId: "candidate-b",
+          candidates: [{ id: "candidate-b", score: 58, selected: true }],
+          gates: [{ name: "technical", status: "failed", summary: "Contrast failed." }],
+          failures: [{ stage: "technical", code: null, summary: "Contrast failed." }],
+          routeChecks: [],
+          assets: { requested: 3, placed: 2, skipped: 1, providerFailure: null },
+          preview: delivery,
+          recordedAt: 1_700_000_000_000,
+        }),
+      }),
+      bindings,
+      context,
+    );
+    expect(response.status).toBe(200);
+    const stored = await env.REVISION_COORDINATOR.getByName(
+      "wrazyai/example-client",
+    ).latestAgentRunEvidence("WrazyAI/example-client");
+    expect(stored?.selectedCandidateId).toBe("candidate-b");
+    expect(stored?.preview?.deploymentId).toBe("4c1e9a2b");
+  });
 });
