@@ -26,6 +26,7 @@ function env(enabled = true) {
     REVISION_COORDINATOR: {
       getByName: () => ({
         readAgentThread: async () => thread,
+        agentRunEvidence: async () => thread.latestEvidence,
       }),
     },
   } as never;
@@ -120,6 +121,7 @@ function modelEnv() {
       REVISION_COORDINATOR: {
         getByName: () => ({
           readAgentThread: async () => thread,
+          agentRunEvidence: async () => thread.latestEvidence,
           reserveAgentCommand: async (_repo: string, id: string) => {
             if (commands.has(id)) return { duplicate: true };
             commands.add(id);

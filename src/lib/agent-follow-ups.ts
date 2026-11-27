@@ -96,6 +96,7 @@ export type AgentSuggestion = {
   baseSha: string | null;
   status: AgentSuggestionStatus;
   requestId: string | null;
+  failure?: string | null;
 };
 
 export type AgentMessage = {

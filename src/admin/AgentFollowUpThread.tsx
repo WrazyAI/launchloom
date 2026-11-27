@@ -38,7 +38,7 @@ function Card({
             ? "Fix in Agent runs"
             : "Open latest preview";
   const disabled =
-    running || delivered || failed || needsReview || (!writable && !hasPreview);
+    running || failed || needsReview || (!writable && !hasPreview);
   return (
     <article className="admin-follow-up-card" data-status={suggestion.status}>
       <p className="admin-follow-up-card__issue">{suggestion.issue}</p>
@@ -51,7 +51,7 @@ function Card({
         type="button"
         className="admin-follow-up-card__apply"
         disabled={disabled}
-        onClick={writable ? onApply : onOpenLatest}
+        onClick={delivered || !writable ? onOpenLatest : onApply}
       >
         {label}
       </button>
@@ -59,6 +59,11 @@ function Card({
         <p className="admin-follow-up-card__receipt">
           The revision passed its checks. The previous preview is still
           available.
+        </p>
+      ) : null}
+      {failed && suggestion.failure ? (
+        <p className="admin-follow-up-card__failure" role="status">
+          {suggestion.failure}
         </p>
       ) : null}
     </article>
@@ -83,6 +88,7 @@ export function AgentFollowUpThread({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const mounted = useRef(true);
+  const applyIds = useRef<Record<string, string>>({});
 
   async function refresh() {
     try {
@@ -101,6 +107,10 @@ export function AgentFollowUpThread({
       mounted.current = false;
     };
   }, [api, attemptId, enabled]);
+
+  useEffect(() => {
+    setOpenedLatest(false);
+  }, [thread?.latestPreview?.deploymentId]);
 
   useEffect(() => {
     if (!thread?.activeRequestId) return;
@@ -150,8 +160,11 @@ export function AgentFollowUpThread({
       return;
     setError(null);
     try {
+      const requestId =
+        applyIds.current[suggestion.id] || crypto.randomUUID();
+      applyIds.current[suggestion.id] = requestId;
       await api.applyAgentSuggestion(attemptId, suggestion.id, {
-        requestId: crypto.randomUUID(),
+        requestId,
         baseDeploymentId: preview.deploymentId,
       });
       setThread((current) =>
@@ -204,12 +217,12 @@ export function AgentFollowUpThread({
                   onApply={() => void apply(suggestion)}
                   onOpenLatest={() => {
                     if (!thread.latestPreview) return;
-                    setOpenedLatest(true);
-                    window.open(
+                    const opened = window.open(
                       thread.latestPreview.previewUrl,
                       "_blank",
                       "noopener,noreferrer",
                     );
+                    if (opened) setOpenedLatest(true);
                   }}
                 />
               ))}

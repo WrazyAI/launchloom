@@ -68,6 +68,7 @@ jobs:
       - name: Apply the approved brief
         if: steps.claim.outputs.run == 'true'
         run: |
+          FEEDBACK_TEXT="$(cat "$RUNNER_TEMP/agent-feedback.txt")" \
           CLIENT_CONFIG_PATH="$RUNNER_TEMP/client/src/site.config.json" \
           FEEDBACK_ISSUE="$CLIENT_PR" \
           FEEDBACK_STAGE=developer \

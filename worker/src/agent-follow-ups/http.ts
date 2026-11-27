@@ -102,7 +102,7 @@ export function parseRunEvidence(value: unknown): AgentRunEvidence | null {
   const repository = boundedString(body.repository, REPO);
   const attemptId = boundedString(body.attemptId, ATTEMPT);
   const profile = boundedString(body.profile, /^[a-z-]{1,60}$/u);
-  const verdict = boundedString(body.verdict, /^(passed|failed)$/u);
+  const verdict = boundedString(body.verdict, /^(passed|failed|unknown)$/u);
   if (
     !repository ||
     !attemptId ||
@@ -189,6 +189,7 @@ type AdminFollowUpEnv = {
         repository: string | null;
         attemptId: string;
         previewUrl?: string | null;
+        deliveryStatus?: string;
       } | null>;
     };
   };
@@ -204,6 +205,10 @@ type AdminFollowUpEnv = {
         latestPreview: PreviewDelivery | null;
         writable: boolean;
       }>;
+      agentRunEvidence(
+        repo: string,
+        attemptId: string,
+      ): Promise<AgentRunEvidence | null>;
       reserveAgentCommand(
         repo: string,
         requestId: string,
@@ -267,6 +272,16 @@ async function applyAgentSuggestion(
       { error: { code: "unavailable", message: "This attempt has no client site." } },
       409,
     );
+  if (!["preview_ready", "published"].includes(String(attempt.deliveryStatus)))
+    return json(
+      {
+        error: {
+          code: "preview_not_writable",
+          message: "Only a verified preview can be revised.",
+        },
+      },
+      409,
+    );
   const coordinator = env.REVISION_COORDINATOR.getByName(
     attempt.repository.toLowerCase(),
   );
@@ -278,16 +293,6 @@ async function applyAgentSuggestion(
     return json(
       { error: { code: "not_found", message: "Suggestion not found." } },
       404,
-    );
-  if (suggestion.status !== "suggested")
-    return json(
-      {
-        error: {
-          code: "suggestion_already_started",
-          message: "This suggestion already has a revision.",
-        },
-      },
-      409,
     );
   if (!suggestion.baseSha || !suggestion.baseDeploymentId)
     return json(
@@ -384,9 +389,14 @@ export async function agentFollowUpsAdmin(
   );
   if (request.method === "GET") {
     const thread = await coordinator.readAgentThread(attempt.repository);
+    const selectedEvidence = await coordinator.agentRunEvidence(
+      attempt.repository,
+      attempt.attemptId,
+    );
+    if (selectedEvidence) thread.latestEvidence = selectedEvidence;
     if (
-      thread.latestPreview &&
-      thread.latestPreview.previewUrl !== (attempt.previewUrl || "")
+      !["preview_ready", "published"].includes(String(attempt.deliveryStatus)) ||
+      thread.latestPreview?.attemptId !== attempt.attemptId
     )
       thread.writable = false;
     return json({ thread });
@@ -423,6 +433,11 @@ export async function agentFollowUpsAdmin(
     return json({ thread });
   }
   const current = await coordinator.readAgentThread(attempt.repository);
+  const selectedEvidence = await coordinator.agentRunEvidence(
+    attempt.repository,
+    attemptId,
+  );
+  if (selectedEvidence) current.latestEvidence = selectedEvidence;
   if (
     mode === "improvement" &&
     String(body.baseDeploymentId || "") !==
@@ -502,8 +517,8 @@ export async function agentFollowUpsAdmin(
   });
   const thread = await coordinator.readAgentThread(attempt.repository);
   if (
-    thread.latestPreview &&
-    thread.latestPreview.previewUrl !== (attempt.previewUrl || "")
+    !["preview_ready", "published"].includes(String(attempt.deliveryStatus)) ||
+    thread.latestPreview?.attemptId !== attempt.attemptId
   )
     thread.writable = false;
   return json({ ok: true, thread });

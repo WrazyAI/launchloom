@@ -32,29 +32,40 @@ if (!process.env.GITHUB_ORG_TOKEN)
 const exactComment = String(process.env.FEEDBACK_COMMENT_ID || "").trim();
 if (exactComment && !/^\d+$/.test(exactComment))
   throw new Error("FEEDBACK_COMMENT_ID must be a GitHub issue comment ID.");
-const response = await fetch(
-  exactComment
-    ? `https://api.github.com/repos/${repo}/issues/comments/${exactComment}`
-    : `https://api.github.com/repos/${repo}/issues/${feedbackIssue}/comments`,
-  {
-    headers: {
-      Authorization: `Bearer ${process.env.GITHUB_ORG_TOKEN}`,
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2026-03-10",
-      "User-Agent": "LaunchLoom-GitHub-Action",
-    },
-  },
-);
-if (!response.ok)
-  throw new Error(`Could not fetch feedback: ${response.status}`);
-const payload = await response.json();
-const comments = exactComment ? [payload] : payload;
+const suppliedFeedback = String(process.env.FEEDBACK_TEXT || "").trim();
 const stage = process.env.FEEDBACK_STAGE === "client" ? "client" : "developer";
-const requests = pendingFeedbackFromComments(
-  comments,
-  stage,
-  Boolean(exactComment),
-);
+let requests;
+if (suppliedFeedback) {
+  requests = [
+    {
+      text: suppliedFeedback,
+      structure: { attachments: [], colors: [] },
+    },
+  ];
+} else {
+  const response = await fetch(
+    exactComment
+      ? `https://api.github.com/repos/${repo}/issues/comments/${exactComment}`
+      : `https://api.github.com/repos/${repo}/issues/${feedbackIssue}/comments`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.GITHUB_ORG_TOKEN}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2026-03-10",
+        "User-Agent": "LaunchLoom-GitHub-Action",
+      },
+    },
+  );
+  if (!response.ok)
+    throw new Error(`Could not fetch feedback: ${response.status}`);
+  const payload = await response.json();
+  const comments = exactComment ? [payload] : payload;
+  requests = pendingFeedbackFromComments(
+    comments,
+    stage,
+    Boolean(exactComment),
+  );
+}
 if (!requests.length) {
   console.log("No pending LaunchLoom feedback.");
   process.exit(0);

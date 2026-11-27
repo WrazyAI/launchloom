@@ -115,7 +115,8 @@ export type EnqueueResult =
         | "revision_request_failed"
         | "preview_base_moved"
         | "suggestion_missing"
-        | "suggestion_already_started";
+        | "suggestion_already_started"
+        | "revision_in_progress";
       error: string;
     };
 
@@ -1065,9 +1066,29 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     }
   }
 
+  async agentRunEvidence(
+    repo: string,
+    attemptId: string,
+  ): Promise<AgentRunEvidence | null> {
+    const row = this.ctx.storage.sql
+      .exec<{ evidence_json: string }>(
+        "SELECT evidence_json FROM agent_run_evidence WHERE repo = ? AND attempt_id = ? LIMIT 1",
+        repo,
+        attemptId,
+      )
+      .toArray()[0];
+    if (!row) return null;
+    try {
+      return JSON.parse(row.evidence_json) as AgentRunEvidence;
+    } catch {
+      return null;
+    }
+  }
+
   private setSuggestionStatusByRequest(
     requestId: string,
     status: AgentSuggestion["status"],
+    failure: string | null = null,
   ) {
     const rows = this.ctx.storage.sql
       .exec<{ suggestion_id: string; payload_json: string }>(
@@ -1079,6 +1100,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       try {
         const suggestion = JSON.parse(row.payload_json) as AgentSuggestion;
         suggestion.status = status;
+        suggestion.failure = failure;
         this.ctx.storage.sql.exec(
           "UPDATE agent_suggestions SET status = ?, payload_json = ? WHERE suggestion_id = ?",
           status,
@@ -1116,37 +1138,38 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     input: AgentExchangeInput,
   ): Promise<{ message: AgentMessage }> {
     const now = Date.now();
-    this.ctx.storage.sql.exec(
-      `INSERT INTO agent_threads (repo, created_at, updated_at) VALUES (?, ?, ?)
-       ON CONFLICT(repo) DO UPDATE SET updated_at = excluded.updated_at`,
-      input.repo,
-      now,
-      now,
-    );
     const adminId = crypto.randomUUID();
     const agentId = crypto.randomUUID();
-    this.ctx.storage.sql.exec(
-      "INSERT INTO agent_messages (message_id, repo, role, text, intent, attempt_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      adminId,
-      input.repo,
-      "admin",
-      input.adminText,
-      null,
-      input.attemptId,
-      now,
-    );
-    this.ctx.storage.sql.exec(
-      "INSERT INTO agent_messages (message_id, repo, role, text, intent, attempt_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      agentId,
-      input.repo,
-      "agent",
-      input.agentText,
-      input.intent,
-      input.attemptId,
-      now + 1,
-    );
-    const suggestions: AgentSuggestion[] = input.suggestions.map(
-      (suggestion) => {
+    let suggestions: AgentSuggestion[] = [];
+    this.ctx.storage.transactionSync(() => {
+      this.ctx.storage.sql.exec(
+        `INSERT INTO agent_threads (repo, created_at, updated_at) VALUES (?, ?, ?)
+         ON CONFLICT(repo) DO UPDATE SET updated_at = excluded.updated_at`,
+        input.repo,
+        now,
+        now,
+      );
+      this.ctx.storage.sql.exec(
+        "INSERT INTO agent_messages (message_id, repo, role, text, intent, attempt_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        adminId,
+        input.repo,
+        "admin",
+        input.adminText,
+        null,
+        input.attemptId,
+        now,
+      );
+      this.ctx.storage.sql.exec(
+        "INSERT INTO agent_messages (message_id, repo, role, text, intent, attempt_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        agentId,
+        input.repo,
+        "agent",
+        input.agentText,
+        input.intent,
+        input.attemptId,
+        now + 1,
+      );
+      suggestions = input.suggestions.map((suggestion) => {
         const id = crypto.randomUUID();
         const stored: AgentSuggestion = {
           ...suggestion,
@@ -1168,8 +1191,8 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           now + 1,
         );
         return stored;
-      },
-    );
+      });
+    });
     return {
       message: {
         id: agentId,
@@ -1197,11 +1220,12 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         attempt_id: string;
         created_at: number;
       }>(
-        "SELECT message_id, role, text, intent, attempt_id, created_at FROM agent_messages WHERE repo = ? ORDER BY created_at ASC LIMIT ?",
+        "SELECT message_id, role, text, intent, attempt_id, created_at FROM agent_messages WHERE repo = ? ORDER BY created_at DESC LIMIT ?",
         repo,
         limit,
       )
-      .toArray();
+      .toArray()
+      .reverse();
     const suggestions = this.ctx.storage.sql
       .exec<{ message_id: string; payload_json: string }>(
         "SELECT message_id, payload_json FROM agent_suggestions WHERE repo = ? ORDER BY created_at ASC",
@@ -1588,7 +1612,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
             : "process-client-feedback",
         client_payload: {
           requestId: row.request_id,
-          feedbackComment: row.comment_id,
+          ...(agentFollowUp ? {} : { feedbackComment: row.comment_id }),
           repo: row.repo,
           pr: row.pr,
           feedbackIssue: row.feedback_issue,
@@ -1596,13 +1620,15 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           ...(agentFollowUp
             ? {
                 agentFollowUp: true,
-                brief: row.brief,
-                baseSha: row.base_sha,
-                baseDeploymentId: row.base_deployment_id,
-                suggestionId: row.suggestion_id,
+                agent: {
+                  brief: row.brief,
+                  baseSha: row.base_sha,
+                  baseDeploymentId: row.base_deployment_id,
+                  suggestionId: row.suggestion_id,
+                },
               }
             : {}),
-          ...(row.base_sha
+          ...(row.base_sha && !agentFollowUp
             ? {
                 baseSha: row.base_sha,
                 originalStage: row.stage,
@@ -1656,7 +1682,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         "UPDATE agent_suggestions SET status = 'failed' WHERE request_id = ?",
         row.request_id,
       );
-      this.setSuggestionStatusByRequest(row.request_id, "failed");
+      this.setSuggestionStatusByRequest(row.request_id, "failed", reason);
       await this.scheduleCoordinatorAlarm();
       return;
     }
@@ -1706,6 +1732,17 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         code: "preview_base_moved",
         error: "The preview moved. Open the latest preview before applying this fix.",
       };
+    const busy = this.ctx.storage.sql
+      .exec<{ request_id: string }>(
+        `SELECT request_id FROM revision_requests WHERE status IN ${ACTIVE} OR status = 'queued' LIMIT 1`,
+      )
+      .toArray()[0];
+    if (busy)
+      return {
+        ok: false,
+        code: "revision_in_progress",
+        error: "A revision is already running for this site.",
+      };
     const suggestion = this.ctx.storage.sql
       .exec<{ payload_json: string; status: string }>(
         "SELECT payload_json, status FROM agent_suggestions WHERE suggestion_id = ? AND repo = ? LIMIT 1",
@@ -1730,7 +1767,8 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       fingerprint: `agent:${input.suggestionId}:${input.baseSha}`,
       stage: "developer",
       repo: input.repo,
-      siteId: input.repo.split("/").at(-1) || "site",
+      pr: preview.pr,
+      siteId: preview.project,
       clientEmail: "",
       reviewedPage: preview.previewUrl,
       reviewedSha: input.baseSha,
@@ -2130,7 +2168,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     if (this.publications.held()) return {allowed:false,code:"revision_in_progress"};
     const failed = this.ctx.storage.sql
       .exec(
-        "SELECT request_id FROM revision_requests WHERE status = 'failed' LIMIT 1",
+        "SELECT request_id FROM revision_requests WHERE status = 'failed' AND source != 'agent_follow_up' LIMIT 1",
       )
       .toArray()[0];
     if (failed) return { allowed: false, code: "revision_queue_halted" };

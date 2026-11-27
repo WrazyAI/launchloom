@@ -603,11 +603,16 @@ describe("agent follow-up thread", () => {
 });
 
 describe("agent follow-up apply", () => {
+  let dispatchPayloads: Array<Record<string, any>> = [];
   beforeEach(() => {
+    dispatchPayloads = [];
     network.use(
       http.post(
         "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
-        () => new HttpResponse(null, { status: 204 }),
+        async ({ request }) => {
+          dispatchPayloads.push((await request.json()) as Record<string, any>);
+          return new HttpResponse(null, { status: 204 });
+        },
       ),
     );
   });
@@ -671,6 +676,8 @@ describe("agent follow-up apply", () => {
       suggestionId,
     });
     expect(accepted).toMatchObject({ ok: true, queueStatus: "started" });
+    expect(dispatchPayloads[0]?.client_payload.pr).toBe(9);
+    expect(Object.keys(dispatchPayloads[0]?.client_payload || {}).length).toBeLessThanOrEqual(10);
 
     const duplicate = await coordinator.enqueueAgentFollowUp({
       requestId: "agent-1",
