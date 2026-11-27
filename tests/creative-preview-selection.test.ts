@@ -134,9 +134,7 @@ describe("creative preview selection", () => {
             verdict: "revise",
             findings: [{ severity: "critical", category: "content-integrity" }],
           },
-          blockers: [
-            { severity: "critical", category: "content-integrity" },
-          ],
+          blockers: [{ severity: "critical", category: "content-integrity" }],
         }),
       }).decision,
     ).toBe("reject");
@@ -203,7 +201,11 @@ describe("creative preview selection", () => {
           audit: {
             verdict: "revise",
             findings: [
-              { severity: "major", category: "hero-geometry", evidence: "drift" },
+              {
+                severity: "major",
+                category: "hero-geometry",
+                evidence: "drift",
+              },
             ],
           },
           blockers: [
@@ -236,7 +238,11 @@ describe("creative preview selection", () => {
           audit: {
             verdict: "revise",
             findings: [
-              { severity: "major", category: "hero-geometry", evidence: "drift" },
+              {
+                severity: "major",
+                category: "hero-geometry",
+                evidence: "drift",
+              },
             ],
           },
           blockers: [
@@ -267,7 +273,9 @@ describe("creative preview selection", () => {
             failures: [
               "contrast fail: / desktop default a.cta measured 2.8:1 (required 4.5)",
             ],
-            renderedReferenceFidelity: { audit: { overallScore: 55, findings: [] } },
+            renderedReferenceFidelity: {
+              audit: { overallScore: 55, findings: [] },
+            },
           },
         ],
       }),
@@ -298,7 +306,9 @@ describe("creative preview selection", () => {
               "desktop: empty media frame has no image, label, or caption",
               "mobile: hero action exceeds mobile viewport for an image-overlay route",
             ],
-            renderedReferenceFidelity: { audit: { overallScore: 55, findings: [] } },
+            renderedReferenceFidelity: {
+              audit: { overallScore: 55, findings: [] },
+            },
           },
         ],
       }),
@@ -320,7 +330,11 @@ describe("creative preview selection", () => {
           audit: {
             verdict: "revise",
             findings: [
-              { severity: "major", category: "hero-geometry", evidence: "drift" },
+              {
+                severity: "major",
+                category: "hero-geometry",
+                evidence: "drift",
+              },
             ],
           },
           blockers: [
@@ -351,5 +365,87 @@ describe("creative preview selection", () => {
     expect(result.blocking).toHaveLength(2);
     expect(result.blocking[0]).toContain("Got questions?");
     expect(result.blocking[1]).toContain("contrast unresolved:");
+  });
+});
+
+describe("creative repair evidence in developer handoff", () => {
+  const nearMissConfig = config({
+    design: {
+      experience: {
+        renderer: "creative-candidate",
+        candidateId: "candidate-a",
+        selectionMode: "creative-near-miss",
+      },
+    },
+  });
+  const nearMissBakeoff = bakeoff({ nearMissSelection: true, fallback: true });
+  const openFindings = [
+    "Mobile hero copy does not overlap the image.",
+    ...Array.from(
+      { length: 14 },
+      (_, index) => `Design observation ${index + 1}.`,
+    ),
+  ];
+  const repairSummary = {
+    status: "previewed-with-open-findings",
+    selectedCandidateId: "candidate-a",
+    promotionReady: false,
+    nearMiss: { candidateId: "candidate-a", overall: 47, openFindings },
+  };
+
+  it("reports the exact near-miss warnings even when the hard visual gate passed", () => {
+    const result = validateCreativePreviewSelection({
+      config: nearMissConfig,
+      bakeoff: nearMissBakeoff,
+      gate: gate(),
+      repairSummary,
+    });
+    expect(result.decision).toBe("warned");
+    expect(result.warnings[0]).toContain("15 open findings");
+    expect(result.warnings).toContain(`Creative review: ${openFindings[0]}`);
+  });
+
+  it("does not call a near-miss clean if the matching repair evidence is unavailable", () => {
+    const result = validateCreativePreviewSelection({
+      config: nearMissConfig,
+      bakeoff: nearMissBakeoff,
+      gate: gate(),
+      repairSummary: {
+        ...repairSummary,
+        selectedCandidateId: "candidate-b",
+        nearMiss: { ...repairSummary.nearMiss, candidateId: "candidate-b" },
+      },
+    });
+    expect(result.decision).toBe("warned");
+    expect(result.warnings.join(" ")).not.toContain(openFindings[0]);
+  });
+
+  it("does not convert report-only contrast notes into deterministically recorded waivers", () => {
+    const contrast =
+      "contrast fail: / mobile default a.cta measured 2.8:1 (required 4.5)";
+    const result = validateCreativePreviewSelection({
+      config: nearMissConfig,
+      bakeoff: nearMissBakeoff,
+      gate: gate(),
+      repairSummary: {
+        ...repairSummary,
+        nearMiss: { ...repairSummary.nearMiss, openFindings: [contrast] },
+      },
+    });
+    expect(filterRecordedContrastWarnings([contrast], result)).toEqual({
+      blocking: [contrast],
+      suppressed: [],
+    });
+  });
+
+  it("does not attach stale repair warnings to a strict selection", () => {
+    expect(
+      validateCreativePreviewSelection({
+        config: config(),
+        bakeoff: bakeoff(),
+        gate: gate(),
+        repairSummary,
+      }),
+    ).toMatchObject({ decision: "clean", warnings: [] });
   });
 });
