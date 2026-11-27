@@ -73,6 +73,7 @@ These are settled:
 - Agent runs already receives sanitized model output, actions, stage changes, gate activity and repair activity through authenticated cursor polling. Trace retention is 30 days.
 - The Worker already calls OpenRouter in two production paths: onboarding service suggestions and the client site assistant. The claim that OpenRouter is otherwise disabled is not accurate for the current code.
 - The reviewed OpenCode Go profile supports text, JSON and JSON schema output. It does not currently expose native tool calling.
+- `deploy-platform.yml` already configures `OPENCODE_GO_API_KEY` and `OPENROUTER_API_KEY` for the API Worker, so the classifier and answering agent can run server-side without a new dispatch workflow.
 - `RevisionCoordinator` already queues, claims, retries and recovers revision requests. It deduplicates by request ID and fingerprint, enforces one active request, and interlocks with publication.
 - The developer revision workflow currently starts from the current review PR head and may update a branch alias and send email. It does not yet provide an exact-base, preview-only mode.
 - `AdminApi` and the workspace API expose repository-scoped revision reads. There is no admin-authenticated follow-up write path.
@@ -212,6 +213,7 @@ A follow-up revision uses the existing coordinator and workflow with a new previ
 - A failed edit keeps the previous preview selected. No partial preview replaces it.
 - The mode skips developer and client email, review-link delivery and publication.
 - Only one revision runs per site. A second request waits as a draft or queue entry, never as a parallel write.
+- The existing `revision_requests.stage` constraint allows only `developer` and `client`. A follow-up needs a migration that adds a source or mode instead of overloading those stages.
 
 If the base cannot be proved, the card becomes **Needs review** and no revision starts.
 
