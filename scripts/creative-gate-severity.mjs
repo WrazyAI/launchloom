@@ -124,7 +124,7 @@ export function classifyJudgeFinding(finding) {
   const isFactualIntegrityDefect = (detail) => {
     const text = String(detail || "").trim();
     if (!text) return true;
-    return /fabricat|invent|unverified|not present|missing from|not in manifest|absent from|wrong business|placeholder|lorem|ipsum|sealed|raw token|broken image|missing image|\b404\b|credential|price|pricing|review|guarantee|licen[cs]e|(?:wrong|fake|mismatch|missing|absent|incorrect).{0,32}(?:phone|email|address|contact)|(?:phone|email|address|contact).{0,32}(?:wrong|fake|mismatch|missing|absent|incorrect|not in|not present)/iu.test(
+    return /fabricat|invent|unverified|not present|missing from|not in manifest|absent from|wrong business|placeholder|lorem|ipsum|sealed|raw token|broken image|missing image|image.{0,32}(?:fail|not load|didn't load|unloaded|broken|missing)|(?:fail|not load|didn't load|unloaded|broken|missing).{0,32}image|\b404\b|trail(?:s|ed|ing)?\s+off|mid-sentence|incomplete\s+sentence|credential|price|pricing|review|guarantee|licen[cs]e|(?:wrong|fake|mismatch|missing|absent|incorrect).{0,32}(?:phone|email|address|contact)|(?:phone|email|address|contact).{0,32}(?:wrong|fake|mismatch|missing|absent|incorrect|not in|not present)/iu.test(
       text,
     );
   };
