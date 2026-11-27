@@ -42,6 +42,7 @@ import {
   generationActivityIngest,
   generationActivityRead,
 } from "./generation-activity/http";
+import { agentFollowUpInternal } from "./agent-follow-ups/http";
 import {
   operationsAdminApi, scheduledReconciliation, type ReconciliationEnvironment,
 } from "./operations/reconcile";
@@ -4032,6 +4033,10 @@ export default {
     if (path === "/api/feedback-image") return feedbackImage(request, env);
     if (path === "/api/creative-repair") return creativeRepair(request, env);
     if (path === "/api/internal/publications") return publicationCoordinator(request, env);
+    {
+      const followUp = await agentFollowUpInternal(request, env, path);
+      if (followUp) return followUp;
+    }
     if (path === "/api/internal/revisions")
       return revisionCoordinator(request, env);
     if (path === "/api/internal/creative-repairs")

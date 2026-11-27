@@ -7,6 +7,7 @@ import {
   feedbackStructureSummary,
   parseFeedbackStructure,
 } from "./feedback-structure";
+import type { PreviewDelivery } from "../../src/lib/agent-follow-ups";
 
 export type RevisionStage = "developer" | "client";
 export type QueueStatus =
@@ -386,6 +387,18 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         );
         CREATE INDEX IF NOT EXISTS revision_requests_status ON revision_requests(status, created_at);
         CREATE INDEX IF NOT EXISTS revision_requests_fingerprint ON revision_requests(fingerprint, created_at);
+        CREATE TABLE IF NOT EXISTS preview_deliveries (
+          repo TEXT NOT NULL,
+          attempt_id TEXT NOT NULL,
+          project TEXT NOT NULL,
+          pr INTEGER NOT NULL,
+          sha TEXT NOT NULL,
+          deployment_id TEXT NOT NULL,
+          preview_url TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          PRIMARY KEY (repo, attempt_id)
+        );
+        CREATE INDEX IF NOT EXISTS preview_deliveries_repo_created ON preview_deliveries(repo, created_at DESC);
         CREATE TABLE IF NOT EXISTS ai_chat_limits (
           visitor_key TEXT PRIMARY KEY,
           window_started_at INTEGER NOT NULL,
@@ -877,6 +890,57 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
   }
 
   /** Read-only timeline for the authenticated admin workspace. */
+  async recordPreviewDelivery(input: PreviewDelivery): Promise<{ ok: true }> {
+    this.ctx.storage.sql.exec(
+      `INSERT INTO preview_deliveries (
+        repo, attempt_id, project, pr, sha, deployment_id, preview_url, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(repo, attempt_id) DO UPDATE SET
+        project = excluded.project,
+        pr = excluded.pr,
+        sha = excluded.sha,
+        deployment_id = excluded.deployment_id,
+        preview_url = excluded.preview_url,
+        created_at = excluded.created_at`,
+      input.repository,
+      input.attemptId,
+      input.project,
+      input.pr,
+      input.sha,
+      input.deploymentId,
+      input.previewUrl,
+      Date.now(),
+    );
+    return { ok: true };
+  }
+
+  async latestPreviewDelivery(repo: string): Promise<PreviewDelivery | null> {
+    const row = this.ctx.storage.sql
+      .exec<{
+        repo: string;
+        attempt_id: string;
+        project: string;
+        pr: number;
+        sha: string;
+        deployment_id: string;
+        preview_url: string;
+      }>(
+        "SELECT repo, attempt_id, project, pr, sha, deployment_id, preview_url FROM preview_deliveries WHERE repo = ? ORDER BY created_at DESC LIMIT 1",
+        repo,
+      )
+      .toArray()[0];
+    if (!row) return null;
+    return {
+      repository: row.repo,
+      attemptId: row.attempt_id,
+      project: row.project,
+      pr: row.pr,
+      sha: row.sha,
+      deploymentId: row.deployment_id,
+      previewUrl: row.preview_url,
+    };
+  }
+
   async list(limit = 20) {
     const rows = this.ctx.storage.sql
       .exec<RevisionRow>(

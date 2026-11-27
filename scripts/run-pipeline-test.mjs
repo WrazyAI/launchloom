@@ -16,6 +16,11 @@ import {
   parsePipelineTestArgs,
   resolvePipelineTestPolicy,
 } from "./pipeline-test-policy.mjs";
+import {
+  pagesDeploymentId,
+  pagesDeploymentUrl,
+} from "./pages-deployment.mjs";
+export { pagesDeploymentId, pagesDeploymentUrl } from "./pages-deployment.mjs";
 import { recordGenerationStage } from "./record-generation-stage.mjs";
 import { summarizeGenerationCosts } from "./generation-cost-summary.mjs";
 import { missingRequiredHeroImagery } from "./creative-asset-readiness.mjs";
@@ -68,17 +73,6 @@ export function assertPipelineTestFacts(config) {
   const readiness = businessFactReadiness(config);
   if (!readiness.allowed)
     throw new Error(readiness.error || "Business facts are not ready.");
-}
-
-export function pagesDeploymentUrl(output) {
-  const matches = [
-    ...String(output).matchAll(
-      /Deployment complete![^\r\n]*?(https:\/\/[a-z0-9.-]+\.pages\.dev)/giu,
-    ),
-  ];
-  if (matches.length !== 1)
-    throw new Error("Immutable Pages deployment URL was not returned.");
-  return new URL(matches[0][1]).href.replace(/\/$/u, "");
 }
 
 export function assertTestPreviewIndexingPolicy({
