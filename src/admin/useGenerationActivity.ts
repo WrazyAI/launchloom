@@ -3,6 +3,7 @@ import type {
   GenerationActivityPage,
   StoredTraceEvent,
   TraceIdentity,
+  TraceSafeFields,
 } from "../lib/generation-activity";
 import type { AdminApi } from "./api";
 import { isAbortError, requestErrorMessage } from "./format";
@@ -21,6 +22,7 @@ export type ActivityConnection =
 export type GenerationActivityState = {
   page: GenerationActivityPage | null;
   events: StoredTraceEvent[];
+  runChanges: TraceSafeFields | null;
   connection: ActivityConnection;
   error: string | null;
   hasOlder: boolean;
@@ -51,6 +53,7 @@ export function useGenerationActivity({
 }): GenerationActivityState {
   const [page, setPage] = useState<GenerationActivityPage | null>(null);
   const [events, setEvents] = useState<StoredTraceEvent[]>([]);
+  const [runChanges, setRunChanges] = useState<TraceSafeFields | null>(null);
   const [connection, setConnection] = useState<ActivityConnection>(
     enabled ? "connecting" : "disabled",
   );
@@ -71,6 +74,7 @@ export function useGenerationActivity({
     eventsRef.current = [];
     setEvents([]);
     setPage(null);
+    setRunChanges(null);
     setHasOlder(false);
     setError(null);
     setConnection(enabled ? "connecting" : "disabled");
@@ -140,6 +144,11 @@ export function useGenerationActivity({
         });
         if (cancelled) return;
         merge(next.items, "append");
+        const changes = next.items.findLast((event) =>
+          event.kind === "action_finished" && event.payload.name === "run_code_changes",
+        );
+        if (next.recording === "expired") setRunChanges(null);
+        else if (changes?.kind === "action_finished") setRunChanges(changes.payload.result);
         latestCursor.current = next.nextCursor ?? latestCursor.current;
         if (after === null) setHasOlder(next.hasMore);
         setPage(next);
@@ -233,6 +242,7 @@ export function useGenerationActivity({
   return {
     page,
     events,
+    runChanges,
     connection,
     error,
     hasOlder,

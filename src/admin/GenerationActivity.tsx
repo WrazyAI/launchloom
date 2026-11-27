@@ -11,6 +11,7 @@ import type {
   GenerationActivityCoverageEntry,
   StoredTraceEvent,
   TraceIdentity,
+  TraceSafeFields,
   TraceText,
   TraceUsage,
 } from "../lib/generation-activity";
@@ -22,6 +23,7 @@ import {
   activityRoleLabel,
   activityStageLabel,
   activityStages,
+  codeChangeTotals,
   filterActivity,
   formatClock,
   formatCount,
@@ -33,6 +35,7 @@ import {
   modelReasoningCount,
   parseModelOutputPreview,
   recordingLabel,
+  runChangeUrl,
   type ActivityEntry,
   type ActivityFilter,
 } from "./generation-activity-format";
@@ -318,6 +321,32 @@ function Evidence({
       );
     case "action_started":
     case "action_finished": {
+      if (
+        event.kind === "action_finished" &&
+        event.payload.name === "edit_candidate_files"
+      ) {
+        const { patch, patchOmitted } = event.payload.result;
+        return (
+          <>
+            <h4>Applied candidate changes</h4>
+            {event.context.candidateId ? <p>{event.context.candidateId}</p> : null}
+            <p>{codeChangeTotals(event.payload.result)}</p>
+            {typeof patch === "string" ? (
+              <pre
+                className="admin-chat__codeblock-pre"
+                tabIndex={0}
+                aria-label="Applied candidate diff"
+              >
+                {patch}
+              </pre>
+            ) : <p className="admin-activity__note">Inline diff unavailable.</p>}
+            {typeof patch === "string" && patchOmitted === true ? (
+              <p className="admin-activity__note">Diff preview shortened. Line counts cover the whole edit.</p>
+            ) : null}
+            {meta}
+          </>
+        );
+      }
       const fields =
         event.kind === "action_started"
           ? event.payload.input
@@ -904,6 +933,10 @@ function ThreadedEntry({
         </span>
         <span className="admin-activity__copy admin-chat__tool-copy">
           <span className="admin-activity__title">{entry.title}</span>
+          {entry.primary.kind === "action_finished" &&
+            entry.primary.payload.name === "edit_candidate_files" && candidateId ? (
+              <span className="admin-activity__sub">{candidateId}</span>
+            ) : null}
           {chip ? (
             <span className="admin-chat__chip">{chip}</span>
           ) : (
@@ -1140,6 +1173,42 @@ function LockedAgentComposer() {
   );
 }
 
+function RunCodeChanges({ result }: { result: TraceSafeFields | null }) {
+  const totals = result ? codeChangeTotals(result) : null;
+  const url = result ? runChangeUrl(result) : null;
+  return (
+    <div className="admin-activity__summary admin-activity__changes" aria-label="Run code changes">
+      <strong>Run code changes</strong>
+      {totals ? (
+        <span title="Source files only; excludes site configuration and generated evidence">{totals}</span>
+      ) : <span>Diff unavailable</span>}
+      {url && totals ? (
+        <a href={url} target="_blank" rel="noreferrer">View complete diff on GitHub</a>
+      ) : null}
+    </div>
+  );
+}
+
+export function AttemptRunCodeChanges({
+  api,
+  attemptId,
+}: {
+  api: AdminApi;
+  attemptId: string;
+}) {
+  const identity = useMemo<TraceIdentity>(
+    () => ({ namespace: "legacy", attemptId }),
+    [attemptId],
+  );
+  const { runChanges, page, error } = useGenerationActivity({
+    api,
+    identity,
+    active: false,
+    enabled: true,
+  });
+  return page || error ? <RunCodeChanges result={runChanges} /> : null;
+}
+
 export function GenerationActivity({
   api,
   identity,
@@ -1175,6 +1244,7 @@ export function GenerationActivity({
   const {
     page,
     events,
+    runChanges,
     connection,
     error,
     hasOlder,
@@ -1441,6 +1511,8 @@ export function GenerationActivity({
               </p>
             </>
           ) : null}
+
+          {!active && page ? <RunCodeChanges result={runChanges} /> : null}
 
           {notice ? (
             <p className="admin-activity__warning" role="status">

@@ -214,6 +214,7 @@ export function AdminApp() {
           state={state}
           cursorTrail={cursorTrail}
           onNavigate={commit}
+          activityEnabled={generationActivityRead}
         />
       ) : state.view === "invitations" ? (
         <InvitationsView api={api} />

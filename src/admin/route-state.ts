@@ -20,6 +20,7 @@ export type AdminRouteState = {
   view: AdminView;
   clientId: string | null;
   attemptId: string | null;
+  attemptView?: "activity";
   filters: AttemptFilters;
   cursor: string | null;
 };
@@ -101,6 +102,7 @@ export function readRouteState(input: URL | string): AdminRouteState {
     view: safeView(params.get("view")),
     clientId: safeId(params.get("client")),
     attemptId: safeId(params.get("attempt")),
+    ...(params.get("attemptView") === "activity" ? { attemptView: "activity" } : {}),
     filters,
     cursor: first(params.get("cursor"), 500),
   };
@@ -116,6 +118,8 @@ export function writeRouteState(state: AdminRouteState): URL {
   if (clientId) params.set("client", clientId);
   const attemptId = safeId(state.attemptId);
   if (attemptId) params.set("attempt", attemptId);
+  if (attemptId && state.view === "generations" && state.attemptView === "activity")
+    params.set("attemptView", "activity");
   const filters = state.filters;
   const search = first(filters.search ?? null, 160);
   if (search) params.set("search", search);
