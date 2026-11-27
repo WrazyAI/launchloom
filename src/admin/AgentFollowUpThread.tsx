@@ -25,17 +25,20 @@ function Card({
   const running = active || suggestion.status === "started";
   const delivered = suggestion.status === "delivered";
   const needsReview = suggestion.status === "needs_review";
+  const failed = suggestion.status === "failed";
   const label = running
     ? "Revision running"
     : delivered
       ? "Open revised preview"
-      : needsReview || (!writable && !hasPreview)
-        ? "Needs review"
-        : writable
-          ? "Fix in Agent runs"
-          : "Open latest preview";
+      : failed
+        ? "Revision failed"
+        : needsReview || (!writable && !hasPreview)
+          ? "Needs review"
+          : writable
+            ? "Fix in Agent runs"
+            : "Open latest preview";
   const disabled =
-    running || delivered || needsReview || (!writable && !hasPreview);
+    running || delivered || failed || needsReview || (!writable && !hasPreview);
   return (
     <article className="admin-follow-up-card" data-status={suggestion.status}>
       <p className="admin-follow-up-card__issue">{suggestion.issue}</p>

@@ -82,6 +82,7 @@ jobs:
         if: steps.claim.outputs.run == 'true'
         working-directory: ${{ runner.temp }}/client
         run: |
+          node "$GITHUB_WORKSPACE/scripts/sync-revision-template.mjs" --client "$PWD"
           node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" create --client "$PWD" --base "${{ steps.base.outputs.sha }}" --out "$RUNNER_TEMP/revision-scope.json"
           node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$PWD" --manifest "$RUNNER_TEMP/revision-scope.json" --stage
           PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
