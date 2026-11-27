@@ -21,6 +21,7 @@ import type {
   GenerationActivityPage,
   TraceIdentity,
 } from "../lib/generation-activity";
+import type { AgentThreadPage } from "../lib/agent-follow-ups";
 
 const ADMIN_API_PREFIX = "/api/admin/";
 const WORKSPACE_PREFIX = "/api/admin/onboarding-invites/workspace";
@@ -362,6 +363,10 @@ export type AdminApi = {
     repo: string,
     options?: AdminRequestOptions,
   ): Promise<RevisionSummary[]>;
+  getAgentThread(
+    attemptId: string,
+    options?: AdminRequestOptions & { cursor?: string | null },
+  ): Promise<AgentThreadPage>;
   getAttemptEvents(
     id: string,
     cursor?: string | null,
@@ -1024,6 +1029,9 @@ export function createAdminApi(
           generationActivityRead:
             isRecord(payload.capabilities) &&
             payload.capabilities.generationActivityRead === true,
+          agentFollowUps:
+            isRecord(payload.capabilities) &&
+            payload.capabilities.agentFollowUps === true,
         },
       };
     },
@@ -1193,6 +1201,16 @@ export function createAdminApi(
         { signal: options?.signal },
       );
       return Array.isArray(payload.requests) ? payload.requests : [];
+    },
+    async getAgentThread(attemptId, options = {}) {
+      const params = new URLSearchParams();
+      add(params, "cursor", options.cursor);
+      const query = params.toString();
+      const payload = await fetcher<{ thread: AgentThreadPage }>(
+        `${WORKSPACE_PREFIX}/attempts/${encodeURIComponent(attemptId)}/agent-follow-ups${query ? `?${query}` : ""}`,
+        { signal: options?.signal },
+      );
+      return payload.thread;
     },
     async getAttempt(id, options) {
       const payload = await fetcher<{ attempt: AttemptDetail }>(

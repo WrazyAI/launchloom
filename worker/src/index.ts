@@ -42,7 +42,7 @@ import {
   generationActivityIngest,
   generationActivityRead,
 } from "./generation-activity/http";
-import { agentFollowUpInternal } from "./agent-follow-ups/http";
+import { agentFollowUpInternal, agentFollowUpsAdmin } from "./agent-follow-ups/http";
 import {
   operationsAdminApi, scheduledReconciliation, type ReconciliationEnvironment,
 } from "./operations/reconcile";
@@ -146,6 +146,7 @@ export interface Env {
   OPERATIONS_OIDC_AUDIENCE?: string;
   OPERATIONS_OIDC_REPOSITORY_ID?: string;
   GENERATION_ACTIVITY_ENABLED?: string;
+  AGENT_FOLLOW_UPS_ENABLED?: string;
   CLOUDFLARE_ACCESS_CLIENT_ID?: string;
   CLOUDFLARE_ACCESS_CLIENT_SECRET?: string;
   PREVIEW_PROXY_HOSTS?: string;
@@ -414,8 +415,15 @@ async function authenticatedWorkspace(
 
   if (mode === "neon") {
     if (suffix === "/enrollments/accept") return enrollmentAccept(request, env);
-    return guardedAdminRoute(request, env, ctx, async (guard) =>
-      /^\/(?:legacy\/attempts|operations\/records)\/[^/]+\/activity$/u.test(suffix)
+    return guardedAdminRoute(request, env, ctx, async (guard) => {
+      const followUps = await agentFollowUpsAdmin(
+        request,
+        env,
+        guard.principal,
+        new URL(request.url).pathname,
+      );
+      if (followUps) return followUps;
+      return /^\/(?:legacy\/attempts|operations\/records)\/[^/]+\/activity$/u.test(suffix)
         ? generationActivityRead(
             request,
             env,
@@ -433,8 +441,8 @@ async function authenticatedWorkspace(
           ? operationsDashboardApi(request, env, guard.principal)
           : suffix.startsWith("/operations/")
             ? operationsAdminApi(request, env, guard.principal)
-            : workspaceApi(request, env, guard.principal.email),
-    );
+            : workspaceApi(request, env, guard.principal.email);
+    });
   }
 
   if (!ctx.access) return workspaceError("signed_out", "Sign in required.", 401);
@@ -468,6 +476,14 @@ async function authenticatedWorkspace(
     return workspaceError(
       "forbidden",
       "Membership management requires a Neon account.",
+      403,
+    );
+  if (
+    /^\/attempts\/[^/]+\/agent-follow-ups$/u.test(suffix)
+  )
+    return workspaceError(
+      "forbidden",
+      "Agent follow-ups require a persistent admin account.",
       403,
     );
   if (

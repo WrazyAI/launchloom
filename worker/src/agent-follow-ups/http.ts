@@ -5,6 +5,8 @@ import type {
 
 const PREVIEW_PATH = "/api/internal/agent-follow-ups/preview-deliveries";
 const EVIDENCE_PATH = "/api/internal/agent-follow-ups/run-evidence";
+const ADMIN_PREFIX = "/api/admin/onboarding-invites/workspace";
+const ADMIN_THREAD = /^\/attempts\/([^/]+)\/agent-follow-ups$/u;
 const REPO = /^WrazyAI\/[a-z0-9][a-z0-9-]{0,100}$/u;
 const ATTEMPT = /^[A-Za-z0-9:_-]{1,160}$/u;
 const PROJECT = /^[a-z0-9][a-z0-9-]{0,62}$/u;
@@ -171,3 +173,63 @@ export async function agentFollowUpInternal(
   ).recordPreviewDelivery(delivery);
   return json({ ok: true });
 }
+
+type AdminFollowUpEnv = {
+  AGENT_FOLLOW_UPS_ENABLED?: string;
+  GENERATION_LEDGER: {
+    getByName(name: string): {
+      getAttempt(id: string): Promise<{
+        repository: string | null;
+        attemptId: string;
+      } | null>;
+    };
+  };
+  REVISION_COORDINATOR: {
+    getByName(name: string): {
+      readAgentThread(repo: string): Promise<unknown>;
+    };
+  };
+};
+
+export async function agentFollowUpsAdmin(
+  request: Request,
+  env: AdminFollowUpEnv,
+  principal: { role?: string } | null | undefined,
+  pathname: string,
+): Promise<Response | null> {
+  const suffix = pathname.startsWith(ADMIN_PREFIX)
+    ? pathname.slice(ADMIN_PREFIX.length)
+    : pathname;
+  const match = ADMIN_THREAD.exec(suffix);
+  if (!match) return null;
+  if (!principal?.role || !["admin", "owner"].includes(principal.role))
+    return json({ error: { code: "forbidden", message: "Admin access required." } }, 403);
+  if (request.method !== "GET")
+    return json({ error: { code: "method_not_allowed", message: "Use GET." } }, 405);
+  if (env.AGENT_FOLLOW_UPS_ENABLED !== "true")
+    return json(
+      { error: { code: "not_enabled", message: "Agent follow-ups are not enabled." } },
+      503,
+    );
+  let attemptId: string;
+  try {
+    attemptId = decodeURIComponent(match[1]);
+  } catch {
+    return json({ error: { code: "invalid_input", message: "Invalid attempt." } }, 400);
+  }
+  const attempt = await env.GENERATION_LEDGER.getByName(
+    "launchloom-generations",
+  ).getAttempt(attemptId);
+  if (!attempt)
+    return json({ error: { code: "not_found", message: "Attempt not found." } }, 404);
+  if (!attempt.repository)
+    return json(
+      { error: { code: "unavailable", message: "This attempt has no client site." } },
+      409,
+    );
+  const thread = await env.REVISION_COORDINATOR.getByName(
+    attempt.repository.toLowerCase(),
+  ).readAgentThread(attempt.repository);
+  return json({ thread });
+}
+

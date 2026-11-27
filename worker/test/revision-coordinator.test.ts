@@ -538,3 +538,66 @@ describe("lead rate limiting", () => {
     expect((await coordinator.allowLead("visitor-new", start + 60 * 60_000)).allowed).toBe(true);
   });
 });
+
+describe("agent follow-up thread", () => {
+  const preview = {
+    repository: "WrazyAI/site-a",
+    attemptId: "attempt-a",
+    project: "site-a",
+    pr: 9,
+    sha: "a".repeat(40),
+    deploymentId: "4c1e9a2b",
+    previewUrl: "https://4c1e9a2b.site-a.pages.dev",
+  };
+
+  it("keeps one thread per repository and separates sites", async () => {
+    const first = env.REVISION_COORDINATOR.getByName("wrazyai/site-a");
+    const second = env.REVISION_COORDINATOR.getByName("wrazyai/site-b");
+    await first.recordPreviewDelivery(preview);
+    await first.recordAgentRunEvidence({
+      attemptId: "attempt-a",
+      repository: "WrazyAI/site-a",
+      siteId: "site-a",
+      issueNumber: 9,
+      profile: "full-preview",
+      renderer: "creative",
+      verdict: "passed",
+      selectedCandidateId: "candidate-b",
+      candidates: [],
+      gates: [],
+      failures: [],
+      routeChecks: [],
+      assets: null,
+      preview,
+      recordedAt: 1_700_000_000_000,
+    });
+    await first.appendAgentExchange({
+      repo: "WrazyAI/site-a",
+      attemptId: "attempt-a",
+      adminText: "Why did the mobile check fail?",
+      agentText: "The contact action fell below the fold.",
+      intent: "question",
+      suggestions: [],
+    });
+    const thread = await first.readAgentThread("WrazyAI/site-a");
+    expect(thread.messages).toHaveLength(2);
+    expect(thread.writable).toBe(true);
+    expect((await second.readAgentThread("WrazyAI/site-b")).messages).toHaveLength(0);
+  });
+
+  it("reads a question thread for a failed attempt without a preview", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName("wrazyai/failed-site");
+    await coordinator.appendAgentExchange({
+      repo: "WrazyAI/failed-site",
+      attemptId: "attempt-failed",
+      adminText: "Why did the run fail?",
+      agentText: "The render gate failed before deployment.",
+      intent: "question",
+      suggestions: [],
+    });
+    const thread = await coordinator.readAgentThread("WrazyAI/failed-site");
+    expect(thread.latestPreview).toBeNull();
+    expect(thread.writable).toBe(false);
+    expect(thread.messages[0]?.text).toContain("Why did the run fail?");
+  });
+});

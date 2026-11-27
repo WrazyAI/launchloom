@@ -8,7 +8,11 @@ import {
   parseFeedbackStructure,
 } from "./feedback-structure";
 import type {
+  AgentExchangeInput,
+  AgentMessage,
   AgentRunEvidence,
+  AgentSuggestion,
+  AgentThreadPage,
   PreviewDelivery,
 } from "../../src/lib/agent-follow-ups";
 
@@ -409,6 +413,31 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           recorded_at INTEGER NOT NULL,
           PRIMARY KEY (repo, attempt_id)
         );
+        CREATE TABLE IF NOT EXISTS agent_threads (
+          repo TEXT PRIMARY KEY,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS agent_messages (
+          message_id TEXT PRIMARY KEY,
+          repo TEXT NOT NULL,
+          role TEXT NOT NULL CHECK(role IN ('admin','agent')),
+          text TEXT NOT NULL,
+          intent TEXT,
+          attempt_id TEXT NOT NULL,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS agent_messages_repo_created ON agent_messages(repo, created_at);
+        CREATE TABLE IF NOT EXISTS agent_suggestions (
+          suggestion_id TEXT PRIMARY KEY,
+          message_id TEXT NOT NULL,
+          repo TEXT NOT NULL,
+          payload_json TEXT NOT NULL,
+          status TEXT NOT NULL,
+          request_id TEXT,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS agent_suggestions_message ON agent_suggestions(message_id);
         CREATE TABLE IF NOT EXISTS ai_chat_limits (
           visitor_key TEXT PRIMARY KEY,
           window_started_at INTEGER NOT NULL,
@@ -981,6 +1010,141 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     } catch {
       return null;
     }
+  }
+
+  async appendAgentExchange(
+    input: AgentExchangeInput,
+  ): Promise<{ message: AgentMessage }> {
+    const now = Date.now();
+    this.ctx.storage.sql.exec(
+      `INSERT INTO agent_threads (repo, created_at, updated_at) VALUES (?, ?, ?)
+       ON CONFLICT(repo) DO UPDATE SET updated_at = excluded.updated_at`,
+      input.repo,
+      now,
+      now,
+    );
+    const adminId = crypto.randomUUID();
+    const agentId = crypto.randomUUID();
+    this.ctx.storage.sql.exec(
+      "INSERT INTO agent_messages (message_id, repo, role, text, intent, attempt_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      adminId,
+      input.repo,
+      "admin",
+      input.adminText,
+      null,
+      input.attemptId,
+      now,
+    );
+    this.ctx.storage.sql.exec(
+      "INSERT INTO agent_messages (message_id, repo, role, text, intent, attempt_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      agentId,
+      input.repo,
+      "agent",
+      input.agentText,
+      input.intent,
+      input.attemptId,
+      now + 1,
+    );
+    const suggestions: AgentSuggestion[] = input.suggestions.map(
+      (suggestion) => {
+        const id = crypto.randomUUID();
+        const stored: AgentSuggestion = {
+          ...suggestion,
+          id,
+          messageId: agentId,
+          status: "suggested",
+          requestId: null,
+        };
+        this.ctx.storage.sql.exec(
+          "INSERT INTO agent_suggestions (suggestion_id, message_id, repo, payload_json, status, request_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+          id,
+          agentId,
+          input.repo,
+          JSON.stringify(stored),
+          stored.status,
+          null,
+          now + 1,
+        );
+        return stored;
+      },
+    );
+    return {
+      message: {
+        id: agentId,
+        role: "agent",
+        text: input.agentText,
+        intent: input.intent,
+        attemptId: input.attemptId,
+        createdAt: now + 1,
+        suggestions,
+      },
+    };
+  }
+
+  async readAgentThread(
+    repo: string,
+    options: { cursor?: string | null; limit?: number } = {},
+  ): Promise<AgentThreadPage> {
+    const limit = Math.max(1, Math.min(100, options.limit ?? 100));
+    const rows = this.ctx.storage.sql
+      .exec<{
+        message_id: string;
+        role: "admin" | "agent";
+        text: string;
+        intent: AgentMessage["intent"];
+        attempt_id: string;
+        created_at: number;
+      }>(
+        "SELECT message_id, role, text, intent, attempt_id, created_at FROM agent_messages WHERE repo = ? ORDER BY created_at ASC LIMIT ?",
+        repo,
+        limit,
+      )
+      .toArray();
+    const suggestions = this.ctx.storage.sql
+      .exec<{ message_id: string; payload_json: string }>(
+        "SELECT message_id, payload_json FROM agent_suggestions WHERE repo = ? ORDER BY created_at ASC",
+        repo,
+      )
+      .toArray();
+    const byMessage = new Map<string, AgentSuggestion[]>();
+    for (const row of suggestions) {
+      try {
+        const parsed = JSON.parse(row.payload_json) as AgentSuggestion;
+        const list = byMessage.get(row.message_id) || [];
+        list.push(parsed);
+        byMessage.set(row.message_id, list);
+      } catch {
+        // A malformed stored suggestion is ignored rather than rendered.
+      }
+    }
+    const latestPreview = await this.latestPreviewDelivery(repo);
+    const latestEvidence = await this.latestAgentRunEvidence(repo);
+    const active = this.ctx.storage.sql
+      .exec<{ request_id: string }>(
+        `SELECT request_id FROM revision_requests WHERE status IN ${ACTIVE} ORDER BY created_at LIMIT 1`,
+      )
+      .toArray()[0];
+    const writable =
+      latestPreview !== null &&
+      latestEvidence?.preview?.deploymentId === latestPreview.deploymentId &&
+      latestEvidence?.preview?.previewUrl === latestPreview.previewUrl;
+    return {
+      repository: repo,
+      messages: rows.map((row) => ({
+        id: row.message_id,
+        role: row.role,
+        text: row.text,
+        intent: row.intent,
+        attemptId: row.attempt_id,
+        createdAt: row.created_at,
+        suggestions: byMessage.get(row.message_id) || [],
+      })),
+      nextCursor: null,
+      latestPreview,
+      latestEvidence,
+      activeRequestId: active?.request_id ?? null,
+      writable,
+    };
   }
 
   async list(limit = 20) {
