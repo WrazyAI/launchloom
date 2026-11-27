@@ -1509,3 +1509,140 @@
     animation: none;
   }
 }
+
+.admin-follow-ups {
+  border-top: 1px solid var(--line, #e4e5de);
+  background: #fbfcf9;
+  padding: 18px 20px 16px;
+}
+.admin-follow-ups__thread {
+  display: grid;
+  gap: 14px;
+  max-height: 340px;
+  overflow-y: auto;
+  margin-bottom: 14px;
+}
+.admin-follow-ups__empty {
+  margin: 0;
+  color: #6b756f;
+  font-size: 13px;
+}
+.admin-follow-up-message {
+  display: grid;
+  gap: 5px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #1d2421;
+}
+.admin-follow-up-message__who {
+  font-size: 12px;
+  font-weight: 700;
+  color: #59645e;
+}
+.admin-follow-up-message p {
+  margin: 0;
+}
+.admin-follow-up-card {
+  border: 1px solid #d2d4cb;
+  border-left: 3px solid #2f5d4a;
+  border-radius: 12px;
+  background: #fff;
+  padding: 13px 14px;
+  display: grid;
+  gap: 7px;
+  margin-top: 4px;
+}
+.admin-follow-up-card__issue {
+  font-weight: 700;
+  font-size: 14px;
+}
+.admin-follow-up-card__fix {
+  color: #59645e;
+  font-size: 13.5px;
+}
+.admin-follow-up-card__scope {
+  color: #87918b;
+  font-size: 12px;
+}
+.admin-follow-up-card__apply {
+  justify-self: start;
+  border: 1px solid #2f5d4a;
+  background: #2f5d4a;
+  color: #fff;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.admin-follow-up-card__apply:disabled {
+  background: #edf3ef;
+  border-color: #d2d4cb;
+  color: #2f5d4a;
+  cursor: default;
+}
+.admin-follow-up-card__receipt {
+  color: #2f5d4a;
+  font-size: 12.5px;
+}
+.admin-follow-ups__composer {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #d2d4cb;
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px 12px;
+}
+.admin-follow-ups__composer textarea {
+  border: 0;
+  resize: vertical;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.45;
+  padding: 0;
+  outline: 0;
+  background: none;
+}
+.admin-follow-ups__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.admin-follow-ups__bar select {
+  font: inherit;
+  font-size: 12.5px;
+  border: 1px solid #e4e5de;
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: #fff;
+  color: #59645e;
+}
+.admin-follow-ups__bar button {
+  border: 1px solid #2f5d4a;
+  background: #2f5d4a;
+  color: #fff;
+  border-radius: 8px;
+  padding: 7px 13px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.admin-follow-ups__bar button:disabled {
+  background: #edf3ef;
+  border-color: #d2d4cb;
+  color: #87918b;
+  cursor: default;
+}
+.admin-follow-ups__notice {
+  margin: 0 0 8px;
+  color: #7d4e0c;
+  font-size: 12.5px;
+}
+.admin-follow-ups__note {
+  margin: 9px 0 0;
+  color: #87918b;
+  font-size: 11.5px;
+}

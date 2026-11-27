@@ -126,3 +126,16 @@ export type AgentExchangeInput = {
     Omit<AgentSuggestion, "id" | "messageId" | "status" | "requestId">
   >;
 };
+
+export type AgentFollowUpSubmission = {
+  requestId: string;
+  text: string;
+  mode: "auto" | "question" | "improvement";
+  baseDeploymentId?: string;
+};
+
+export type AgentFollowUpResponse = {
+  ok: true;
+  thread?: AgentThreadPage;
+  fallback?: "choose_mode";
+};

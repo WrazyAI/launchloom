@@ -102,6 +102,7 @@ let heroMode: HeroMode = "ok";
 let heroPng: Buffer;
 let operationsReadCapability = false;
 let activityEnabled = false;
+let agentFollowUpsEnabled = false;
 let activityFixture: unknown = null;
 let seoDetail: string | null = null;
 
@@ -369,6 +370,7 @@ async function serve(
       capabilities: {
         operationsRead: operationsReadCapability,
         generationActivityRead: activityEnabled,
+        agentFollowUps: agentFollowUpsEnabled,
       },
     });
     return;
@@ -419,6 +421,23 @@ async function serve(
   if (activityMatch) {
     const id = decodeURIComponent(activityMatch[1]);
     sendJson(response, activityFixture ?? activityPageFor(id));
+    return;
+  }
+
+  const followUpMatch = /^\/attempts\/([^/]+)\/agent-follow-ups$/u.exec(suffix);
+  if (followUpMatch) {
+    const id = decodeURIComponent(followUpMatch[1]);
+    sendJson(response, {
+      thread: {
+        repository: `WrazyAI/${id}`,
+        messages: [],
+        nextCursor: null,
+        latestPreview: null,
+        latestEvidence: null,
+        activeRequestId: null,
+        writable: false,
+      },
+    });
     return;
   }
 
@@ -611,6 +630,7 @@ afterAll(async () => {
 beforeEach(() => {
   operationsReadCapability = false;
   activityEnabled = false;
+  agentFollowUpsEnabled = false;
   activityFixture = null;
   requests = [];
   health = fixtureHealth();
@@ -5434,3 +5454,25 @@ it.each([1512, 390])(
     }
   },
 );
+
+it("shows the follow-up composer when agent follow-ups are enabled", async () => {
+  activityEnabled = true;
+  agentFollowUpsEnabled = true;
+  const { page, errors } = await openPage({
+    viewport: { width: 390, height: 844 },
+    path: "/admin/onboarding-invites?view=generations&attempt=attempt-0005",
+  });
+  try {
+    const drawer = page.locator("#attempt-inspector");
+    await drawer.getByRole("button", { name: "Agent runs", exact: true }).click();
+    const composer = drawer.getByPlaceholder(
+      "Ask about this run, or describe what to improve",
+    );
+    await visible(composer);
+    expect(await composer.isDisabled()).toBe(false);
+    expect(await drawer.getByText("Read-only run trace").count()).toBe(0);
+    autoErrors(errors);
+  } finally {
+    await page.close();
+  }
+});

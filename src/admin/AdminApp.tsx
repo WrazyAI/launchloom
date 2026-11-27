@@ -101,6 +101,7 @@ export function AdminApp() {
   const [api] = useState(createAdminApi);
   const [operationsRead, setOperationsRead] = useState<boolean | null>(null);
   const [generationActivityRead, setGenerationActivityRead] = useState(false);
+  const [followUpsEnabled, setFollowUpsEnabled] = useState(false);
   const [principal, setPrincipal] = useState<WorkspacePrincipal | null>(null);
   const pendingOperations =
     state.view === "operations" && operationsRead === null;
@@ -121,6 +122,7 @@ export function AdminApp() {
           setPrincipal(workspace.principal);
           setOperationsRead(workspace.capabilities.operationsRead);
           setGenerationActivityRead(workspace.capabilities.generationActivityRead);
+          setFollowUpsEnabled(workspace.capabilities.agentFollowUps);
         }
       })
       .catch(() => {
@@ -207,6 +209,7 @@ export function AdminApp() {
           cursorTrail={cursorTrail}
           onNavigate={commit}
           activityEnabled={generationActivityRead}
+          followUpsEnabled={followUpsEnabled}
         />
       ) : state.view === "clients" ? (
         <ClientsView

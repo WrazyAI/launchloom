@@ -93,6 +93,7 @@ export function GenerationsView({
   cursorTrail,
   onNavigate,
   activityEnabled = false,
+  followUpsEnabled = false,
 }: {
   api: AdminApi;
   state: AdminRouteState;
@@ -102,6 +103,7 @@ export function GenerationsView({
     options?: { cursorTrail?: string[] },
   ) => void;
   activityEnabled?: boolean;
+  followUpsEnabled?: boolean;
 }) {
   const filters = state.filters;
   const cursor = state.cursor;
@@ -1072,6 +1074,7 @@ export function GenerationsView({
           eventsLoading={eventsLoading}
           eventsError={eventsError}
           activityEnabled={activityEnabled}
+          followUpsEnabled={followUpsEnabled}
           openActivity={state.attemptView === "activity"}
           onWorkflowPollingChange={setWorkflowAttemptId}
           headingRef={headingRef}

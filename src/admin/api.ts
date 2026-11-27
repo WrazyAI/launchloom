@@ -21,7 +21,11 @@ import type {
   GenerationActivityPage,
   TraceIdentity,
 } from "../lib/generation-activity";
-import type { AgentThreadPage } from "../lib/agent-follow-ups";
+import type {
+  AgentFollowUpResponse,
+  AgentFollowUpSubmission,
+  AgentThreadPage,
+} from "../lib/agent-follow-ups";
 
 const ADMIN_API_PREFIX = "/api/admin/";
 const WORKSPACE_PREFIX = "/api/admin/onboarding-invites/workspace";
@@ -367,6 +371,17 @@ export type AdminApi = {
     attemptId: string,
     options?: AdminRequestOptions & { cursor?: string | null },
   ): Promise<AgentThreadPage>;
+  submitAgentFollowUp(
+    attemptId: string,
+    input: AgentFollowUpSubmission,
+    options?: AdminRequestOptions,
+  ): Promise<AgentFollowUpResponse>;
+  applyAgentSuggestion(
+    attemptId: string,
+    suggestionId: string,
+    input: { requestId: string; baseDeploymentId: string },
+    options?: AdminRequestOptions,
+  ): Promise<{ ok: true; requestId: string; queueStatus: string }>;
   getAttemptEvents(
     id: string,
     cursor?: string | null,
@@ -1211,6 +1226,28 @@ export function createAdminApi(
         { signal: options?.signal },
       );
       return payload.thread;
+    },
+    submitAgentFollowUp(attemptId, input, options) {
+      return fetcher<AgentFollowUpResponse>(
+        `${WORKSPACE_PREFIX}/attempts/${encodeURIComponent(attemptId)}/agent-follow-ups`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+          signal: options?.signal,
+        },
+      );
+    },
+    applyAgentSuggestion(attemptId, suggestionId, input, options) {
+      return fetcher<{ ok: true; requestId: string; queueStatus: string }>(
+        `${WORKSPACE_PREFIX}/attempts/${encodeURIComponent(attemptId)}/agent-follow-ups/${encodeURIComponent(suggestionId)}/apply`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+          signal: options?.signal,
+        },
+      );
     },
     async getAttempt(id, options) {
       const payload = await fetcher<{ attempt: AttemptDetail }>(

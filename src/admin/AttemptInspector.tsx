@@ -54,6 +54,7 @@ export type AttemptInspectorProps = {
   eventsLoading: boolean;
   eventsError: string | null;
   activityEnabled?: boolean;
+  followUpsEnabled?: boolean;
   openActivity?: boolean;
   onWorkflowPollingChange?: (attemptId: string | null) => void;
   headingRef: RefObject<HTMLHeadingElement | null>;
@@ -256,6 +257,7 @@ export function AttemptInspector({
   eventsLoading,
   eventsError,
   activityEnabled = false,
+  followUpsEnabled = false,
   openActivity = false,
   headingRef,
   onClose,
@@ -484,6 +486,7 @@ export function AttemptInspector({
                 attempt.executionStatus === "queued"
               }
               enabled={activityEnabled}
+              followUpsEnabled={followUpsEnabled}
               threaded
               topBanner={statusNotices}
               dockFooter={
